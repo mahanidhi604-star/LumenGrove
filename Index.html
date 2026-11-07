@@ -54,6 +54,42 @@ html.rm *{animation:none!important;transition:none!important}html.rm .ring{strok
 .rt{stroke-dasharray:6 5;animation:dash 1s linear infinite}@keyframes dash{to{stroke-dashoffset:-22}}.pl{animation:pls 2s infinite;transform-box:fill-box;transform-origin:center}@keyframes pls{from{transform:scale(1);opacity:.7}to{transform:scale(2.6);opacity:0}}
 #lm{position:fixed;right:16px;bottom:16px;z-index:8}#lmp{position:fixed;right:16px;bottom:76px;width:min(340px,calc(100% - 32px));z-index:8;display:none}#lmm{height:220px;overflow:auto;font-size:14px}.m{margin:6px 0;padding:8px 12px;border-radius:12px;background:var(--ln)}.m.u{background:color-mix(in srgb,var(--ac) 25%,transparent);text-align:right}
 @media(max-width:720px){#lm{bottom:84px}#lmp{bottom:144px}}
+
+.map-box{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--ln);background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,0.06)}
+.map-svg{width:100%;height:auto;display:block;cursor:crosshair;user-select:none;-webkit-tap-highlight-color:transparent}
+.map-bg{transition:filter .3s}
+[data-t=forest] .map-bg{filter:brightness(.85) contrast(1.05)}
+[data-t=blueprint] .map-bg{filter:brightness(.82) contrast(1.1) hue-rotate(185deg)}
+[data-t=volt] .map-bg,[data-t=omni] .map-bg{filter:brightness(.78) contrast(1.15) grayscale(.35)}
+.st-pin{cursor:pointer;transition:transform .15s}
+.st-pin:hover{transform:scale(1.1)}
+.v-pin{cursor:pointer;transition:transform .15s}
+.v-pin:hover{transform:scale(1.15)}
+.map-hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--ln)}
+.map-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font-size:.8rem;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.chip:hover{background:var(--ln);border-color:var(--ac)}
+.chip.on{background:var(--ac);color:var(--on);border-color:var(--ac)}
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;max-height:280px;overflow-y:auto;padding-right:4px}
+.v-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--ln);font-size:.82rem}
+
+
+.map-wrap{display:flex;flex-direction:column;gap:12px;user-select:none}
+.map-box{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--ln);background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+.map-svg{width:100%;height:auto;display:block;cursor:crosshair;-webkit-tap-highlight-color:transparent}
+.v-card{cursor:pointer;transition:transform .18s cubic-bezier(.2,.8,.2,1),filter .18s}
+.v-card:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 6px 14px rgba(0,0,0,0.14))}
+.v-card.sel rect{stroke:var(--ac)!important;stroke-width:2.5px!important}
+.v-card.dim{opacity:.28;filter:grayscale(.6)}
+.v-card text{pointer-events:none}
+.map-hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-radius:16px;background:var(--card);border:1px solid var(--ln);box-shadow:0 4px 14px rgba(0,0,0,0.04)}
+.map-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.map-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .1s}
+.chip:hover{background:var(--ln);border-color:var(--ac);transform:translateY(-1px)}
+.chip.on{background:var(--ac);color:var(--on);border-color:var(--ac);box-shadow:0 2px 8px color-mix(in srgb,var(--ac) 40%,transparent)}
+.search-box{padding:6px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font:inherit;font-size:.82rem;min-height:34px}
+
 </style>
 </head>
 <body>
@@ -67,7 +103,61 @@ kn:{home:'ಮುಖಪುಟ',how:'ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್�
 hi:{home:'होम',how:'यह कैसे काम करता है',tech:'तकनीक',impact:'प्रभाव',about:'परिचय',plug:'प्लग इन',find:'बैंक खोजें',rent:'किराया',rentals:'मेरे किराये',me:'सेटिंग्स',hub:'हब',si:'साइन इन',guest:'अतिथि के रूप में जारी रखें',h1:'अब बैटरी की चिंता नहीं।',sub:'कैंपस के स्टेशनों पर सौर ऊर्जा से चार्ज पावर बैंक तैयार हैं।',greet:'आज कहाँ चार्ज करेंगे?',back:'← लूमेनग्रोव'}};
 const S={l:q('l','en'),th:q('th',matchMedia('(prefers-color-scheme:dark)').matches?'forest':'cream'),u:null,rt:{step:1,st:'library',slot:null,t0:0,res:0}};
 const t=k=>(L[S.l]||{})[k]||L.en[k]||k;
-const ST=[['library','Library',120,90],['mm','M.M Foods',330,70],['mingoes','Big Mingoes',250,200],['cauvery','Cauvery Hostel',80,230]].map((a,i)=>({id:a[0],n:a[1],x:a[2],y:a[3],lat:null,lng:null,slots:8,free:3+i,stock:{std:3,lap:2,fast:1+i%2,wl:2},solar:200+i*40,batt:70+i*5,temp:34,ok:true}));
+const VENUES = [
+  { id:'metro', n:'Pattanagere Metro', icon:'🚇', desc:'Campus Metro Entrance', x:240, y:32, w:160, h:34, cat:'gate' },
+  { id:'gate', n:'Main Campus Gate', icon:'🚪', desc:'Mysore Road Entrance', x:360, y:32, w:70, h:34, cat:'gate' },
+  { id:'atm', n:'Kotak Bank ATM', icon:'🏧', desc:'Campus ATM Counter', x:440, y:32, w:80, h:34, cat:'facility' },
+  { id:'hub', n:'Innovation Hub (DTL)', icon:'💡', desc:'Makerspace & DTL', x:95, y:105, w:120, h:58, cat:'hub', st:true },
+  { id:'admin', n:'Admin Block', icon:'🏛️', desc:'Main Admin & Quad', x:255, y:105, w:145, h:65, cat:'admin', st:true },
+  { id:'civil', n:'Civil Dept.', icon:'📐', desc:'Civil Engineering', x:435, y:105, w:110, h:60, cat:'dept' },
+  { id:'ground', n:'Main Stage · CS Ground', icon:'🎭', desc:'Festival Stage & Sports', x:610, y:120, w:160, h:105, cat:'facility' },
+  { id:'parking', n:'Poornima Parking', icon:'🅿️', desc:'Vehicle Parking Bay', x:775, y:150, w:95, h:150, cat:'facility' },
+  { id:'mech', n:'Mech. Dept.', icon:'⚙️', desc:'Mechanical Engineering', x:95, y:185, w:120, h:58, cat:'dept' },
+  { id:'workshops', n:'Workshops', icon:'🔧', desc:'Central Campus Workshops', x:235, y:190, w:90, h:50, cat:'facility' },
+  { id:'maint', n:'Maintenance Office', icon:'🏢', desc:'Central Maintenance', x:340, y:190, w:80, h:50, cat:'facility' },
+  { id:'eee', n:'EEE Dept.', icon:'⚡', desc:'Electrical Engineering', x:445, y:185, w:110, h:55, cat:'dept' },
+  { id:'cse', n:'CSE Dept.', icon:'💻', desc:'Computer Science', x:565, y:235, w:115, h:60, cat:'dept', st:true },
+  { id:'hostel', n:"Boys' Hostel (Cauvery)", icon:'🏢', desc:'Student Residence', x:715, y:310, w:130, h:155, cat:'hostel', st:true },
+  { id:'quad', n:'BT Quadrangle', icon:'🌿', desc:'Courtyard Garden & BT', x:95, y:265, w:120, h:58, cat:'facility' },
+  { id:'aiml', n:'AI-ML & MCA Dept.', icon:'🤖', desc:'AI, ML & MCA', x:95, y:345, w:120, h:55, cat:'dept' },
+  { id:'rvu', n:'RV University', icon:'🎓', desc:'RVU Academic Block', x:235, y:260, w:100, h:55, cat:'dept' },
+  { id:'ece', n:'ECE Dept.', icon:'📡', desc:'Electronics & Comm.', x:355, y:260, w:100, h:55, cat:'dept' },
+  { id:'chem', n:'Chem & Physics Dept.', icon:'🧪', desc:'Sciences Department', x:235, y:340, w:110, h:60, cat:'dept' },
+  { id:'ete', n:'ETE Dept.', icon:'📶', desc:'Telecomm. Engineering', x:235, y:420, w:110, h:55, cat:'dept' },
+  { id:'library', n:'Central Library', icon:'📚', desc:'Main Reference Library', x:365, y:350, w:120, h:68, cat:'facility', st:true },
+  { id:'mm', n:'Mini Canteen', icon:'🥪', desc:'Snacks & Refreshments', x:505, y:350, w:110, h:55, cat:'food', st:true },
+  { id:'mingoes', n:'Food Court (MINGOS)', icon:'🍽️', desc:'Main Campus Food Court', x:105, y:435, w:140, h:72, cat:'food', st:true },
+  { id:'vip', n:'VIP Lounge', icon:'🛋️', desc:'Guest & VIP Reception', x:105, y:525, w:120, h:45, cat:'facility' },
+  { id:'ise', n:'ASE & ISE Dept.', icon:'✈️', desc:'Aerospace & Information', x:365, y:510, w:130, h:60, cat:'dept' },
+  { id:'incub', n:'Incubation Center', icon:'🚀', desc:'Startups & Incubation', x:525, y:510, w:130, h:60, cat:'facility' }
+];
+
+const ST_RAW = [
+  { id:'library', n:'Central Library', icon:'📚', x:365, y:350 },
+  { id:'mingoes', n:'Food Court (MINGOS)', icon:'🍽️', x:105, y:435 },
+  { id:'cauvery', n:"Boys' Hostel (Cauvery)", icon:'🏢', x:715, y:310 },
+  { id:'mm', n:'Mini Canteen', icon:'🥪', x:505, y:350 },
+  { id:'cse', n:'CSE Dept.', icon:'💻', x:565, y:235 },
+  { id:'admin', n:'Admin Block', icon:'🏛️', x:255, y:105 },
+  { id:'hub', n:'Innovation Hub (DTL)', icon:'💡', x:95, y:105 }
+];
+
+const ST = ST_RAW.map((a, i) => ({
+  id: a.id,
+  n: a.n,
+  icon: a.icon,
+  x: a.x,
+  y: a.y,
+  lat: 12.9237 + i * 0.0003,
+  lng: 77.4987 + i * 0.0003,
+  slots: 8,
+  free: 3 + (i % 4),
+  stock: { std: 3, lap: 2, fast: 1 + i % 2, wl: 2 },
+  solar: 210 + (i * 30) % 110,
+  batt: 72 + (i * 5) % 25,
+  temp: 34,
+  ok: true
+}));
 const PR={rate:'',grace:10,cap:'',late:'',dep:''};
 const slots=id=>[...Array(10)].map((_,i)=>{const c=(i*37+id.length*13)%100,r=i%7==3;return{i,c,s:r?'out':c>=90?'ready':'charging'}});
 const free=id=>{const s=ST.find(x=>x.id==id);return s?s.free:0};
@@ -87,7 +177,7 @@ about:()=>`<div class="wrap"><h1 tabindex="-1">${t('about')}</h1><p>LumenGrove i
 plug:()=>`<div class="wrap hub"><span class="k">LumenGrove hub</span><h1 tabindex="-1">${t('greet')}</h1><div class="grid">${[['app-stations',t('find'),'Stations and free banks'],['app-rent',t('rent'),'Reserve, pay, unlock'],['app-rentals',t('rentals'),'Active rental and history'],['app-report','Report a problem','Lock stuck? Not charging?'],['app-impact','My impact','kWh and CO₂'],['app-settings',t('me'),'Language, theme, motion'],['signin',t('si'),'Or continue as guest']].map(a=>`<a class="card tile" href="#${a[0]}"><span class="k">${a[1]}</span><p>${a[2]}</p></a>`).join('')}</div></div>`,
 signin:()=>`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t('si')}</h1><label for="em">Email</label><input id="em" type="email" style="width:100%"><div class="err" id="e1"></div><label for="pw">Password</label><input id="pw" type="password" style="width:100%"><div class="err" id="e2"></div><p><button class="btn" onclick="sIn()">${t('si')}</button> <button class="btn g" onclick="login('guest')">${t('guest')}</button></p><p class="badge">Demo only</p><p><button class="btn g" onclick="login('student')">Demo student</button></p></div>`,
 'admin-login':()=>`<div class="wrap" style="max-width:520px"><span class="k">Staff only</span><h1 tabindex="-1">Admin sign in</h1><p>Demo accounts, replaced by Supabase later.</p><p><button class="btn" onclick="login('super')">Super admin</button> <button class="btn g" onclick="login('tech')">Technician</button></p></div>`,
-'app-stations':()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1><svg viewBox="0 0 300 220" style="width:100%;max-width:520px" role="img" aria-label="Campus map"><rect width="300" height="220" rx="20" fill="var(--card)" stroke="var(--ln)"/>${ST.map(s=>`<a href="#app-station-${s.id}"><circle cx="${s.x}" cy="${s.y}" r="14" fill="var(--ac)"/><text x="${s.x}" y="${s.y+30}" text-anchor="middle" font-size="11" fill="var(--fg)">${s.n}</text></a>`).join('')}</svg><div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`,
+  'app-stations':()=>PG['app-stations'](),
 'app-impact':()=>PG.impact(),
 'app-report':()=>S.u&&S.u.role=='student'?`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">Report a problem</h1><label for="pb">What happened?</label><select id="pb" style="width:100%"><option>Bank not charging</option><option>Lock stuck</option><option>Station offline</option></select><label for="nt">Details</label><textarea id="nt" rows="4" style="width:100%"></textarea><p><button class="btn" onclick="toast('Report sent (demo)')">Send report</button></p></div>`:need,
 'app-settings':()=>`<div class="wrap"><h1 tabindex="-1">${t('me')}</h1><label for="sl">Language</label><select id="sl" onchange="S.l=this.value;sv('l',S.l);go()">${[['en','English'],['kn','ಕನ್ನಡ'],['hi','हिन्दी']].map(a=>`<option value="${a[0]}"${S.l==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><label for="st">Theme</label><select id="st" onchange="theme(this.value)">${[['cream','Solar Cream'],['forest','Forest Night'],['blueprint','Blueprint'],['dusk','Terracotta Dusk'],['volt','Mono Volt'],['omni','OmniVolt']].map(a=>`<option value="${a[0]}"${S.th==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><label><input type="checkbox" onchange="document.documentElement.classList.toggle('rm',this.checked)"> Reduce motion</label></div>`,
@@ -131,19 +221,266 @@ let mx=0,my=0;const mv=e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('rm');R3={r};let t0=0;
 const loop=()=>{t0+=.012;G.rotation.y=Math.sin(t0)*.5+mx*.8;G.rotation.x=my*.4;G.position.y=Math.sin(t0*1.5)*.12;ring.rotation.x=1.2+t0*.3;ring.rotation.y=t0*.2;pts.rotation.y=t0*.15;r.render(sc,cam);if(!still)R3.id=requestAnimationFrame(loop)};loop()}
 const CATS={std:{n:'Grove Phone',p:'5V / 10W',d:'Mobile charging',dr:.05,i:'M7 3h10v18H7z'},lap:{n:'Grove Laptop',p:'65W',d:'USB-C laptop charging',dr:.12,i:'M4 5h16v11H4zM2 19h20'},fast:{n:'Grove Fast',p:'100W dual',d:'Laptop and phone at once',dr:.2,i:'M13 2 4 14h7l-1 8 9-12h-7z'},wl:{n:'Grove Wireless',p:'15W magnetic',d:'Magnetic wireless pad',dr:.08,i:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z'}};
-Object.assign(S,{pos:{x:200,y:150},cat:'std',dur:2,pick:null,rent:null,speed:1});try{const u=q('lg_user','');if(u)S.u=JSON.parse(u)}catch(e){}
-const ic=p=>`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" aria-hidden="true"><path d="${p}"/></svg>`,dist=s=>Math.hypot(s.x-S.pos.x,s.y-S.pos.y)*3|0,score=(s,ret)=>!s.ok?1e9:dist(s)+((ret?s.free<1:s.stock[S.cat]<1)?1e6:0)+(8-s.free)*8,best=ret=>[...ST].sort((a,b)=>score(a,ret)-score(b,ret))[0],pad=n=>String(n).padStart(2,'0'),fmt=x=>{x=Math.max(0,x|0);return pad(x/3600|0)+':'+pad(x%3600/60|0)+':'+pad(x%60)},el=()=>S.rent&&S.rent.started?(Date.now()-S.rent.started)/1000*S.speed:0,stu=()=>S.u&&S.u.role=='student';
+Object.assign(S,{pos:{x:360,y:75},cat:'std',dur:2,pick:null,rent:null,speed:1,vFilter:'all',vSearch:''});try{const u=q('lg_user','');if(u)S.u=JSON.parse(u)}catch(e){}
+const ic=p=>`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" aria-hidden="true"><path d="${p}"/></svg>`,dist=s=>Math.round(Math.hypot(s.x-S.pos.x,s.y-S.pos.y)*0.75),score=(s,ret)=>!s.ok?1e9:dist(s)+((ret?s.free<1:s.stock[S.cat]<1)?1e6:0)+(8-s.free)*8,best=ret=>[...ST].sort((a,b)=>score(a,ret)-score(b,ret))[0],pad=n=>String(n).padStart(2,'0'),fmt=x=>{x=Math.max(0,x|0);return pad(x/3600|0)+':'+pad(x%3600/60|0)+':'+pad(x%60)},el=()=>S.rent&&S.rent.started?(Date.now()-S.rent.started)/1000*S.speed:0,stu=()=>S.u&&S.u.role=='student';
 window.nav=s=>s.lat==null?toast('Station coordinates pending'):open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking`,'_blank','noopener');
-const mapSvg=()=>{const r=S.pick||best(),P=`M${S.pos.x} ${S.pos.y}L${r.x} ${r.y}`;return`<svg viewBox="0 0 420 300" style="width:100%;border-radius:14px;background:var(--card);border:1px solid var(--ln);cursor:crosshair" onclick="mvp(event)" role="img" aria-label="Campus map. Tap to set your position."><path class="rt" d="${P}" stroke="var(--ac)" stroke-width="2" fill="none"/><circle r="4" fill="var(--ac2)"><animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/></circle>${ST.map(s=>`<circle class="pl" cx="${s.x}" cy="${s.y}" r="9" fill="${s.ok?'var(--ac)':'var(--mut)'}"/><circle cx="${s.x}" cy="${s.y}" r="${r.id==s.id?13:9}" fill="${s.ok?'var(--ac)':'var(--mut)'}"/><text x="${s.x+15}" y="${s.y+4}" font-size="11" fill="var(--fg)">${s.n}</text>`).join('')}<circle cx="${S.pos.x}" cy="${S.pos.y}" r="6" fill="var(--ac2)"/><text x="${S.pos.x+9}" y="${S.pos.y-8}" font-size="11" fill="var(--ac2)">YOU</text></svg>`};
-window.mvp=e=>{const b=e.currentTarget.getBoundingClientRect();S.pos={x:(e.clientX-b.left)/b.width*420,y:(e.clientY-b.top)/b.height*300};S.pick=null;$('#rb')?rr():go(1)};
+
+window.pickSt=(id,e)=>{
+  if(e)e.stopPropagation();
+  const s=ST.find(x=>x.id==id);
+  if(s){
+    S.pick=s;
+    if(S.rt)S.rt.st=id;
+    toast('Selected Station: '+s.icon+' '+s.n);
+    $('#rb')?rr():go(1);
+  }
+};
+
+window.pickVenue=(id,e)=>{
+  if(e)e.stopPropagation();
+  const v=VENUES.find(x=>x.id==id);
+  if(v){
+    S.pos={x:v.x,y:v.y};
+    const nearest=best();
+    toast(`You are at ${v.icon} ${v.n} · Nearest: ${nearest.n} (${dist(nearest)}m)`);
+    $('#rb')?rr():go(1);
+  }
+};
+
+window.setMyPos=(x,y,lbl)=>{
+  S.pos={x,y};
+  toast('Location set: '+lbl);
+  $('#rb')?rr():go(1);
+};
+
+window.setVFilter=(f,e)=>{
+  if(e)e.stopPropagation();
+  S.vFilter=f;
+  $('#rb')?rr():go(1);
+};
+
+window.setVSearch=val=>{
+  S.vSearch=(val||'').toLowerCase().trim();
+  $('#rb')?rr():go(1);
+};
+
+const mapSvg=()=>{
+  const r=S.pick||best(), P=`M${S.pos.x} ${S.pos.y} L${r.x} ${r.y}`;
+  const d=dist(r), wm=Math.max(1,Math.round(d/65));
+  
+  // Filtering logic
+  const list=VENUES.filter(v=>{
+    if(S.vSearch && !v.n.toLowerCase().includes(S.vSearch)) return false;
+    if(S.vFilter=='st') return !!v.st;
+    if(S.vFilter=='food') return v.cat=='food';
+    if(S.vFilter=='dept') return v.cat=='dept';
+    return true;
+  });
+
+  return `
+  <div class="map-wrap">
+    <!-- Map Toolbar -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px">
+      <div class="map-filters">
+        <span class="badge" style="font-weight:700">RVCE Campus Map</span>
+        <button class="chip${S.vFilter=='all'?' on':''}" onclick="setVFilter('all',event)">All Venues (${VENUES.length})</button>
+        <button class="chip${S.vFilter=='st'?' on':''}" onclick="setVFilter('st',event)">⚡ Solar Stations (${ST.length})</button>
+        <button class="chip${S.vFilter=='food'?' on':''}" onclick="setVFilter('food',event)">🍽️ Food (${VENUES.filter(v=>v.cat=='food').length})</button>
+        <button class="chip${S.vFilter=='dept'?' on':''}" onclick="setVFilter('dept',event)">💻 Depts (${VENUES.filter(v=>v.cat=='dept').length})</button>
+      </div>
+      <div>
+        <input class="search-box" type="search" placeholder="🔍 Search venue..." value="${S.vSearch}" oninput="setVSearch(this.value)">
+      </div>
+    </div>
+
+    <!-- Map Canvas Container -->
+    <div class="map-box">
+      <svg viewBox="0 0 880 570" class="map-svg" onclick="mvp(event)" role="img" aria-label="Interactive RVCE Campus Map">
+        <defs>
+          <filter id="bldgShadow" x="-10%" y="-10%" width="125%" height="130%">
+            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.1" />
+          </filter>
+          <pattern id="roadMark" width="20" height="20" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="10" x2="10" y2="10" stroke="var(--bg)" stroke-width="2" opacity="0.6"/>
+          </pattern>
+        </defs>
+
+        <!-- Base Campus Background -->
+        <rect width="880" height="570" fill="color-mix(in srgb,var(--card) 60%,var(--bg))" />
+
+        <!-- Green Lawn & Park Spaces -->
+        <!-- Admin lawn -->
+        <rect x="200" y="80" width="120" height="40" rx="8" fill="var(--ac2)" opacity="0.18"/>
+        <!-- CS Ground Sports Field -->
+        <rect x="530" y="65" width="160" height="110" rx="14" fill="var(--ac2)" opacity="0.22" stroke="var(--ac2)" stroke-dasharray="4 4" stroke-width="1.2"/>
+        <text x="610" y="165" font-size="10" text-anchor="middle" fill="var(--ac2)" font-weight="700" letter-spacing="0.08em">SPORTS FIELD</text>
+        <!-- BT Quadrangle Garden -->
+        <rect x="35" y="235" width="120" height="58" rx="10" fill="var(--ac2)" opacity="0.14"/>
+        
+        <!-- Mysore Road / Metro Corridor at Top -->
+        <rect x="0" y="0" width="880" height="52" fill="var(--ln)" opacity="0.55"/>
+        <line x1="0" y1="26" x2="880" y2="26" stroke="var(--fg)" stroke-dasharray="14 10" stroke-width="2" opacity="0.3"/>
+        <text x="30" y="32" font-size="11" font-weight="800" fill="var(--mut)" letter-spacing="0.1em">MYSORE ROAD / HIGHWAY</text>
+
+        <!-- Campus Roads (Primary Asphalt Avenues) -->
+        <!-- North Main Gate Entrance Drive -->
+        <path d="M 360 45 L 360 490" stroke="var(--ln)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M 360 55 L 360 480" stroke="var(--bg)" stroke-dasharray="8 8" stroke-width="2" fill="none" opacity="0.7"/>
+
+        <!-- Avenue 1 (North cross avenue) -->
+        <path d="M 20 145 L 750 145" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
+        
+        <!-- Avenue 2 (Central cross avenue) -->
+        <path d="M 20 295 L 780 295" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
+
+        <!-- Avenue 3 (South cross avenue - MINGOS to Library to Hostel) -->
+        <path d="M 30 435 L 680 435" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
+
+        <!-- Avenue 4 (Far South connection) -->
+        <path d="M 340 485 L 600 485" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
+
+        <!-- North-South West Link -->
+        <path d="M 160 145 L 160 435" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
+        
+        <!-- North-South East Link -->
+        <path d="M 640 145 L 640 435" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
+
+        <!-- Pedestrian Walkway Indicators -->
+        <path d="M 240 50 L 240 100 M 505 50 L 505 100 M 565 145 L 565 200 M 365 295 L 365 320 M 105 380 L 105 400" stroke="var(--ac2)" stroke-dasharray="3 3" stroke-width="1.8" fill="none" opacity="0.5"/>
+
+        <!-- Animated Route Line (YOU -> Selected Station) -->
+        <path class="rt" d="${P}" stroke="var(--ac)" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.95"/>
+        <circle r="4.5" fill="var(--ac)">
+          <animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/>
+        </circle>
+
+        <!-- Campus Buildings & Venues -->
+        ${list.map(v=>{
+          const isSt = !!v.st;
+          const stObj = ST.find(s=>s.id==v.id);
+          const isCur = r.id == v.id;
+          const x0 = v.x - v.w/2, y0 = v.y - v.h/2;
+          
+          return `
+          <g class="v-card${isCur?' sel':''}" onclick="${isSt?`pickSt('${v.id}',event)`:`pickVenue('${v.id}',event)`}">
+            <!-- Building Card Background with Drop Shadow -->
+            <rect x="${x0}" y="${y0}" width="${v.w}" height="${v.h}" rx="10" 
+                  fill="${isCur ? 'color-mix(in srgb,var(--card) 85%,var(--ac))' : 'var(--card)'}" 
+                  stroke="${isCur ? 'var(--ac)' : isSt ? 'color-mix(in srgb,var(--ac) 50%,var(--ln))' : 'var(--ln)'}" 
+                  stroke-width="${isCur ? 2.5 : isSt ? 1.8 : 1.2}" 
+                  filter="url(#bldgShadow)" />
+
+            <!-- Category Accent Top Stripe -->
+            <path d="M ${x0+10} ${y0} L ${x0+v.w-10} ${y0}" 
+                  stroke="${isSt ? 'var(--ac)' : v.cat=='food' ? 'var(--ac2)' : v.cat=='gate' ? '#8b5cf6' : 'var(--ln)'}" 
+                  stroke-width="3" stroke-linecap="round"/>
+
+            <!-- Venue Icon & Name -->
+            <text x="${v.x}" y="${v.y - (isSt ? 5 : 2)}" text-anchor="middle" font-size="17">${v.icon}</text>
+            <text x="${v.x}" y="${v.y + (isSt ? 11 : 14)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">${v.n}</text>
+
+            <!-- Solar Station Badge Pill if applicable -->
+            ${isSt ? `
+              <rect x="${v.x - 38}" y="${v.y + 17}" width="76" height="15" rx="7.5" fill="color-mix(in srgb,var(--ac) 18%,var(--card))" stroke="var(--ac)" stroke-width="0.8"/>
+              <text x="${v.x}" y="${v.y + 27.5}" text-anchor="middle" font-size="8" font-weight="800" fill="var(--fg)">⚡ ${stObj?stObj.free:4} ready</text>
+            ` : ''}
+
+            <!-- Station Target Selection Halo -->
+            ${isCur ? `
+              <circle cx="${v.x}" cy="${v.y}" r="${Math.max(v.w,v.h)/2 + 8}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-dasharray="5 3"/>
+            ` : ''}
+
+            <title>${v.n} (${v.desc}) · Click to ${isSt?'rent solar bank':'set location here'}</title>
+          </g>
+          `;
+        }).join('')}
+
+        <!-- User Position Indicator ("YOU") -->
+        <g style="pointer-events:none">
+          <circle class="pl" cx="${S.pos.x}" cy="${S.pos.y}" r="16" fill="var(--ac2)" opacity="0.65"/>
+          <circle cx="${S.pos.x}" cy="${S.pos.y}" r="8" fill="var(--ac2)" stroke="#fff" stroke-width="2.2"/>
+          <rect x="${S.pos.x - 18}" y="${S.pos.y - 22}" width="36" height="15" rx="7.5" fill="var(--ac2)" />
+          <text x="${S.pos.x}" y="${S.pos.y - 11.5}" text-anchor="middle" font-size="8.5" font-weight="900" fill="#fff" letter-spacing="0.05em">YOU</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Active Route & Distance Status Bar -->
+    <div class="map-hud">
+      <div>
+        <div style="font-weight:700;font-size:1.02rem;display:flex;align-items:center;gap:6px">
+          <span>Target Station:</span>
+          <span style="color:var(--ac2)">${r.icon} ${r.n}</span>
+        </div>
+        <div style="font-size:0.86rem;color:var(--mut);margin-top:3px">
+          Walking Distance: <b>${d} meters</b> (~${wm} min walk) · <b>${r.free}</b> solar banks ready · Solar input: <b>${r.solar|0} W</b>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a class="btn" style="min-height:38px;padding:8px 18px;font-size:0.9rem" href="#app-rent" onclick="S.pick=ST.find(x=>x.id=='${r.id}');if($('#rb'))rr();">
+          Rent Here ⚡
+        </a>
+        <button class="btn g" style="min-height:38px;padding:8px 14px;font-size:0.9rem" onclick="nav(ST.find(x=>x.id=='${r.id}'))">
+          Directions
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Location Chips -->
+    <div class="map-chips">
+      <span style="font-size:0.82rem;color:var(--mut);font-weight:700">📍 Set location:</span>
+      <button class="chip" onclick="setMyPos(240,40,'Pattanagere Metro Entrance')">🚇 Metro Gate</button>
+      <button class="chip" onclick="setMyPos(255,115,'Admin Block')">🏛️ Admin Block</button>
+      <button class="chip" onclick="setMyPos(565,245,'CSE Dept.')">💻 CSE Dept.</button>
+      <button class="chip" onclick="setMyPos(105,445,'Food Court (MINGOS)')">🍽️ MINGOS</button>
+      <button class="chip" onclick="setMyPos(365,360,'Central Library')">📚 Library</button>
+      <button class="chip" onclick="setMyPos(505,360,'Mini Canteen')">🥪 Mini Canteen</button>
+      <button class="chip" onclick="setMyPos(715,320,'Boys Hostel (Cauvery)')">🏢 Cauvery Hostel</button>
+      <button class="chip" onclick="setMyPos(95,115,'Innovation Hub')">💡 Innovation Hub</button>
+    </div>
+  </div>
+  `;
+};
+
+window.mvp=e=>{
+  if(e.target.closest('.v-card'))return;
+  const b=e.currentTarget.getBoundingClientRect();
+  S.pos={
+    x:Math.round(Math.max(20,Math.min(860,(e.clientX-b.left)/b.width*880))),
+    y:Math.round(Math.max(20,Math.min(550,(e.clientY-b.top)/b.height*570)))
+  };
+  S.pick=null;
+  $('#rb')?rr():go(1);
+};
+
 window.rr=()=>{$('#rb').innerHTML=rentBody()};
-const rentBody=()=>{const bs=best(),cur=S.pick||bs;return`<div class="grid">${Object.entries(CATS).map(([k,c])=>`<button class="card pick${S.cat==k?' sel':''}" style="color:var(--fg);font:inherit;cursor:pointer" onclick="S.cat='${k}';S.pick=null;rr()">${ic(c.i)}<h3>${c.n}</h3><p>${c.d}</p><span class="badge">${c.p}</span></button>`).join('')}</div><div class="grid" style="margin-top:16px"><div class="card"><label for="du">Duration: <b id="dv">${S.dur} h</b> (30 min to 6 h)</label><input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" style="width:100%;accent-color:var(--ac)" oninput="S.dur=+this.value;$('#dv').textContent=S.dur+' h'"><p>Rate: ₹ ${PR.rate||'—'} per hour (set by admin).</p><h3>Best station</h3>${[...ST].sort((a,c)=>score(a)-score(c)).map(s=>`<button class="card pick${cur.id==s.id?' sel':''}" style="display:block;width:100%;margin:8px 0;color:var(--fg);font:inherit;cursor:pointer" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rr()"><b>${s.n}</b> ${s.id==bs.id?'<span class="badge">best</span>':''}<br><small>${dist(s)} m · ${s.stock[S.cat]} in stock${s.ok?'':' · offline'}</small></button>`).join('')}</div><div class="card">${mapSvg()}<p>Tap the map to set your position.</p><button class="btn" onclick="startR()">Rent from ${cur.n}</button> <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button></div></div>`};
+const rentBody=()=>{
+  const bs=best(),cur=S.pick||bs;
+  return `
+  <div class="grid">${Object.entries(CATS).map(([k,c])=>`<button class="card pick${S.cat==k?' sel':''}" style="color:var(--fg);font:inherit;cursor:pointer" onclick="S.cat='${k}';S.pick=null;rr()">${ic(c.i)}<h3>${c.n}</h3><p>${c.d}</p><span class="badge">${c.p}</span></button>`).join('')}</div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card">
+      <label for="du">Duration: <b id="dv">${S.dur} h</b> (30 min to 6 h)</label>
+      <input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" style="width:100%;accent-color:var(--ac)" oninput="S.dur=+this.value;$('#dv').textContent=S.dur+' h'">
+      <p>Rate: ₹ ${PR.rate||'—'} per hour (set by admin).</p>
+      <h3>Best station</h3>
+      ${[...ST].sort((a,c)=>score(a)-score(c)).map(s=>`<button class="card pick${cur.id==s.id?' sel':''}" style="display:block;width:100%;margin:8px 0;color:var(--fg);font:inherit;cursor:pointer" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rr()"><b>${s.icon} ${s.n}</b> ${s.id==bs.id?'<span class="badge">best</span>':''}<br><small>${dist(s)} m (~${Math.max(1,Math.round(dist(s)/65))} min) · ${s.stock[S.cat]} in stock${s.ok?'':' · offline'}</small></button>`).join('')}
+    </div>
+    <div class="card">
+      ${mapSvg()}
+      <div style="margin-top:12px">
+        <button class="btn" onclick="startR()">Rent from ${cur.n}</button> 
+        <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button>
+      </div>
+    </div>
+  </div>`;
+};
 window.startR=()=>{const b=S.pick||best();if(b.stock[S.cat]<1)return toast('No stock at this station for that category.');S.rent={pin:String(100000+Math.random()*900000|0),st:b,cat:S.cat,dur:S.dur*3600,started:0,batt:100,slot:null,done:false};b.stock[S.cat]--;location.hash='app-rentals'};
 window.kiosk=()=>{const r=S.rent;if($('#kp').value!==r.pin)return $('#ke').textContent='Wrong PIN.';r.slot=1+Math.random()*8|0;r.started=Date.now();r.st.free=Math.max(0,r.st.free-1);go(1)};
 window.retn=()=>{const r=S.rent,b=best(true);b.free=Math.max(0,b.free-1);b.stock[r.cat]++;S.rent=null;toast('Returned at '+b.n+'. Thanks for using solar power.');go(1)};
 window.tg=id=>{const s=ST.find(x=>x.id==id);s.ok=!s.ok;$('#adm').innerHTML=cards()};
 PG['app-rent']=()=>stu()?`<div class="wrap"><h1 tabindex="-1">${t('rent')}</h1><div id="rb">${rentBody()}</div></div>`:need;
-PG['app-stations']=()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1>${mapSvg()}<p>Tap the map to set your position.</p><div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`;
+PG['app-stations']=()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1>${mapSvg()}<div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`;
 PG['app-rentals']=()=>{if(!stu())return need;const r=S.rent,hist='<h3 style="margin-top:24px">History</h3><table><tr><td>Library</td><td>1 h 05 m</td></tr><tr><td>Big Mingoes</td><td>0 h 40 m</td></tr></table>';if(!r)return`<div class="wrap"><h1 tabindex="-1">${t('rentals')}</h1><p>No active rental.</p><a class="btn" href="#app-rent">${t('rent')}</a>${hist}</div>`;return`<div class="wrap"><h1 tabindex="-1">${t('rentals')}</h1><div class="grid"><div class="card"><span class="badge">${CATS[r.cat].n}</span><p>Your 6-digit PIN</p><div class="num" style="font-size:3rem;letter-spacing:.3em">${r.pin}</div><p>Pickup: <b>${r.st.n}</b>. Enter the PIN at the station kiosk.</p>${r.started?`<div class="num" id="tm">${fmt(r.dur-el())}</div><label>Power bank charge <b id="bt">${Math.max(0,r.batt)|0}%</b></label><div class="bar"><i id="bb" style="width:${Math.max(0,r.batt)}%"></i></div><p><button class="btn" onclick="retn()">Return power bank</button> <a class="btn g" href="#app-report">Report a problem</a></p>`:`<button class="btn g" onclick="nav(S.rent.st)">Navigate to station</button>`}</div><div class="card"><h3>Station kiosk (simulator)</h3><div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">${[...Array(8)].map((_,i)=>`<div class="kd${r.slot==i+1?' lit':''}">SLOT ${i+1}</div>`).join('')}</div>${r.started?`<p>Slot <b>${r.slot}</b> unlocked. Timer started.</p><label for="sp">Demo speed</label><select id="sp" onchange="S.speed=+this.value"><option value="1">1×</option><option value="60"${S.speed==60?' selected':''}>60× (demo)</option></select>`:`<label for="kp">Enter PIN</label><input id="kp" maxlength="6" inputmode="numeric" style="width:100%"><div class="err" id="ke"></div><button class="btn" onclick="kiosk()">Unlock slot</button>`}</div></div>${hist}</div>`};
 PG.signin=()=>`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t('si')}</h1><label for="nm">Full name</label><input id="nm" autocomplete="name" style="width:100%"><label for="em">RVCE email</label><input id="em" type="email" placeholder="name@rvce.edu.in" style="width:100%"><label for="ph">Contact phone (for management queries)</label><input id="ph" type="tel" placeholder="+91XXXXXXXXXX" style="width:100%"><div class="err" id="e1"></div><p><button class="btn" onclick="sIn()">${t('si')}</button> <button class="btn g" onclick="login('guest')">${t('guest')}</button></p><p class="badge">Demo only</p><p><button class="btn g" onclick="login('student')">Demo student</button></p></div>`;
 window.sIn=()=>{const n=$('#nm').value.trim(),e=$('#em').value.trim().toLowerCase(),p=$('#ph').value.trim();if(!/^[^@\s]+@rvce\.edu\.in$/.test(e))return $('#e1').textContent='Use your rvce.edu.in email.';if(!n||!/^\+?\d{10,13}$/.test(p))return $('#e1').textContent='Enter your name and a valid phone number.';S.u={role:'student',name:n,email:e,phone:p};sv('lg_user',JSON.stringify(S.u));location.hash='plug'};
