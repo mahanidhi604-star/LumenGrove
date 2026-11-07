@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-t="cream">
+<html lang="en" data-t="olive">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -54,42 +54,28 @@ html.rm *{animation:none!important;transition:none!important}html.rm .ring{strok
 .rt{stroke-dasharray:6 5;animation:dash 1s linear infinite}@keyframes dash{to{stroke-dashoffset:-22}}.pl{animation:pls 2s infinite;transform-box:fill-box;transform-origin:center}@keyframes pls{from{transform:scale(1);opacity:.7}to{transform:scale(2.6);opacity:0}}
 #lm{position:fixed;right:16px;bottom:16px;z-index:8}#lmp{position:fixed;right:16px;bottom:76px;width:min(340px,calc(100% - 32px));z-index:8;display:none}#lmm{height:220px;overflow:auto;font-size:14px}.m{margin:6px 0;padding:8px 12px;border-radius:12px;background:var(--ln)}.m.u{background:color-mix(in srgb,var(--ac) 25%,transparent);text-align:right}
 @media(max-width:720px){#lm{bottom:84px}#lmp{bottom:144px}}
-
-.map-box{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--ln);background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,0.06)}
-.map-svg{width:100%;height:auto;display:block;cursor:crosshair;user-select:none;-webkit-tap-highlight-color:transparent}
-.map-bg{transition:filter .3s}
-[data-t=forest] .map-bg{filter:brightness(.85) contrast(1.05)}
-[data-t=blueprint] .map-bg{filter:brightness(.82) contrast(1.1) hue-rotate(185deg)}
-[data-t=volt] .map-bg,[data-t=omni] .map-bg{filter:brightness(.78) contrast(1.15) grayscale(.35)}
-.st-pin{cursor:pointer;transition:transform .15s}
-.st-pin:hover{transform:scale(1.1)}
-.v-pin{cursor:pointer;transition:transform .15s}
-.v-pin:hover{transform:scale(1.15)}
-.map-hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--ln)}
-.map-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font-size:.8rem;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
-.chip:hover{background:var(--ln);border-color:var(--ac)}
-.chip.on{background:var(--ac);color:var(--on);border-color:var(--ac)}
-.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;max-height:280px;overflow-y:auto;padding-right:4px}
-.v-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--ln);font-size:.82rem}
-
-
-.map-wrap{display:flex;flex-direction:column;gap:12px;user-select:none}
-.map-box{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--ln);background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,0.08)}
-.map-svg{width:100%;height:auto;display:block;cursor:crosshair;-webkit-tap-highlight-color:transparent}
-.v-card{cursor:pointer;transition:transform .18s cubic-bezier(.2,.8,.2,1),filter .18s}
-.v-card:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 6px 14px rgba(0,0,0,0.14))}
-.v-card.sel rect{stroke:var(--ac)!important;stroke-width:2.5px!important}
-.v-card.dim{opacity:.28;filter:grayscale(.6)}
-.v-card text{pointer-events:none}
-.map-hud{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-radius:16px;background:var(--card);border:1px solid var(--ln);box-shadow:0 4px 14px rgba(0,0,0,0.04)}
-.map-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.map-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .1s}
-.chip:hover{background:var(--ln);border-color:var(--ac);transform:translateY(-1px)}
-.chip.on{background:var(--ac);color:var(--on);border-color:var(--ac);box-shadow:0 2px 8px color-mix(in srgb,var(--ac) 40%,transparent)}
-.search-box{padding:6px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--card);color:var(--fg);font:inherit;font-size:.82rem;min-height:34px}
-
+[data-t=olive]{--bg:#1d2417;--fg:#f3ecd8;--mut:#b9bfa4;--card:#27301e;--ac:#f08a24;--ac2:#c9d86a;--on:#1d2417;--ln:#3b4730}[data-t=amber]{--bg:#f0a21e;--fg:#17140d;--mut:#4a3d1a;--card:#f7efdc;--ac:#17140d;--ac2:#3c4a12;--on:#f7efdc;--ln:#c98510}
+h1,h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;line-height:.95}.card{border-radius:6px;border:1.5px solid var(--fg);box-shadow:5px 5px 0 var(--ac)}.btn{border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:1.05rem}
+body:before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.08;z-index:99;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.8'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+.tag{display:inline-block;background:var(--fg);color:var(--bg);font:800 1.1rem 'Barlow Condensed';text-transform:uppercase;padding:6px 12px}.hero2{position:relative;overflow:hidden;min-height:280px}.hero2 h1{font-size:clamp(2.6rem,9vw,6rem);margin:12px 0;position:relative}.hero2 .vt{position:absolute;right:14px;top:10px;writing-mode:vertical-rl;font:800 2.2rem 'Barlow Condensed';letter-spacing:.1em}.hero2 svg.dc{position:absolute;pointer-events:none}.spin{animation:spin 30s linear infinite;transform-origin:center;transform-box:fill-box}
+.sl{height:40px;margin-top:6px}.sl canvas{width:100%;height:100%;display:block}.pay{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}@media(max-width:720px){.pay{grid-template-columns:1fr}}.tw{overflow-x:auto}td .btn{min-height:36px;padding:4px 12px;font-size:.9rem}#cm{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);z-index:80}
+.mf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.mf input{flex:1;min-width:140px}.msv{width:100%;border-radius:6px;border:1.5px solid var(--fg);background:var(--bg);cursor:crosshair}.msv text{pointer-events:none}.msv g.v{cursor:pointer}
+.dur{padding:14px 16px 12px;border-radius:20px;background:color-mix(in srgb,var(--card) 70%,transparent);backdrop-filter:blur(14px);border:1px solid var(--ln);box-shadow:0 14px 34px rgba(0,0,0,.25);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}.dur.on{transform:translateY(-6px) scale(1.02);box-shadow:0 26px 50px rgba(0,0,0,.35)}.dh{text-align:center;margin-bottom:10px}.dh b{display:block;font:800 1.6rem 'Barlow Condensed',sans-serif;text-transform:uppercase;color:var(--ac)}.dh small{color:var(--mut);transition:color .3s}.dh small.mx{color:var(--ac);font-weight:600}
+.dt{position:relative;height:30px;display:flex;align-items:center}.dt canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:99px}#du{-webkit-appearance:none;appearance:none;width:100%;height:26px;border-radius:99px;background:linear-gradient(90deg,var(--ac) calc(var(--p,30)*1%),var(--ln) 0);margin:0;padding:0;border:0;touch-action:pan-y}#du::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 8px rgba(0,0,0,.4)}#du::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:0}.dd{display:flex;justify-content:space-between;padding:8px 14px 0}.dd i{width:4px;height:4px;border-radius:50%;background:var(--mut);opacity:.6}
+.dt{height:32px}.dtr{position:absolute;left:0;right:0;top:2px;height:28px;border-radius:99px;background:var(--ln);overflow:hidden}.dfl{position:absolute;left:0;top:0;bottom:0;width:calc(16px + (100% - 32px)*var(--f,.27));background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 65%,transparent),var(--ac));border-radius:99px;transition:width .12s}
+#du{position:relative;z-index:2;height:32px;min-height:0;background:transparent;border:0;padding:0;border-radius:0}#du::-webkit-slider-runnable-track{height:32px;background:transparent}#du::-moz-range-track{height:32px;background:transparent}#du::-webkit-slider-thumb{width:32px;height:32px;margin-top:0;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 0 3px var(--ac)}#du::-moz-range-thumb{width:32px;height:32px;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 0 3px var(--ac)}.dd{padding:10px 16px 0}.dur{box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.stp{display:flex;align-items:center;gap:8px;list-style:none;padding:0;margin:0 0 22px}.stp li{display:flex;align-items:center;gap:8px;font:800 .95rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.stp li b{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--mut);transition:background .3s,color .3s}.stp li.on{color:var(--fg)}.stp li.on b{background:var(--ac);color:var(--on);border-color:var(--ac)}.stp li.dn b{background:var(--fg);color:var(--bg);border-color:var(--fg)}.stp i{flex:1;height:2px;background:var(--ln);min-width:18px}.pay{animation:pin .45s cubic-bezier(.2,.8,.2,1)}
+.hm{height:220px;overflow:auto;margin-bottom:10px}.hm .m{max-width:85%}.hm .m.u{margin-left:auto}
+#lm{padding:4px 14px;min-height:36px;font-size:.9rem}body:has(#cm) #lm,body:has(#cm) #lmp,body:has(#hp) #lm,body:has(#hp) #lmp{display:none!important}
+@media(max-width:720px){header{gap:6px;padding:8px 10px}header select{min-width:0;max-width:84px;padding:6px 8px}.brand{font-size:1rem;gap:6px}}
+main{overflow-x:clip}.bento>*{min-width:0}.bk{max-width:100%}
+.bento{display:grid;gap:16px;grid-template-columns:repeat(4,1fr)}.bento>.s2{grid-column:span 2}.bento>.s4{grid-column:1/-1}.bento>.r2{grid-row:span 2}.bento .rv{transition-delay:calc(var(--i,0)*70ms)}
+.bk{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.bk>*{flex:0 0 220px;scroll-snap-align:start}
+.sw{display:flex;background:var(--ln);border-radius:99px;padding:4px;margin-bottom:8px}.sw a{flex:1;justify-content:center;border-radius:99px}.sw a.on{background:var(--ac);color:var(--on)}
+.chip{border:1px solid var(--ln);background:transparent;color:var(--fg);border-radius:99px;padding:8px 14px;min-height:44px;font:inherit;cursor:pointer;transition:background .2s}.chip:hover{background:var(--ln)}
+.ring2{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ac) calc(var(--p)*1%),var(--ln) 0);position:relative}.ring2:after{content:'';position:absolute;inset:10px;border-radius:50%;background:var(--card)}.ring2 b{position:relative;z-index:1;font:800 1.6rem 'Barlow Condensed'}
+@media(min-width:721px){.ap header{position:fixed;left:0;top:0;bottom:0;width:232px;flex-direction:column;align-items:stretch;gap:8px;padding:20px 14px;border-right:1px solid var(--ln);border-bottom:0;z-index:7}.ap nav{flex-direction:column;margin:12px 0;overflow:visible}.ap main,.ap footer{margin-left:232px}.ap header select{width:100%}}
+@media(max-width:900px){.bento{grid-template-columns:1fr 1fr}}@media(max-width:720px){.bento{grid-template-columns:1fr}.bento>.s2,.bento>.s4{grid-column:auto}.tab a:nth-child(3){background:var(--ac);color:var(--on);flex:0 0 64px;height:64px;border-radius:50%;transform:translateY(-16px);box-shadow:0 8px 20px color-mix(in srgb,var(--ac) 40%,transparent);display:flex;align-items:center;justify-content:center}}
 </style>
 </head>
 <body>
@@ -101,63 +87,9 @@ const $=s=>document.querySelector(s),q=(k,d)=>{try{return localStorage.getItem(k
 const L={en:{home:'Home',how:'How it works',tech:'Technology',impact:'Impact',about:'About',plug:'Plug In',find:'Find a bank',rent:'Rent',rentals:'My rentals',me:'Settings',hub:'Hub',si:'Sign in',guest:'Continue as guest',h1:'No more battery anxiety.',sub:'Solar-charged power banks, ready at stations around campus.',greet:'Where are you charging today?',back:'← LumenGrove'},
 kn:{home:'ಮುಖಪುಟ',how:'ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ',tech:'ತಂತ್ರಜ್ಞಾನ',impact:'ಪರಿಣಾಮ',about:'ಬಗ್ಗೆ',plug:'ಪ್ಲಗ್ ಇನ್',find:'ಬ್ಯಾಂಕ್ ಹುಡುಕಿ',rent:'ಬಾಡಿಗೆ',rentals:'ನನ್ನ ಬಾಡಿಗೆಗಳು',me:'ಸೆಟ್ಟಿಂಗ್ಸ್',hub:'ಹಬ್',si:'ಸೈನ್ ಇನ್',guest:'ಅತಿಥಿಯಾಗಿ ಮುಂದುವರಿಯಿರಿ',h1:'ಇನ್ನು ಬ್ಯಾಟರಿ ಚಿಂತೆ ಬೇಡ.',sub:'ಕ್ಯಾಂಪಸ್‌ನ ಕೇಂದ್ರಗಳಲ್ಲಿ ಸೌರ ಚಾರ್ಜ್ ಆದ ಪವರ್ ಬ್ಯಾಂಕ್‌ಗಳು ಸಿದ್ಧ.',greet:'ಇಂದು ಎಲ್ಲಿ ಚಾರ್ಜ್ ಮಾಡುತ್ತೀರಿ?',back:'← ಲೂಮೆನ್‌ಗ್ರೋವ್'},
 hi:{home:'होम',how:'यह कैसे काम करता है',tech:'तकनीक',impact:'प्रभाव',about:'परिचय',plug:'प्लग इन',find:'बैंक खोजें',rent:'किराया',rentals:'मेरे किराये',me:'सेटिंग्स',hub:'हब',si:'साइन इन',guest:'अतिथि के रूप में जारी रखें',h1:'अब बैटरी की चिंता नहीं।',sub:'कैंपस के स्टेशनों पर सौर ऊर्जा से चार्ज पावर बैंक तैयार हैं।',greet:'आज कहाँ चार्ज करेंगे?',back:'← लूमेनग्रोव'}};
-const S={l:q('l','en'),th:q('th',matchMedia('(prefers-color-scheme:dark)').matches?'forest':'cream'),u:null,rt:{step:1,st:'library',slot:null,t0:0,res:0}};
+const S={l:q('l','en'),th:['olive','amber'].includes(q('th','olive'))?q('th','olive'):'olive',u:null,rt:{step:1,st:'library',slot:null,t0:0,res:0}};
 const t=k=>(L[S.l]||{})[k]||L.en[k]||k;
-const VENUES = [
-  { id:'metro', n:'Pattanagere Metro', icon:'🚇', desc:'Campus Metro Entrance', x:240, y:32, w:160, h:34, cat:'gate' },
-  { id:'gate', n:'Main Campus Gate', icon:'🚪', desc:'Mysore Road Entrance', x:360, y:32, w:70, h:34, cat:'gate' },
-  { id:'atm', n:'Kotak Bank ATM', icon:'🏧', desc:'Campus ATM Counter', x:440, y:32, w:80, h:34, cat:'facility' },
-  { id:'hub', n:'Innovation Hub (DTL)', icon:'💡', desc:'Makerspace & DTL', x:95, y:105, w:120, h:58, cat:'hub', st:true },
-  { id:'admin', n:'Admin Block', icon:'🏛️', desc:'Main Admin & Quad', x:255, y:105, w:145, h:65, cat:'admin', st:true },
-  { id:'civil', n:'Civil Dept.', icon:'📐', desc:'Civil Engineering', x:435, y:105, w:110, h:60, cat:'dept' },
-  { id:'ground', n:'Main Stage · CS Ground', icon:'🎭', desc:'Festival Stage & Sports', x:610, y:120, w:160, h:105, cat:'facility' },
-  { id:'parking', n:'Poornima Parking', icon:'🅿️', desc:'Vehicle Parking Bay', x:775, y:150, w:95, h:150, cat:'facility' },
-  { id:'mech', n:'Mech. Dept.', icon:'⚙️', desc:'Mechanical Engineering', x:95, y:185, w:120, h:58, cat:'dept' },
-  { id:'workshops', n:'Workshops', icon:'🔧', desc:'Central Campus Workshops', x:235, y:190, w:90, h:50, cat:'facility' },
-  { id:'maint', n:'Maintenance Office', icon:'🏢', desc:'Central Maintenance', x:340, y:190, w:80, h:50, cat:'facility' },
-  { id:'eee', n:'EEE Dept.', icon:'⚡', desc:'Electrical Engineering', x:445, y:185, w:110, h:55, cat:'dept' },
-  { id:'cse', n:'CSE Dept.', icon:'💻', desc:'Computer Science', x:565, y:235, w:115, h:60, cat:'dept', st:true },
-  { id:'hostel', n:"Boys' Hostel (Cauvery)", icon:'🏢', desc:'Student Residence', x:715, y:310, w:130, h:155, cat:'hostel', st:true },
-  { id:'quad', n:'BT Quadrangle', icon:'🌿', desc:'Courtyard Garden & BT', x:95, y:265, w:120, h:58, cat:'facility' },
-  { id:'aiml', n:'AI-ML & MCA Dept.', icon:'🤖', desc:'AI, ML & MCA', x:95, y:345, w:120, h:55, cat:'dept' },
-  { id:'rvu', n:'RV University', icon:'🎓', desc:'RVU Academic Block', x:235, y:260, w:100, h:55, cat:'dept' },
-  { id:'ece', n:'ECE Dept.', icon:'📡', desc:'Electronics & Comm.', x:355, y:260, w:100, h:55, cat:'dept' },
-  { id:'chem', n:'Chem & Physics Dept.', icon:'🧪', desc:'Sciences Department', x:235, y:340, w:110, h:60, cat:'dept' },
-  { id:'ete', n:'ETE Dept.', icon:'📶', desc:'Telecomm. Engineering', x:235, y:420, w:110, h:55, cat:'dept' },
-  { id:'library', n:'Central Library', icon:'📚', desc:'Main Reference Library', x:365, y:350, w:120, h:68, cat:'facility', st:true },
-  { id:'mm', n:'Mini Canteen', icon:'🥪', desc:'Snacks & Refreshments', x:505, y:350, w:110, h:55, cat:'food', st:true },
-  { id:'mingoes', n:'Food Court (MINGOS)', icon:'🍽️', desc:'Main Campus Food Court', x:105, y:435, w:140, h:72, cat:'food', st:true },
-  { id:'vip', n:'VIP Lounge', icon:'🛋️', desc:'Guest & VIP Reception', x:105, y:525, w:120, h:45, cat:'facility' },
-  { id:'ise', n:'ASE & ISE Dept.', icon:'✈️', desc:'Aerospace & Information', x:365, y:510, w:130, h:60, cat:'dept' },
-  { id:'incub', n:'Incubation Center', icon:'🚀', desc:'Startups & Incubation', x:525, y:510, w:130, h:60, cat:'facility' }
-];
-
-const ST_RAW = [
-  { id:'library', n:'Central Library', icon:'📚', x:365, y:350 },
-  { id:'mingoes', n:'Food Court (MINGOS)', icon:'🍽️', x:105, y:435 },
-  { id:'cauvery', n:"Boys' Hostel (Cauvery)", icon:'🏢', x:715, y:310 },
-  { id:'mm', n:'Mini Canteen', icon:'🥪', x:505, y:350 },
-  { id:'cse', n:'CSE Dept.', icon:'💻', x:565, y:235 },
-  { id:'admin', n:'Admin Block', icon:'🏛️', x:255, y:105 },
-  { id:'hub', n:'Innovation Hub (DTL)', icon:'💡', x:95, y:105 }
-];
-
-const ST = ST_RAW.map((a, i) => ({
-  id: a.id,
-  n: a.n,
-  icon: a.icon,
-  x: a.x,
-  y: a.y,
-  lat: 12.9237 + i * 0.0003,
-  lng: 77.4987 + i * 0.0003,
-  slots: 8,
-  free: 3 + (i % 4),
-  stock: { std: 3, lap: 2, fast: 1 + i % 2, wl: 2 },
-  solar: 210 + (i * 30) % 110,
-  batt: 72 + (i * 5) % 25,
-  temp: 34,
-  ok: true
-}));
+const ST=[['library','Library',425,384],['mm','M.M Foods',560,377],['mingoes','Big Mingoes',175,471],['cauvery','Cauvery Hostel',780,387]].map((a,i)=>({id:a[0],n:a[1],x:a[2],y:a[3],lat:null,lng:null,slots:8,free:3+i,stock:{std:3,lap:2,fast:1+i%2,wl:2},solar:200+i*40,batt:70+i*5,temp:34,ok:true}));
 const PR={rate:'',grace:10,cap:'',late:'',dep:''};
 const slots=id=>[...Array(10)].map((_,i)=>{const c=(i*37+id.length*13)%100,r=i%7==3;return{i,c,s:r?'out':c>=90?'ready':'charging'}});
 const free=id=>{const s=ST.find(x=>x.id==id);return s?s.free:0};
@@ -177,7 +109,7 @@ about:()=>`<div class="wrap"><h1 tabindex="-1">${t('about')}</h1><p>LumenGrove i
 plug:()=>`<div class="wrap hub"><span class="k">LumenGrove hub</span><h1 tabindex="-1">${t('greet')}</h1><div class="grid">${[['app-stations',t('find'),'Stations and free banks'],['app-rent',t('rent'),'Reserve, pay, unlock'],['app-rentals',t('rentals'),'Active rental and history'],['app-report','Report a problem','Lock stuck? Not charging?'],['app-impact','My impact','kWh and CO₂'],['app-settings',t('me'),'Language, theme, motion'],['signin',t('si'),'Or continue as guest']].map(a=>`<a class="card tile" href="#${a[0]}"><span class="k">${a[1]}</span><p>${a[2]}</p></a>`).join('')}</div></div>`,
 signin:()=>`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t('si')}</h1><label for="em">Email</label><input id="em" type="email" style="width:100%"><div class="err" id="e1"></div><label for="pw">Password</label><input id="pw" type="password" style="width:100%"><div class="err" id="e2"></div><p><button class="btn" onclick="sIn()">${t('si')}</button> <button class="btn g" onclick="login('guest')">${t('guest')}</button></p><p class="badge">Demo only</p><p><button class="btn g" onclick="login('student')">Demo student</button></p></div>`,
 'admin-login':()=>`<div class="wrap" style="max-width:520px"><span class="k">Staff only</span><h1 tabindex="-1">Admin sign in</h1><p>Demo accounts, replaced by Supabase later.</p><p><button class="btn" onclick="login('super')">Super admin</button> <button class="btn g" onclick="login('tech')">Technician</button></p></div>`,
-  'app-stations':()=>PG['app-stations'](),
+'app-stations':()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1><svg viewBox="0 0 300 220" style="width:100%;max-width:520px" role="img" aria-label="Campus map"><rect width="300" height="220" rx="20" fill="var(--card)" stroke="var(--ln)"/>${ST.map(s=>`<a href="#app-station-${s.id}"><circle cx="${s.x}" cy="${s.y}" r="14" fill="var(--ac)"/><text x="${s.x}" y="${s.y+30}" text-anchor="middle" font-size="11" fill="var(--fg)">${s.n}</text></a>`).join('')}</svg><div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`,
 'app-impact':()=>PG.impact(),
 'app-report':()=>S.u&&S.u.role=='student'?`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">Report a problem</h1><label for="pb">What happened?</label><select id="pb" style="width:100%"><option>Bank not charging</option><option>Lock stuck</option><option>Station offline</option></select><label for="nt">Details</label><textarea id="nt" rows="4" style="width:100%"></textarea><p><button class="btn" onclick="toast('Report sent (demo)')">Send report</button></p></div>`:need,
 'app-settings':()=>`<div class="wrap"><h1 tabindex="-1">${t('me')}</h1><label for="sl">Language</label><select id="sl" onchange="S.l=this.value;sv('l',S.l);go()">${[['en','English'],['kn','ಕನ್ನಡ'],['hi','हिन्दी']].map(a=>`<option value="${a[0]}"${S.l==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><label for="st">Theme</label><select id="st" onchange="theme(this.value)">${[['cream','Solar Cream'],['forest','Forest Night'],['blueprint','Blueprint'],['dusk','Terracotta Dusk'],['volt','Mono Volt'],['omni','OmniVolt']].map(a=>`<option value="${a[0]}"${S.th==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><label><input type="checkbox" onchange="document.documentElement.classList.toggle('rm',this.checked)"> Reduce motion</label></div>`,
@@ -195,11 +127,11 @@ window.toast=m=>{const e=$('#toast');e.textContent=m;e.classList.add('on');setTi
 window.theme=x=>{S.th=x;sv('th',x);document.documentElement.dataset.t=x};
 window.login=r=>{S.u={role:r};location.hash=r=='super'||r=='tech'?'admin':'plug'};
 window.sIn=()=>{const e=$('#em').value,p=$('#pw').value;$('#e1').textContent=e.includes('@')?'':'Enter a valid email.';$('#e2').textContent=p.length>=6?'':'Use at least 6 characters.';if(e.includes('@')&&p.length>=6)login('student')};
-function hdr(h){const app=/^(app|plug|signin)/.test(h),ad=h.startsWith('admin'),ex=['home','how','tech','impact','about'],ap=[['plug',t('hub')],['app-stations',t('find')],['app-rent',t('rent')],['app-rentals',t('rentals')],['app-settings',t('me')]];
+function hdr(h){const app=/^(app|plug|signin)/.test(h),ad=h.startsWith('admin'),ex=['home','how','tech','impact','about'],ap=[['app-home',t('hub')],['app-stations',t('find')],['app-rent',t('rent')],['app-rentals',t('rentals')],['app-settings',t('me')],['app-help','Help']];
 document.body.className=app||ad?'ap':'';
-$('#hd').innerHTML=`<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main">${app||ad?`<a href="#home">${t('back')}</a>`+ap.map(a=>`<a href="#${a[0]}" class="${h==a[0]?'on':''}">${a[1]}</a>`).join(''):ex.map(k=>`<a href="#${k}" class="${h==k?'on':''}">${t(k)}</a>`).join('')+`<a class="btn plug" href="#plug">${t('plug')} ⚡</a>`}</nav><select aria-label="Theme" onchange="theme(this.value)">${[['cream','Cream'],['forest','Forest'],['blueprint','Blueprint'],['dusk','Dusk'],['volt','Volt'],['omni','OmniVolt']].map(a=>`<option value="${a[0]}"${S.th==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><select aria-label="Language" onchange="S.l=this.value;sv('l',S.l);go()">${[['en','EN'],['kn','ಕನ್'],['hi','हि']].map(a=>`<option value="${a[0]}"${S.l==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select></header>`;
-$('#tb').innerHTML=app?ap.map(a=>`<a href="#${a[0]}" class="${h==a[0]?'on':''}">${a[1]}</a>`).join(''):''}
-function go(same){const h=location.hash.slice(1)||'home',v=$('#v'),draw=()=>{hdr(h);v.innerHTML=h.startsWith('app-station-')?stDetail(h.slice(12)):h=='admin'?admin():(PG[h]||PG.home)();v.className='in';fx();const f=v.querySelector('h1');if(f&&!same)f.focus({preventScroll:true});if(!same)scrollTo(0,0)};
+$('#hd').innerHTML=`<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main">${app||ad?`<div class="sw"><a href="#home">Explore</a><a href="#app-home" class="on">Plug In</a></div>`+ap.map(a=>`<a href="#${a[0]}" class="${h==a[0]?'on':''}">${a[1]}</a>`).join(''):ex.map(k=>`<a href="#${k}" class="${h==k?'on':''}">${t(k)}</a>`).join('')+`<a class="btn plug" href="#plug">${t('plug')} ⚡</a>`}</nav><select aria-label="Theme" onchange="theme(this.value)">${[['olive','Olive Night'],['amber','Amber Sun']].map(a=>`<option value="${a[0]}"${S.th==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select><select aria-label="Language" onchange="S.l=this.value;sv('l',S.l);go()">${[['en','EN'],['kn','ಕನ್'],['hi','हि']].map(a=>`<option value="${a[0]}"${S.l==a[0]?' selected':''}>${a[1]}</option>`).join('')}</select></header>`;
+$('#tb').innerHTML=app?ap.slice(0,5).map(a=>`<a href="#${a[0]}" class="${h==a[0]?'on':''}">${a[1]}</a>`).join(''):''}
+function go(same){let h=location.hash.slice(1)||'home';if(h=='plug'){h='app-home';history.replaceState(null,'','#app-home')}const v=$('#v'),draw=()=>{hdr(h);v.innerHTML=h.startsWith('app-station-')?stDetail(h.slice(12)):h=='admin'?admin():(PG[h]||PG.home)();v.className='in';fx();const f=v.querySelector('h1');if(f&&!same)f.focus({preventScroll:true});if(!same)scrollTo(0,0)};
 if(same||matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('rm'))draw();else{v.className='out';cu(1);setTimeout(()=>{draw();cu(0)},460)}}
 setInterval(()=>{const e=$('#tm');if(e&&S.rt.t0){const s=Math.floor((Date.now()-S.rt.t0)/1000);e.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}document.querySelectorAll('.sol').forEach(b=>b.textContent='Solar now · '+(34+Math.floor(Math.random()*9))+' W')},1000);
 let R3,IO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');IO.unobserve(e.target)}}),{threshold:.12});
@@ -221,266 +153,19 @@ let mx=0,my=0;const mv=e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('rm');R3={r};let t0=0;
 const loop=()=>{t0+=.012;G.rotation.y=Math.sin(t0)*.5+mx*.8;G.rotation.x=my*.4;G.position.y=Math.sin(t0*1.5)*.12;ring.rotation.x=1.2+t0*.3;ring.rotation.y=t0*.2;pts.rotation.y=t0*.15;r.render(sc,cam);if(!still)R3.id=requestAnimationFrame(loop)};loop()}
 const CATS={std:{n:'Grove Phone',p:'5V / 10W',d:'Mobile charging',dr:.05,i:'M7 3h10v18H7z'},lap:{n:'Grove Laptop',p:'65W',d:'USB-C laptop charging',dr:.12,i:'M4 5h16v11H4zM2 19h20'},fast:{n:'Grove Fast',p:'100W dual',d:'Laptop and phone at once',dr:.2,i:'M13 2 4 14h7l-1 8 9-12h-7z'},wl:{n:'Grove Wireless',p:'15W magnetic',d:'Magnetic wireless pad',dr:.08,i:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z'}};
-Object.assign(S,{pos:{x:360,y:75},cat:'std',dur:2,pick:null,rent:null,speed:1,vFilter:'all',vSearch:''});try{const u=q('lg_user','');if(u)S.u=JSON.parse(u)}catch(e){}
-const ic=p=>`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" aria-hidden="true"><path d="${p}"/></svg>`,dist=s=>Math.round(Math.hypot(s.x-S.pos.x,s.y-S.pos.y)*0.75),score=(s,ret)=>!s.ok?1e9:dist(s)+((ret?s.free<1:s.stock[S.cat]<1)?1e6:0)+(8-s.free)*8,best=ret=>[...ST].sort((a,b)=>score(a,ret)-score(b,ret))[0],pad=n=>String(n).padStart(2,'0'),fmt=x=>{x=Math.max(0,x|0);return pad(x/3600|0)+':'+pad(x%3600/60|0)+':'+pad(x%60)},el=()=>S.rent&&S.rent.started?(Date.now()-S.rent.started)/1000*S.speed:0,stu=()=>S.u&&S.u.role=='student';
+Object.assign(S,{pos:{x:360,y:60},cat:'std',dur:2,pick:null,rent:null,speed:1});try{const u=q('lg_user','');if(u)S.u=JSON.parse(u)}catch(e){}
+const ic=p=>`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" aria-hidden="true"><path d="${p}"/></svg>`,dist=s=>Math.hypot(s.x-S.pos.x,s.y-S.pos.y)*.7|0,score=(s,ret)=>!s.ok?1e9:dist(s)+((ret?s.free<1:s.stock[S.cat]<1)?1e6:0)+(8-s.free)*8,best=ret=>[...ST].sort((a,b)=>score(a,ret)-score(b,ret))[0],pad=n=>String(n).padStart(2,'0'),fmt=x=>{x=Math.max(0,x|0);return pad(x/3600|0)+':'+pad(x%3600/60|0)+':'+pad(x%60)},el=()=>S.rent&&S.rent.started?(Date.now()-S.rent.started)/1000*S.speed:0,stu=()=>S.u&&S.u.role=='student';
 window.nav=s=>s.lat==null?toast('Station coordinates pending'):open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking`,'_blank','noopener');
-
-window.pickSt=(id,e)=>{
-  if(e)e.stopPropagation();
-  const s=ST.find(x=>x.id==id);
-  if(s){
-    S.pick=s;
-    if(S.rt)S.rt.st=id;
-    toast('Selected Station: '+s.icon+' '+s.n);
-    $('#rb')?rr():go(1);
-  }
-};
-
-window.pickVenue=(id,e)=>{
-  if(e)e.stopPropagation();
-  const v=VENUES.find(x=>x.id==id);
-  if(v){
-    S.pos={x:v.x,y:v.y};
-    const nearest=best();
-    toast(`You are at ${v.icon} ${v.n} · Nearest: ${nearest.n} (${dist(nearest)}m)`);
-    $('#rb')?rr():go(1);
-  }
-};
-
-window.setMyPos=(x,y,lbl)=>{
-  S.pos={x,y};
-  toast('Location set: '+lbl);
-  $('#rb')?rr():go(1);
-};
-
-window.setVFilter=(f,e)=>{
-  if(e)e.stopPropagation();
-  S.vFilter=f;
-  $('#rb')?rr():go(1);
-};
-
-window.setVSearch=val=>{
-  S.vSearch=(val||'').toLowerCase().trim();
-  $('#rb')?rr():go(1);
-};
-
-const mapSvg=()=>{
-  const r=S.pick||best(), P=`M${S.pos.x} ${S.pos.y} L${r.x} ${r.y}`;
-  const d=dist(r), wm=Math.max(1,Math.round(d/65));
-  
-  // Filtering logic
-  const list=VENUES.filter(v=>{
-    if(S.vSearch && !v.n.toLowerCase().includes(S.vSearch)) return false;
-    if(S.vFilter=='st') return !!v.st;
-    if(S.vFilter=='food') return v.cat=='food';
-    if(S.vFilter=='dept') return v.cat=='dept';
-    return true;
-  });
-
-  return `
-  <div class="map-wrap">
-    <!-- Map Toolbar -->
-    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px">
-      <div class="map-filters">
-        <span class="badge" style="font-weight:700">RVCE Campus Map</span>
-        <button class="chip${S.vFilter=='all'?' on':''}" onclick="setVFilter('all',event)">All Venues (${VENUES.length})</button>
-        <button class="chip${S.vFilter=='st'?' on':''}" onclick="setVFilter('st',event)">⚡ Solar Stations (${ST.length})</button>
-        <button class="chip${S.vFilter=='food'?' on':''}" onclick="setVFilter('food',event)">🍽️ Food (${VENUES.filter(v=>v.cat=='food').length})</button>
-        <button class="chip${S.vFilter=='dept'?' on':''}" onclick="setVFilter('dept',event)">💻 Depts (${VENUES.filter(v=>v.cat=='dept').length})</button>
-      </div>
-      <div>
-        <input class="search-box" type="search" placeholder="🔍 Search venue..." value="${S.vSearch}" oninput="setVSearch(this.value)">
-      </div>
-    </div>
-
-    <!-- Map Canvas Container -->
-    <div class="map-box">
-      <svg viewBox="0 0 880 570" class="map-svg" onclick="mvp(event)" role="img" aria-label="Interactive RVCE Campus Map">
-        <defs>
-          <filter id="bldgShadow" x="-10%" y="-10%" width="125%" height="130%">
-            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.1" />
-          </filter>
-          <pattern id="roadMark" width="20" height="20" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="10" x2="10" y2="10" stroke="var(--bg)" stroke-width="2" opacity="0.6"/>
-          </pattern>
-        </defs>
-
-        <!-- Base Campus Background -->
-        <rect width="880" height="570" fill="color-mix(in srgb,var(--card) 60%,var(--bg))" />
-
-        <!-- Green Lawn & Park Spaces -->
-        <!-- Admin lawn -->
-        <rect x="200" y="80" width="120" height="40" rx="8" fill="var(--ac2)" opacity="0.18"/>
-        <!-- CS Ground Sports Field -->
-        <rect x="530" y="65" width="160" height="110" rx="14" fill="var(--ac2)" opacity="0.22" stroke="var(--ac2)" stroke-dasharray="4 4" stroke-width="1.2"/>
-        <text x="610" y="165" font-size="10" text-anchor="middle" fill="var(--ac2)" font-weight="700" letter-spacing="0.08em">SPORTS FIELD</text>
-        <!-- BT Quadrangle Garden -->
-        <rect x="35" y="235" width="120" height="58" rx="10" fill="var(--ac2)" opacity="0.14"/>
-        
-        <!-- Mysore Road / Metro Corridor at Top -->
-        <rect x="0" y="0" width="880" height="52" fill="var(--ln)" opacity="0.55"/>
-        <line x1="0" y1="26" x2="880" y2="26" stroke="var(--fg)" stroke-dasharray="14 10" stroke-width="2" opacity="0.3"/>
-        <text x="30" y="32" font-size="11" font-weight="800" fill="var(--mut)" letter-spacing="0.1em">MYSORE ROAD / HIGHWAY</text>
-
-        <!-- Campus Roads (Primary Asphalt Avenues) -->
-        <!-- North Main Gate Entrance Drive -->
-        <path d="M 360 45 L 360 490" stroke="var(--ln)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <path d="M 360 55 L 360 480" stroke="var(--bg)" stroke-dasharray="8 8" stroke-width="2" fill="none" opacity="0.7"/>
-
-        <!-- Avenue 1 (North cross avenue) -->
-        <path d="M 20 145 L 750 145" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
-        
-        <!-- Avenue 2 (Central cross avenue) -->
-        <path d="M 20 295 L 780 295" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
-
-        <!-- Avenue 3 (South cross avenue - MINGOS to Library to Hostel) -->
-        <path d="M 30 435 L 680 435" stroke="var(--ln)" stroke-width="22" stroke-linecap="round" fill="none"/>
-
-        <!-- Avenue 4 (Far South connection) -->
-        <path d="M 340 485 L 600 485" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
-
-        <!-- North-South West Link -->
-        <path d="M 160 145 L 160 435" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
-        
-        <!-- North-South East Link -->
-        <path d="M 640 145 L 640 435" stroke="var(--ln)" stroke-width="18" stroke-linecap="round" fill="none"/>
-
-        <!-- Pedestrian Walkway Indicators -->
-        <path d="M 240 50 L 240 100 M 505 50 L 505 100 M 565 145 L 565 200 M 365 295 L 365 320 M 105 380 L 105 400" stroke="var(--ac2)" stroke-dasharray="3 3" stroke-width="1.8" fill="none" opacity="0.5"/>
-
-        <!-- Animated Route Line (YOU -> Selected Station) -->
-        <path class="rt" d="${P}" stroke="var(--ac)" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.95"/>
-        <circle r="4.5" fill="var(--ac)">
-          <animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/>
-        </circle>
-
-        <!-- Campus Buildings & Venues -->
-        ${list.map(v=>{
-          const isSt = !!v.st;
-          const stObj = ST.find(s=>s.id==v.id);
-          const isCur = r.id == v.id;
-          const x0 = v.x - v.w/2, y0 = v.y - v.h/2;
-          
-          return `
-          <g class="v-card${isCur?' sel':''}" onclick="${isSt?`pickSt('${v.id}',event)`:`pickVenue('${v.id}',event)`}">
-            <!-- Building Card Background with Drop Shadow -->
-            <rect x="${x0}" y="${y0}" width="${v.w}" height="${v.h}" rx="10" 
-                  fill="${isCur ? 'color-mix(in srgb,var(--card) 85%,var(--ac))' : 'var(--card)'}" 
-                  stroke="${isCur ? 'var(--ac)' : isSt ? 'color-mix(in srgb,var(--ac) 50%,var(--ln))' : 'var(--ln)'}" 
-                  stroke-width="${isCur ? 2.5 : isSt ? 1.8 : 1.2}" 
-                  filter="url(#bldgShadow)" />
-
-            <!-- Category Accent Top Stripe -->
-            <path d="M ${x0+10} ${y0} L ${x0+v.w-10} ${y0}" 
-                  stroke="${isSt ? 'var(--ac)' : v.cat=='food' ? 'var(--ac2)' : v.cat=='gate' ? '#8b5cf6' : 'var(--ln)'}" 
-                  stroke-width="3" stroke-linecap="round"/>
-
-            <!-- Venue Icon & Name -->
-            <text x="${v.x}" y="${v.y - (isSt ? 5 : 2)}" text-anchor="middle" font-size="17">${v.icon}</text>
-            <text x="${v.x}" y="${v.y + (isSt ? 11 : 14)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">${v.n}</text>
-
-            <!-- Solar Station Badge Pill if applicable -->
-            ${isSt ? `
-              <rect x="${v.x - 38}" y="${v.y + 17}" width="76" height="15" rx="7.5" fill="color-mix(in srgb,var(--ac) 18%,var(--card))" stroke="var(--ac)" stroke-width="0.8"/>
-              <text x="${v.x}" y="${v.y + 27.5}" text-anchor="middle" font-size="8" font-weight="800" fill="var(--fg)">⚡ ${stObj?stObj.free:4} ready</text>
-            ` : ''}
-
-            <!-- Station Target Selection Halo -->
-            ${isCur ? `
-              <circle cx="${v.x}" cy="${v.y}" r="${Math.max(v.w,v.h)/2 + 8}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-dasharray="5 3"/>
-            ` : ''}
-
-            <title>${v.n} (${v.desc}) · Click to ${isSt?'rent solar bank':'set location here'}</title>
-          </g>
-          `;
-        }).join('')}
-
-        <!-- User Position Indicator ("YOU") -->
-        <g style="pointer-events:none">
-          <circle class="pl" cx="${S.pos.x}" cy="${S.pos.y}" r="16" fill="var(--ac2)" opacity="0.65"/>
-          <circle cx="${S.pos.x}" cy="${S.pos.y}" r="8" fill="var(--ac2)" stroke="#fff" stroke-width="2.2"/>
-          <rect x="${S.pos.x - 18}" y="${S.pos.y - 22}" width="36" height="15" rx="7.5" fill="var(--ac2)" />
-          <text x="${S.pos.x}" y="${S.pos.y - 11.5}" text-anchor="middle" font-size="8.5" font-weight="900" fill="#fff" letter-spacing="0.05em">YOU</text>
-        </g>
-      </svg>
-    </div>
-
-    <!-- Active Route & Distance Status Bar -->
-    <div class="map-hud">
-      <div>
-        <div style="font-weight:700;font-size:1.02rem;display:flex;align-items:center;gap:6px">
-          <span>Target Station:</span>
-          <span style="color:var(--ac2)">${r.icon} ${r.n}</span>
-        </div>
-        <div style="font-size:0.86rem;color:var(--mut);margin-top:3px">
-          Walking Distance: <b>${d} meters</b> (~${wm} min walk) · <b>${r.free}</b> solar banks ready · Solar input: <b>${r.solar|0} W</b>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <a class="btn" style="min-height:38px;padding:8px 18px;font-size:0.9rem" href="#app-rent" onclick="S.pick=ST.find(x=>x.id=='${r.id}');if($('#rb'))rr();">
-          Rent Here ⚡
-        </a>
-        <button class="btn g" style="min-height:38px;padding:8px 14px;font-size:0.9rem" onclick="nav(ST.find(x=>x.id=='${r.id}'))">
-          Directions
-        </button>
-      </div>
-    </div>
-
-    <!-- Quick Location Chips -->
-    <div class="map-chips">
-      <span style="font-size:0.82rem;color:var(--mut);font-weight:700">📍 Set location:</span>
-      <button class="chip" onclick="setMyPos(240,40,'Pattanagere Metro Entrance')">🚇 Metro Gate</button>
-      <button class="chip" onclick="setMyPos(255,115,'Admin Block')">🏛️ Admin Block</button>
-      <button class="chip" onclick="setMyPos(565,245,'CSE Dept.')">💻 CSE Dept.</button>
-      <button class="chip" onclick="setMyPos(105,445,'Food Court (MINGOS)')">🍽️ MINGOS</button>
-      <button class="chip" onclick="setMyPos(365,360,'Central Library')">📚 Library</button>
-      <button class="chip" onclick="setMyPos(505,360,'Mini Canteen')">🥪 Mini Canteen</button>
-      <button class="chip" onclick="setMyPos(715,320,'Boys Hostel (Cauvery)')">🏢 Cauvery Hostel</button>
-      <button class="chip" onclick="setMyPos(95,115,'Innovation Hub')">💡 Innovation Hub</button>
-    </div>
-  </div>
-  `;
-};
-
-window.mvp=e=>{
-  if(e.target.closest('.v-card'))return;
-  const b=e.currentTarget.getBoundingClientRect();
-  S.pos={
-    x:Math.round(Math.max(20,Math.min(860,(e.clientX-b.left)/b.width*880))),
-    y:Math.round(Math.max(20,Math.min(550,(e.clientY-b.top)/b.height*570)))
-  };
-  S.pick=null;
-  $('#rb')?rr():go(1);
-};
-
+const mapSvg0=()=>{const r=S.pick||best(),P=`M${S.pos.x} ${S.pos.y}L${r.x} ${r.y}`;return`<svg viewBox="0 0 420 300" style="width:100%;border-radius:14px;background:var(--card);border:1px solid var(--ln);cursor:crosshair" onclick="mvp(event)" role="img" aria-label="Campus map. Tap to set your position."><path class="rt" d="${P}" stroke="var(--ac)" stroke-width="2" fill="none"/><circle r="4" fill="var(--ac2)"><animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/></circle>${ST.map(s=>`<circle class="pl" cx="${s.x}" cy="${s.y}" r="9" fill="${s.ok?'var(--ac)':'var(--mut)'}"/><circle cx="${s.x}" cy="${s.y}" r="${r.id==s.id?13:9}" fill="${s.ok?'var(--ac)':'var(--mut)'}"/><text x="${s.x+15}" y="${s.y+4}" font-size="11" fill="var(--fg)">${s.n}</text>`).join('')}<circle cx="${S.pos.x}" cy="${S.pos.y}" r="6" fill="var(--ac2)"/><text x="${S.pos.x+9}" y="${S.pos.y-8}" font-size="11" fill="var(--ac2)">YOU</text></svg>`};
+window.mvp=e=>{const b=e.currentTarget.getBoundingClientRect();S.pos={x:(e.clientX-b.left)/b.width*420,y:(e.clientY-b.top)/b.height*300};S.pick=null;$('#rb')?rr():go(1)};
 window.rr=()=>{$('#rb').innerHTML=rentBody()};
-const rentBody=()=>{
-  const bs=best(),cur=S.pick||bs;
-  return `
-  <div class="grid">${Object.entries(CATS).map(([k,c])=>`<button class="card pick${S.cat==k?' sel':''}" style="color:var(--fg);font:inherit;cursor:pointer" onclick="S.cat='${k}';S.pick=null;rr()">${ic(c.i)}<h3>${c.n}</h3><p>${c.d}</p><span class="badge">${c.p}</span></button>`).join('')}</div>
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <label for="du">Duration: <b id="dv">${S.dur} h</b> (30 min to 6 h)</label>
-      <input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" style="width:100%;accent-color:var(--ac)" oninput="S.dur=+this.value;$('#dv').textContent=S.dur+' h'">
-      <p>Rate: ₹ ${PR.rate||'—'} per hour (set by admin).</p>
-      <h3>Best station</h3>
-      ${[...ST].sort((a,c)=>score(a)-score(c)).map(s=>`<button class="card pick${cur.id==s.id?' sel':''}" style="display:block;width:100%;margin:8px 0;color:var(--fg);font:inherit;cursor:pointer" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rr()"><b>${s.icon} ${s.n}</b> ${s.id==bs.id?'<span class="badge">best</span>':''}<br><small>${dist(s)} m (~${Math.max(1,Math.round(dist(s)/65))} min) · ${s.stock[S.cat]} in stock${s.ok?'':' · offline'}</small></button>`).join('')}
-    </div>
-    <div class="card">
-      ${mapSvg()}
-      <div style="margin-top:12px">
-        <button class="btn" onclick="startR()">Rent from ${cur.n}</button> 
-        <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button>
-      </div>
-    </div>
-  </div>`;
-};
+const rentBody=()=>{const bs=best(),cur=S.pick||bs;return`<div class="grid">${Object.entries(CATS).map(([k,c])=>`<button class="card pick${S.cat==k?' sel':''}" style="color:var(--fg);font:inherit;cursor:pointer" onclick="S.cat='${k}';S.pick=null;rr()">${ic(c.i)}<h3>${c.n}</h3><p>${c.d}</p><span class="badge">${c.p}</span></button>`).join('')}</div><div class="grid" style="margin-top:16px"><div class="card"><label>Duration</label><div class="dur" id="dc"><div class="dh"><b id="dl">${DL(S.dur)}</b><small id="ds" class="${S.dur>=6?'mx':''}">${S.dur>=6?'Longest rental · charges apply per hour':DS(S.dur)}</small></div><div class="dt" style="--f:${(S.dur-.5)/5.5}"><div class="dtr"><div class="dfl"></div><canvas id="pc" aria-hidden="true"></canvas></div><input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" aria-label="Rental duration in hours" oninput="durIn(this.value)"></div><div class="dd" aria-hidden="true">${'<i></i>'.repeat(12)}</div></div><p>Rate: ₹ ${PR.rate||'—'} per hour (set by admin).</p><h3>Best station</h3>${[...ST].sort((a,c)=>score(a)-score(c)).map(s=>`<button class="card pick${cur.id==s.id?' sel':''}" style="display:block;width:100%;margin:8px 0;color:var(--fg);font:inherit;cursor:pointer" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rr()"><b>${s.n}</b> ${s.id==bs.id?'<span class="badge">best</span>':''}<br><small>${dist(s)} m · ${s.stock[S.cat]} in stock${s.ok?'':' · offline'}</small></button>`).join('')}</div><div class="card">${mapSvg()}<p>Tap the map to set your position.</p><button class="btn" onclick="startR()">Rent from ${cur.n}</button> <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button></div></div>`};
 window.startR=()=>{const b=S.pick||best();if(b.stock[S.cat]<1)return toast('No stock at this station for that category.');S.rent={pin:String(100000+Math.random()*900000|0),st:b,cat:S.cat,dur:S.dur*3600,started:0,batt:100,slot:null,done:false};b.stock[S.cat]--;location.hash='app-rentals'};
 window.kiosk=()=>{const r=S.rent;if($('#kp').value!==r.pin)return $('#ke').textContent='Wrong PIN.';r.slot=1+Math.random()*8|0;r.started=Date.now();r.st.free=Math.max(0,r.st.free-1);go(1)};
 window.retn=()=>{const r=S.rent,b=best(true);b.free=Math.max(0,b.free-1);b.stock[r.cat]++;S.rent=null;toast('Returned at '+b.n+'. Thanks for using solar power.');go(1)};
 window.tg=id=>{const s=ST.find(x=>x.id==id);s.ok=!s.ok;$('#adm').innerHTML=cards()};
 PG['app-rent']=()=>stu()?`<div class="wrap"><h1 tabindex="-1">${t('rent')}</h1><div id="rb">${rentBody()}</div></div>`:need;
-PG['app-stations']=()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1>${mapSvg()}<div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`;
+PG['app-stations']=()=>`<div class="wrap"><h1 tabindex="-1">${t('find')}</h1>${mapSvg()}<p>Tap the map to set your position.</p><div class="grid" style="margin-top:20px">${ST.map(stn).join('')}</div></div>`;
 PG['app-rentals']=()=>{if(!stu())return need;const r=S.rent,hist='<h3 style="margin-top:24px">History</h3><table><tr><td>Library</td><td>1 h 05 m</td></tr><tr><td>Big Mingoes</td><td>0 h 40 m</td></tr></table>';if(!r)return`<div class="wrap"><h1 tabindex="-1">${t('rentals')}</h1><p>No active rental.</p><a class="btn" href="#app-rent">${t('rent')}</a>${hist}</div>`;return`<div class="wrap"><h1 tabindex="-1">${t('rentals')}</h1><div class="grid"><div class="card"><span class="badge">${CATS[r.cat].n}</span><p>Your 6-digit PIN</p><div class="num" style="font-size:3rem;letter-spacing:.3em">${r.pin}</div><p>Pickup: <b>${r.st.n}</b>. Enter the PIN at the station kiosk.</p>${r.started?`<div class="num" id="tm">${fmt(r.dur-el())}</div><label>Power bank charge <b id="bt">${Math.max(0,r.batt)|0}%</b></label><div class="bar"><i id="bb" style="width:${Math.max(0,r.batt)}%"></i></div><p><button class="btn" onclick="retn()">Return power bank</button> <a class="btn g" href="#app-report">Report a problem</a></p>`:`<button class="btn g" onclick="nav(S.rent.st)">Navigate to station</button>`}</div><div class="card"><h3>Station kiosk (simulator)</h3><div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">${[...Array(8)].map((_,i)=>`<div class="kd${r.slot==i+1?' lit':''}">SLOT ${i+1}</div>`).join('')}</div>${r.started?`<p>Slot <b>${r.slot}</b> unlocked. Timer started.</p><label for="sp">Demo speed</label><select id="sp" onchange="S.speed=+this.value"><option value="1">1×</option><option value="60"${S.speed==60?' selected':''}>60× (demo)</option></select>`:`<label for="kp">Enter PIN</label><input id="kp" maxlength="6" inputmode="numeric" style="width:100%"><div class="err" id="ke"></div><button class="btn" onclick="kiosk()">Unlock slot</button>`}</div></div>${hist}</div>`};
 PG.signin=()=>`<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t('si')}</h1><label for="nm">Full name</label><input id="nm" autocomplete="name" style="width:100%"><label for="em">RVCE email</label><input id="em" type="email" placeholder="name@rvce.edu.in" style="width:100%"><label for="ph">Contact phone (for management queries)</label><input id="ph" type="tel" placeholder="+91XXXXXXXXXX" style="width:100%"><div class="err" id="e1"></div><p><button class="btn" onclick="sIn()">${t('si')}</button> <button class="btn g" onclick="login('guest')">${t('guest')}</button></p><p class="badge">Demo only</p><p><button class="btn g" onclick="login('student')">Demo student</button></p></div>`;
 window.sIn=()=>{const n=$('#nm').value.trim(),e=$('#em').value.trim().toLowerCase(),p=$('#ph').value.trim();if(!/^[^@\s]+@rvce\.edu\.in$/.test(e))return $('#e1').textContent='Use your rvce.edu.in email.';if(!n||!/^\+?\d{10,13}$/.test(p))return $('#e1').textContent='Enter your name and a valid phone number.';S.u={role:'student',name:n,email:e,phone:p};sv('lg_user',JSON.stringify(S.u));location.hash='plug'};
@@ -497,6 +182,42 @@ $('#lm').onclick=()=>{const c=$('#lmp');c.style.display=c.style.display=='block'
 $('#lmi').onkeydown=e=>{if(e.key!=='Enter'||!e.target.value.trim())return;const x=e.target.value;e.target.value='';say(x,1);const h=KB.find(k=>k[0].test(x.toLowerCase()));setTimeout(()=>say(h?h[1]:'I am not sure. Please contact management using your registered phone or email.'),400)};
 if(!matchMedia('(prefers-reduced-motion:reduce)').matches){const l=document.createElement('div');l.id='ld';l.innerHTML=logo(96);document.body.append(l);setTimeout(()=>l.classList.add('x'),1300);setTimeout(()=>l.remove(),1900);
 if(matchMedia('(pointer:fine)').matches){document.body.insertAdjacentHTML('beforeend','<div id="cg"></div>'+'<i class="tr"></i>'.repeat(8));const g=$('#cg'),tr=[...document.querySelectorAll('.tr')],P=tr.map(()=>[0,0]);let mx=-300,my=-300,gx=-300,gy=-300;addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY});(function f(){gx+=(mx-gx)*.12;gy+=(my-gy)*.12;g.style.transform=`translate(${gx}px,${gy}px)`;let px=mx,py=my;tr.forEach((d,i)=>{P[i][0]+=(px-P[i][0])*.35;P[i][1]+=(py-P[i][1])*.35;px=P[i][0];py=P[i][1];d.style.transform=`translate(${px}px,${py}px) scale(${1-i/9})`;d.style.opacity=.6-i*.07});requestAnimationFrame(f)})()}}
+const reply=x=>{const h=KB.find(k=>k[0].test(x.toLowerCase()));setTimeout(()=>say(h?h[1]:'I am not sure. Please contact management using your registered phone or email.'),400)};
+window.lumi=x=>{$('#lmp').style.display='block';if(!$('#lmm').children.length)say('Hi, I am Lumi. Ask me about PINs, bank types, returns or charging.');say(x,1);reply(x)};
+const fx1=fx;fx=function(){fx1();const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;document.querySelectorAll('[data-n]').forEach(e=>{const n=+e.dataset.n,t0=performance.now();(function f(t){const p=rm?1:Math.min(1,(t-t0)/1200);e.textContent=(n*(1-Math.pow(1-p,3))|0).toLocaleString();if(p<1)requestAnimationFrame(f)})(t0)})};
+PG['app-home']=()=>{const r=S.rent,b=best(),H=new Date().getHours(),g=H<12?'Good morning':H<17?'Good afternoon':'Good evening',n=S.u&&S.u.name&&S.u.role=='student'?', '+S.u.name.split(' ')[0]:'',c=(x,i,k)=>`<div class="card ${x}" style="--i:${i}">${k}</div>`;
+const prim=!stu()?`<span class="k">Welcome</span><h2>Sign in to charge up</h2><p>Browse stations as a guest, or sign in with your RVCE email to rent a power bank.</p><a class="btn" href="#signin">${t('si')}</a><p style="margin-top:16px">Best station right now: <b>${b.n}</b> (${dist(b)} m)</p>`:r&&r.started?`<span class="k">Active rental</span><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><div class="ring2" style="--p:${Math.max(0,r.batt)|0}"><b id="bt">${Math.max(0,r.batt)|0}%</b></div><div><div class="num" id="tm">${fmt(r.dur-el())}</div><p>${CATS[r.cat].n} · slot ${r.slot}</p></div></div><div class="bar"><i id="bb" style="width:${Math.max(0,r.batt)}%"></i></div><p><a class="btn" href="#app-rentals">Open rental</a></p>`:r?`<span class="k">PIN ready</span><div class="num" style="font-size:3rem;letter-spacing:.3em">${r.pin}</div><p>Enter it at ${r.st.n} to unlock your slot.</p><a class="btn" href="#app-rentals">Go to kiosk</a>`:`<span class="k">Charge up</span><h2>${b.n}</h2><p>${dist(b)} m away · ${b.free} slots free · ${b.stock[S.cat]} ${CATS[S.cat].n} in stock</p><p><a class="btn" href="#app-rent" onclick="S.pick=best()">Rent here</a> <button class="btn g" onclick="nav(best())">Navigate</button></p>`;
+return`<div class="wrap"><div class="bento">${c('s4',0,`<h1 tabindex="-1" style="font-size:clamp(2rem,5vw,3.4rem);margin:0">${g}${n}</h1>${sol()}`)}${c('s2 r2',1,prim)}${c('s2',2,mapSvg()+'<p>Tap the map to set your position.</p>')}${c('s2',3,'<h3>Stations</h3>'+ST.map(s=>`<a href="#app-station-${s.id}" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--ln);color:var(--fg);text-decoration:none"><b>${s.n}</b><span class="badge">${s.ok?s.free+' free':'offline'}</span></a>`).join(''))}${c('s4',4,'<h3>Grove banks</h3><div class="bk">'+Object.entries(CATS).map(([k,x])=>`<a class="card" style="color:var(--fg);text-decoration:none" href="#app-rent" onclick="S.cat='${k}'">${ic(x.i)}<h3>${x.n}</h3><p>${x.p}</p><span class="badge">${best().stock[k]} nearby</span></a>`).join('')+'</div>')}${c('',5,'<span class="k">Campus impact</span><div class="num" data-n="1284">0</div><p>kWh solar used (demo)</p><div class="num" data-n="1053">0</div><p>kg CO₂ avoided (demo)</p>')}${c('',6,'<h3>Recent</h3><table><tr><td>Library</td><td>1 h 05 m</td></tr><tr><td>Big Mingoes</td><td>0 h 40 m</td></tr></table>')}${c('s4',7,'<h3>Ask Lumi</h3>'+['How do I get my PIN?','Which bank fits my laptop?','How long can I rent?'].map(x=>`<button class="chip" onclick="lumi('${x}')">${x}</button> `).join(''))}</div></div>`};
+S.hist=[{id:'LG-1041',d:'03 Nov',st:'Library',cat:'std',h:'1 h 05 m',s:'Completed'},{id:'LG-1038',d:'01 Nov',st:'Big Mingoes',cat:'lap',h:'0 h 40 m',s:'Completed'}];S.pay=null;
+const payView=()=>{const p=S.pay,c=CATS[S.cat],r=S.rent;if(p.paid&&r)return`<div class="card"><span class="k">Payment received</span><h2>Your PIN</h2><div class="num" style="font-size:3.4rem;letter-spacing:.3em">${r.pin}</div><p>${c.n} at ${r.st.n}. Enter this PIN at the station kiosk to unlock your slot.</p><a class="btn" href="#app-rentals">View current rental</a> <button class="btn g" onclick="S.pay=null;rr()">Done</button></div>`;return`<div class="card pay"><div style="color:#000;width:200px;background:#fff;padding:10px;border-radius:6px">${qr(p.b.id+S.dur)}</div><div><span class="k">Step 2 of 3 · Pay</span><h2>Scan to pay</h2><p>${c.n} · ${S.dur} h · ${p.b.n}</p><p>Amount: <b>₹ —</b> (rate set by admin). The UPI QR is a demo.</p><p class="badge">Auto-confirming in <b id="pcd">6</b> s</p><p><button class="btn" onclick="paid()">I’ve paid</button> <button class="btn g" onclick="S.pay=null;rr()">Cancel</button></p></div></div>`};
+const rb2=()=>stp()+(S.pay?payView():rentBody());window.rr=()=>{$('#rb').innerHTML=rb2()};
+PG['app-rent']=()=>stu()?`<div class="wrap"><h1 tabindex="-1">${t('rent')}</h1><div id="rb">${rb2()}</div></div>`:need;
+window.startR=()=>{if(S.rent)return toast('You already have an active rental.');const b=S.pick||best();if(b.stock[S.cat]<1)return toast('No stock at this station for that category.');S.pay={t:Date.now(),b,paid:false};rr()};
+window.paid=()=>{const p=S.pay;if(!p||p.paid)return;p.paid=true;S.rent={id:'LG-'+(1042+S.hist.length),pin:String(100000+Math.random()*900000|0),st:p.b,cat:S.cat,dur:S.dur*3600,started:0,batt:100,slot:null,done:false};p.b.stock[S.cat]--;toast('Payment received');if($('#rb'))rr()};
+setInterval(()=>{const p=S.pay;if(!p||p.paid)return;const l=6-(Date.now()-p.t)/1000;if(l<=0)paid();else{const e=$('#pcd');if(e)e.textContent=Math.ceil(l)}},250);
+const retn0=window.retn;window.retn=()=>{const r=S.rent;if(!r)return;S.hist.unshift({id:r.id,d:'Today',st:r.st.n,cat:r.cat,h:fmt(el()).slice(0,5).replace(':',' h ')+' m',s:'Completed'});S.pay=null;retn0()};
+window.cmp=id=>{document.body.insertAdjacentHTML('beforeend',`<div id="cm" onclick="if(event.target==this)this.remove()"><div class="card" style="width:min(460px,92%);background:var(--card)" role="dialog" aria-label="File a complaint"><h3>File a complaint</h3><label for="ct">Issue</label><select id="ct" style="width:100%"><option>Paid but no PIN</option><option>Lock stuck</option><option>Bank not charging</option><option>Wrong amount</option><option>Other</option></select><label for="cn">Details ${id?'(transaction '+id+')':''}</label><textarea id="cn" rows="4" style="width:100%"></textarea><p><button class="btn" onclick="$('#cm').remove();toast('Complaint filed (demo)')">Submit</button> <button class="btn g" onclick="$('#cm').remove()">Cancel</button></p></div></div>`);const e=$('#ct');if(e)e.focus()};
+const rn0=PG['app-rentals'];PG['app-rentals']=()=>{let h=rn0();if(!stu())return h;h=h.replace(new RegExp('<h3 style="margin-top:24px">History</h3><table>[^]*?</table>'),'').replace('</h1>','</h1><p><button class="btn g" onclick="cmp()">File a complaint</button></p><h2>Current rental</h2>');const r=S.rent,rows=(r?[{id:r.id,d:'Today',st:r.st.n,cat:r.cat,h:(r.dur/3600)+' h',s:r.started?'Active':'Paid'}]:[]).concat(S.hist);return h.replace(new RegExp('</div>$'),`<h2 style="margin-top:32px">Transaction history</h2><div class="tw"><table><tr><th>ID</th><th>Date</th><th>Station</th><th>Bank</th><th>Duration</th><th>Amount</th><th>Status</th><th></th></tr>${rows.map(x=>`<tr><td>${x.id}</td><td>${x.d}</td><td>${x.st}</td><td>${CATS[x.cat].n}</td><td>${x.h}</td><td>₹ —</td><td><span class="badge">${x.s}</span></td><td><button class="btn g" onclick="cmp('${x.id}')">Complain</button></td></tr>`).join('')}</table></div></div>`)};
+const pill=(k,a,f)=>`<button class="chip" style="${S[k]==a[0]?'background:var(--ac);color:var(--on)':''}" aria-pressed="${S[k]==a[0]}" onclick="${f(a[0])}">${a[1]}</button>`;
+PG['app-settings']=()=>{const u=S.u,P=u&&u.role=='student'?`<b>${u.name}</b><br>${u.email}<br>${u.phone}`:'Browsing as guest';return`<div class="wrap"><span class="k">Account</span><h1 tabindex="-1">${t('me')}</h1><div class="grid"><div class="card"><h3>Profile</h3><p>${P}</p>${u?`<button class="btn g" onclick="S.u=null;sv('lg_user','');go(1);toast('Signed out')">Sign out</button>`:`<a class="btn" href="#signin">${t('si')}</a>`}</div><div class="card"><h3>Language</h3>${[['en','English'],['kn','ಕನ್ನಡ'],['hi','हिन्दी']].map(a=>pill('l',a,x=>`S.l='${x}';sv('l',S.l);go(1)`)).join(' ')}</div><div class="card"><h3>Theme</h3>${[['olive','Olive Night'],['amber','Amber Sun']].map(a=>pill('th',a,x=>`theme('${x}');go(1)`)).join(' ')}</div><div class="card"><h3>Motion</h3><label style="display:flex;gap:10px;align-items:center;margin:0"><input type="checkbox" onchange="document.documentElement.classList.toggle('rm',this.checked)"> Reduce motion</label></div></div></div>`};
+const ah0=PG['app-home'];PG['app-home']=()=>{const H=new Date().getHours(),g=H<12?'Good morning':H<17?'Good afternoon':'Good evening',n=stu()?', '+S.u.name.split(' ')[0]:'',bc=[...Array(26)].map((_,i)=>`<rect x="${i*7}" y="0" width="${1+(i*5)%4}" height="26" fill="var(--fg)"/>`).join(''),hero=`<div class="card s4 hero2" style="--i:0"><svg class="dc" viewBox="0 0 200 200" style="right:60px;top:-40px;width:260px" aria-hidden="true"><circle cx="100" cy="100" r="62" fill="var(--ac)" opacity=".9"/><circle class="spin" cx="100" cy="100" r="84" fill="none" stroke="var(--fg)" stroke-width="12" stroke-dasharray="9 7"/><g fill="none" stroke="var(--fg)" stroke-width="1.2"><circle cx="100" cy="100" r="40"/><ellipse cx="100" cy="100" rx="16" ry="40"/><ellipse cx="100" cy="100" rx="32" ry="40"/><path d="M60 100h80"/></g></svg><span class="vt" aria-hidden="true">SOLARPUNK</span><span class="k">LumenGrove · Plug In</span><h1 tabindex="-1">${g}${n}</h1><span class="tag">Future is solar-charged.</span> ${sol()}<svg viewBox="0 0 182 26" width="182" height="26" style="display:block;margin-top:18px" aria-hidden="true">${bc}</svg></div>`;let h=ah0().replace(new RegExp('<div class="card s4" style="--i:0">[^]*?</div>'),hero);return h.replace(new RegExp('<span class="k">PIN ready</span><div class="num"[^>]*>[0-9]+</div><p>Enter it at'),'<span class="k">Payment received</span><p>Open My rentals for your PIN, then go to')};
+const PA=[];let pf=0,pcol='';(function L(){const c=$('#pc');if(c&&!matchMedia('(prefers-reduced-motion:reduce)').matches&&!document.documentElement.classList.contains('rm')){const d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=w*d){c.width=w*d;c.height=h*d}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);if(pf++%40==0)pcol=getComputedStyle(document.documentElement).getPropertyValue('--ac').trim();const fw=(w-32)*(S.dur-.5)/5.5+16,n=14+S.dur*6;while(PA.length<n)PA.push({x:Math.random()*w,y:Math.random()*h,v:.8+Math.random()*2,p:Math.random()*6});PA.length=n;PA.forEach(p=>{p.x+=p.v*(.6+S.dur/3);p.p+=.15;if(p.x>fw){p.x=-20;p.y=Math.random()*h}const y=p.y+Math.sin(p.p)*3,l=14+p.v*10,gr=x.createLinearGradient(p.x-l,0,p.x,0);gr.addColorStop(0,'transparent');gr.addColorStop(1,pcol);x.strokeStyle=gr;x.lineWidth=1.5;x.beginPath();x.moveTo(p.x-l,y);x.lineTo(p.x,y);x.stroke();x.fillStyle=pcol;x.shadowColor=pcol;x.shadowBlur=8;x.beginPath();x.arc(p.x,y,1.8,0,6.3);x.fill();x.shadowBlur=0})}requestAnimationFrame(L)})();
+const VN=[['metro','Metro',240,32,115,34,'gate'],['gate','Main Gate',360,32,70,34,'gate'],['atm','ATM',440,32,80,34,'fac'],['hub','DTL Hub',95,105,120,58,'hub'],['admin','Admin Block',255,105,145,65,'admin'],['civil','Civil',435,105,110,60,'dept'],['ground','Main Stage · CS Ground',610,120,160,105,'fac'],['parking','Parking',775,150,95,150,'fac'],['mech','Mech',95,185,120,58,'dept'],['workshops','Workshops',235,190,90,50,'fac'],['maint','Maintenance',340,190,80,50,'fac'],['eee','EEE',445,185,110,55,'dept'],['cse','CSE',565,235,115,60,'dept'],['cauvery','Cauvery Hostel',715,310,130,155,'hostel',1],['quad','BT Quad',95,265,120,58,'fac'],['aiml','AI-ML & MCA',95,345,120,55,'dept'],['rvu','RV University',235,260,100,55,'dept'],['ece','ECE',355,260,100,55,'dept'],['chem','Chem & Physics',235,340,110,60,'dept'],['ete','ETE',235,420,110,55,'dept'],['library','Library',365,350,120,68,'fac',1],['mm','M.M Foods',505,350,110,55,'food',1],['mingoes','Big Mingoes',105,435,140,72,'food',1],['vip','VIP Lounge',105,525,120,45,'fac'],['ise','ASE & ISE',365,510,130,60,'dept'],['incub','Incubation',525,510,130,60,'fac']];
+const mapIn=()=>{const r=S.pick||best(),P=`M${S.pos.x} ${S.pos.y}L${r.x} ${r.y}`,f=S.vf||'all',k=(S.vq||'').toLowerCase(),on=v=>(f=='all'||(f=='st'&&v[7])||(f=='food'&&v[6]=='food')||(f=='dept'&&v[6]=='dept'))&&(!k||v[1].toLowerCase().includes(k));return`<rect width="880" height="26" fill="var(--ln)"/><text x="12" y="18" font-size="12" font-weight="700" fill="var(--mut)">MYSORE ROAD · PATTANAGERE METRO</text>`+VN.map(v=>{const s=v[7],cx=v[2]+v[4]/2,cy=v[3]+v[5]/2;return`<g class="v" opacity="${on(v)?1:.22}" onclick="${s?`pickSt('${v[0]}',event)`:`pickVenue('${v[0]}',event)`}"><rect x="${v[2]}" y="${v[3]}" width="${v[4]}" height="${v[5]}" rx="4" fill="${s?'var(--ac)':'var(--card)'}" stroke="var(--fg)" stroke-width="${r.id==v[0]?4:1.5}"/><text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="11" font-weight="700" fill="${s?'var(--on)':'var(--fg)'}">${v[1]}</text>${s?`<circle class="pl" cx="${v[2]+v[4]-8}" cy="${v[3]+8}" r="5" fill="var(--ac2)"/>`:''}</g>`}).join('')+`<path class="rt" d="${P}" stroke="var(--ac)" stroke-width="3" fill="none"/><circle r="5" fill="var(--ac2)"><animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/></circle><circle cx="${S.pos.x}" cy="${S.pos.y}" r="8" fill="var(--ac2)" stroke="var(--fg)" stroke-width="2"/><text x="${S.pos.x+12}" y="${S.pos.y-10}" font-size="12" font-weight="800" fill="var(--fg)">YOU</text>`};
+const mapSvg=()=>{const r=S.pick||best(),m=Math.max(1,Math.round(dist(r)/80)),f=S.vf||'all';return`<div class="mp"><div class="mf">${[['all','All'],['st','Solar stations'],['food','Food'],['dept','Depts']].map(a=>`<button class="chip" aria-pressed="${f==a[0]}" style="${f==a[0]?'background:var(--ac);color:var(--on)':''}" onclick="vf('${a[0]}')">${a[1]}</button>`).join('')}<input type="search" aria-label="Search venues" placeholder="Search venue" value="${S.vq||''}" oninput="vs(this.value)"></div><svg viewBox="0 0 880 570" class="msv" onclick="mvp(event)" role="img" aria-label="RVCE campus map. Tap to set your position.">${mapIn()}</svg><p><b>${r.n}</b> · ${dist(r)} m · about ${m} min walk. Tap a building to set where you are.</p></div>`};
+const rer=()=>$('#rb')?rr():go(1);
+window.vf=f=>{S.vf=f;rer()};window.vs=v=>{S.vq=v;document.querySelectorAll('.msv').forEach(s=>s.innerHTML=mapIn())};
+window.pickSt=(id,e)=>{e.stopPropagation();S.pick=ST.find(x=>x.id==id);toast('Selected station: '+S.pick.n);rer()};
+window.pickVenue=(id,e)=>{e.stopPropagation();const v=VN.find(x=>x[0]==id);S.pos={x:v[2]+v[4]/2|0,y:v[3]+v[5]/2|0};S.pick=null;const b=best();toast('You are at '+v[1]+'. Nearest: '+b.n+' ('+dist(b)+' m)');rer()};
+window.mvp=e=>{const b=e.currentTarget.getBoundingClientRect();S.pos={x:Math.max(20,Math.min(860,(e.clientX-b.left)/b.width*880))|0,y:Math.max(20,Math.min(550,(e.clientY-b.top)/b.height*570))|0};S.pick=null;rer()};
+const DL=h=>h<1?'30 min':h==1?'1 hour':h+' hours',DS=h=>h<=1?'Quick top-up':h<=2?'Standard':h<=4?'Long session':'Extended';
+window.durIn=v=>{S.dur=+v;$('.dt').style.setProperty('--f',(S.dur-.5)/5.5);$('#dl').textContent=DL(S.dur);const s=$('#ds'),mx=S.dur>=6;s.textContent=mx?'Longest rental · charges apply per hour':DS(S.dur);s.classList.toggle('mx',mx)};
+addEventListener('pointerdown',e=>{if(e.target.id=='du')$('#dc').classList.add('on')});addEventListener('pointerup',()=>{const d=$('#dc');if(d)d.classList.remove('on')});
+const stp=()=>{const n=!S.pay?1:S.pay.paid?3:2;return`<ol class="stp" aria-label="Rental progress">${['Choose','Pay','PIN'].map((x,i)=>`<li class="${i+1==n?'on':i+1<n?'dn':''}"${i+1==n?' aria-current="step"':''}><b>${i+1<n?'✓':i+1}</b>${x}</li>${i<2?'<i></i>':''}`).join('')}</ol>`};
+KB[0][1]='After you pay on the Rent page, your PIN appears there and in My rentals. Enter it at the station kiosk.';KB.unshift([/pay|upi|qr|charged/,'Scan the QR on the Pay step. It confirms automatically after a few seconds, or tap I’ve paid. If you were charged but got no PIN, file a complaint from Help or My rentals.']);
+const hs=(x,u)=>{const m=$('#hm');m.insertAdjacentHTML('beforeend','<div class="m'+(u?' u':'')+'"></div>');m.lastChild.textContent=x;m.scrollTop=1e5};
+window.hask=x=>{x=x.trim();if(!x)return;$('#hi').value='';hs(x,1);const h=KB.find(k=>k[0].test(x.toLowerCase()));setTimeout(()=>hs(h?h[1]:'I am not sure. Please file a complaint or contact management.'),400)};
+PG['app-help']=()=>`<div class="wrap" id="hp"><span class="k">Support</span><h1 tabindex="-1">Help</h1><div class="grid"><div class="card" style="grid-column:1/-1"><h3>Ask Lumi</h3><div id="hm" class="hm"><div class="m">Hi, I am Lumi. Ask me about payment, PINs, bank types or returns.</div></div><div>${['Why no PIN after paying?','How long can I rent?','Which bank fits my laptop?'].map(x=>`<button class="chip" onclick="hask('${x}')">${x}</button>`).join(' ')}</div><input id="hi" aria-label="Message Lumi" placeholder="Type your question and press Enter" style="width:100%;margin-top:10px" onkeydown="if(event.key=='Enter')hask(this.value)"></div><div class="card"><h3>FAQ</h3><details><summary>How does renting work?</summary><p>Choose a bank and duration, pay by QR, then enter your PIN at the station kiosk.</p></details><details><summary>Charged but no PIN?</summary><p>File a complaint with the transaction ID from My rentals.</p></details><details><summary>How long can I rent?</summary><p>From 30 minutes to 6 hours.</p></details><details><summary>What if I return late?</summary><p>Late rules will be announced with pricing.</p></details><details><summary>Which bank fits my laptop?</summary><p>Grove Laptop for laptops only, Grove Fast for a laptop and phone together.</p></details></div><div class="card"><h3>Something wrong?</h3><p>Tell us about a stuck lock, a bank that is not charging, or a wrong amount.</p><button class="btn" onclick="cmp()">File a complaint</button></div><div class="card"><h3>Contact management</h3><p>Phone: to be added<br>Email: to be added<br>Office hours: to be added</p></div></div></div>`;
 document.documentElement.dataset.t=S.th;addEventListener('hashchange',()=>go());go(1);
 </script>
 </body>
