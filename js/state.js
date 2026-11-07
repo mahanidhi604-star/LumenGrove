@@ -30,7 +30,11 @@ const S = {
   ],
   pay: null,
   vf: 'all',
-  vq: ''
+  vq: '',
+  authStep: 'email',
+  authEmail: '',
+  tempName: '',
+  tempPhone: ''
 };
 
 try {

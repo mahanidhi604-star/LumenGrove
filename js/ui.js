@@ -181,17 +181,21 @@ const PG = {
       .map(a => `<a class="card tile" href="#${a[0]}"><span class="k">${a[1]}</span><p>${a[2]}</p></a>`)
       .join('')}</div></div>`,
 
-  signin: () =>
-    `<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t(
+  signin: () => {
+    if (S.authStep === 'otp') {
+      return `<div class="wrap" style="max-width:520px"><span class="k">Verification</span><h1 tabindex="-1">Enter code</h1><p>We sent a 6-digit verification code to <b>${S.authEmail}</b>.</p><label for="otp">Verification code</label><input id="otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;font-size:24px;letter-spacing:6px;text-align:center"><div class="err" id="e1"></div><p style="margin-top:16px"><button class="btn" onclick="verifyStudentOtp()">Verify & Sign In</button> <button class="btn g" onclick="resendOtp()">Resend</button></p><p style="margin-top:12px"><a href="javascript:void(0)" onclick="S.authStep='email';go(1)">Use a different email</a></p></div>`;
+    }
+    return `<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t(
       'si'
-    )}</h1><label for="nm">Full name</label><input id="nm" autocomplete="name" style="width:100%"><label for="em">RVCE email</label><input id="em" type="email" placeholder="name@rvce.edu.in" style="width:100%"><label for="ph">Contact phone (for management queries)</label><input id="ph" type="tel" placeholder="+91XXXXXXXXXX" style="width:100%"><div class="err" id="e1"></div><p><button class="btn" onclick="sIn()">${t(
+    )}</h1><label for="nm">Full name</label><input id="nm" autocomplete="name" style="width:100%" value="${S.tempName || ''}"><label for="em">RVCE email</label><input id="em" type="email" placeholder="name@rvce.edu.in" style="width:100%" value="${S.authEmail || ''}"><label for="ph">Contact phone (for management queries)</label><input id="ph" type="tel" placeholder="+91XXXXXXXXXX" style="width:100%" value="${S.tempPhone || ''}"><div class="err" id="e1"></div><p style="margin-top:16px"><button class="btn" onclick="sendStudentOtp()">${t(
       'si'
-    )}</button> <button class="btn g" onclick="login('guest')">${t(
+    )}</button> <button class="btn g" onclick="continueAsGuest()">${t(
       'guest'
-    )}</button></p><p class="badge">Demo only</p><p><button class="btn g" onclick="login('student')">Demo student</button></p></div>`,
+    )}</button></p></div>`;
+  },
 
   'admin-login': () =>
-    `<div class="wrap" style="max-width:520px"><span class="k">Staff only</span><h1 tabindex="-1">Admin sign in</h1><p>Demo accounts, replaced by Supabase later.</p><p><button class="btn" onclick="login('super')">Super admin</button> <button class="btn g" onclick="login('tech')">Technician</button></p></div>`,
+    `<div class="wrap" style="max-width:520px"><span class="k">Staff only</span><h1 tabindex="-1">Staff sign in</h1><p>Authorized RVCE LumenGrove administrators and field technicians.</p><label for="adm_em">Staff email</label><input id="adm_em" type="email" placeholder="staff@example.com" autocomplete="username" style="width:100%"><label for="adm_pw">Password</label><input id="adm_pw" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%"><div class="err" id="adm_err"></div><p style="margin-top:16px"><button class="btn" onclick="staffSignIn()">Sign in to Console</button> <a class="btn g" href="#home">Back to site</a></p></div>`,
 
   'app-stations': () =>
     `<div class="wrap"><h1 tabindex="-1">${t(
