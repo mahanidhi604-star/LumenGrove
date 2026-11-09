@@ -1224,3 +1224,13 @@ VALUES
   ('library', 'return_failed', 'warning', '{"slot": 2, "message": "Return check failed, Library slot 2"}'::jsonb);
 
 
+
+-- 7. SEED STAFF ALLOWLIST (Super Admin & Technicians)
+INSERT INTO public.staff_allowlist (email, role, notes)
+VALUES
+  ('admin@rvce.edu.in', 'super_admin', 'RVCE System Administrator'),
+  ('mahanidhi604@gmail.com', 'super_admin', 'Project Owner & Super Admin'),
+  ('tech@service.in', 'technician', 'Campus Field Technician')
+ON CONFLICT (email) DO UPDATE
+SET role = EXCLUDED.role,
+    notes = EXCLUDED.notes;

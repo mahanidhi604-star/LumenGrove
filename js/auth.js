@@ -15,7 +15,7 @@ if (
         flowType: 'pkce',
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: false
       }
     });
     console.log('LumenGrove: Supabase PKCE Auth client initialized.');
@@ -60,7 +60,18 @@ async function loadProfile(userId) {
 
 // 2. Sign In With Google (PKCE Flow with official branding hints)
 window.signInWithGoogle = async (targetHash) => {
-  const destination = targetHash || location.hash || '#app-home';
+  const isAdmin = targetHash === '#admin' || (location.hash && location.hash.includes('admin'));
+  let destination = targetHash;
+  if (!destination) {
+    const saved = sessionStorage.getItem('lg_redirect_hash');
+    if (saved && saved !== '#signin' && saved !== '#admin-login') {
+      destination = saved;
+    } else {
+      const cur = location.hash;
+      destination = (cur && cur !== '#signin' && cur !== '#admin-login') ? cur : (isAdmin ? '#admin' : '#app-home');
+    }
+  }
+
   try {
     sessionStorage.setItem('lg_redirect_hash', destination);
   } catch (e) {}
@@ -82,28 +93,35 @@ window.signInWithGoogle = async (targetHash) => {
 
   if (window.supabaseClient) {
     try {
-      const redirectUrl = window.location.origin + window.location.pathname;
+      const redirectUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/');
+      const queryParams = {
+        prompt: 'select_account'
+      };
+      // Staff sign-in must NOT send hd hint (allowlisted staff may have external email domains)
+      // For student login in production environments, send hd=rvce.edu.in
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isAdmin && !isLocalhost) {
+        queryParams.hd = 'rvce.edu.in';
+      }
+
       const { error } = await window.supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          queryParams: {
-            hd: 'rvce.edu.in',
-            prompt: 'select_account'
-          }
+          queryParams: queryParams
         }
       });
       if (error) {
         resetBtn();
-        showAuthError(error.message);
+        showAuthError(error.message, isAdmin);
       }
     } catch (err) {
       resetBtn();
-      showAuthError(err.message || 'Error communicating with Google Auth.');
+      showAuthError(err.message || 'Error communicating with Google Auth.', isAdmin);
     }
   } else {
     resetBtn();
-    showAuthError('Supabase is not configured yet. You can test using "Demo student" or "Continue as guest".');
+    showAuthError('Supabase is not configured yet. You can test using "Demo student" or "Continue as guest".', isAdmin);
   }
 };
 
@@ -212,13 +230,13 @@ window.exitDemo = () => {
 };
 
 // 7. Surface friendly auth error messages
-function showAuthError(msg) {
-  S.authError = msg;
-  const el = $('#auth_err');
-  if (el) {
-    el.textContent = msg;
-    el.style.display = 'block';
+function showAuthError(msg, isAdmin) {
+  if (isAdmin || (location.hash && location.hash.includes('admin'))) {
+    S.adminError = msg;
+  } else {
+    S.authError = msg;
   }
+  if (typeof go === 'function') go(1);
 }
 
 // 8. Process PKCE Return, Code Exchange, and OAuth Rejections
@@ -228,23 +246,32 @@ function showAuthError(msg) {
   const errorDesc = urlParams.get('error_description');
   const codeParam = urlParams.get('code');
 
+  const savedHash = sessionStorage.getItem('lg_redirect_hash') || '';
+  const isAdminTarget = savedHash.startsWith('#admin') || (location.hash && location.hash.includes('admin'));
+
   // Check for server-side rejection or OAuth error
   if (errorParam || errorDesc) {
     let friendlyMessage = 'Please use your @rvce.edu.in Google account.';
-    if (errorDesc && errorDesc.toLowerCase().includes('database error')) {
-      friendlyMessage = 'Please use your @rvce.edu.in Google account.';
-    } else if (errorParam === 'access_denied') {
-      friendlyMessage = 'Sign in was cancelled. Please choose your @rvce.edu.in Google account.';
-    }
-    S.authError = friendlyMessage;
-
-    // Clean query parameters from URL without losing current hash
-    const cleanUrl = window.location.pathname + (window.location.hash || '#signin');
-    window.history.replaceState(null, '', cleanUrl);
-
-    if (location.hash !== '#signin') {
+    if (isAdminTarget) {
+      friendlyMessage = errorParam === 'access_denied'
+        ? 'Sign in was cancelled. Please choose an authorized staff account.'
+        : 'Access Denied: Staff authorization required (' + (errorDesc || errorParam) + ').';
+      S.adminError = friendlyMessage;
+      location.hash = 'admin-login';
+    } else {
+      if (errorParam === 'access_denied') {
+        friendlyMessage = 'Sign in was cancelled. Please choose your @rvce.edu.in Google account.';
+      } else if (errorDesc && errorDesc.toLowerCase().includes('database error')) {
+        friendlyMessage = 'Registration restricted: Only official @rvce.edu.in student accounts and authorized staff are permitted.';
+      }
+      S.authError = friendlyMessage;
       location.hash = 'signin';
     }
+
+    // Clean query parameters from URL without losing current hash
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/') + location.hash;
+    window.history.replaceState(null, '', cleanUrl);
+
     if (typeof go === 'function') go(1);
     return;
   }
@@ -254,23 +281,47 @@ function showAuthError(msg) {
     try {
       const { data, error } = await window.supabaseClient.auth.exchangeCodeForSession(codeParam);
       if (error) {
-        showAuthError('Please use your @rvce.edu.in Google account.');
+        if (isAdminTarget) {
+          S.adminError = 'Staff sign-in error: ' + error.message;
+        } else {
+          S.authError = 'Please use your @rvce.edu.in Google account.';
+        }
       } else if (data && data.user) {
         await loadProfile(data.user.id);
       }
     } catch (e) {
-      showAuthError('Authentication error. Please try again.');
+      if (isAdminTarget) {
+        S.adminError = 'Authentication error. Please try again.';
+      } else {
+        S.authError = 'Authentication error. Please try again.';
+      }
+    }
+
+    // Determine target hash
+    let target = savedHash || '#app-home';
+    if (target === '#signin' || target === '#admin-login') {
+      target = isAdminTarget ? '#admin' : '#app-home';
+    }
+
+    if (isAdminTarget) {
+      sessionStorage.removeItem('lg_redirect_hash');
+      if (!S.u || (S.u.role !== 'super_admin' && S.u.role !== 'technician')) {
+        S.adminError = `Access Denied: ${S.u?.email || 'This account'} does not possess staff privileges.`;
+        target = '#admin-login';
+      } else {
+        target = '#admin';
+      }
+    } else {
+      // If student needs profile completion (phone number), navigate to #signin
+      if (S.needsProfile) {
+        target = '#signin';
+      } else {
+        sessionStorage.removeItem('lg_redirect_hash');
+      }
     }
 
     // Clean query string from address bar
-    const savedHash = sessionStorage.getItem('lg_redirect_hash') || '#app-home';
-    sessionStorage.removeItem('lg_redirect_hash');
-    let target = savedHash;
-    if (savedHash.startsWith('#admin') && (!S.u || (S.u.role !== 'super_admin' && S.u.role !== 'technician'))) {
-      S.adminError = 'Access Denied: This Google account does not possess staff privileges.';
-      target = '#admin-login';
-    }
-    const cleanUrl = window.location.pathname + target;
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/') + target;
     window.history.replaceState(null, '', cleanUrl);
     location.hash = target.replace('#', '');
     if (typeof go === 'function') go(1);
@@ -283,6 +334,10 @@ function showAuthError(msg) {
       const { data: { session } } = await window.supabaseClient.auth.getSession();
       if (session && session.user) {
         await loadProfile(session.user.id);
+        // If already signed in with a valid profile and currently on #signin, redirect to #app-home
+        if (location.hash === '#signin' && S.u && !S.needsProfile) {
+          location.hash = 'app-home';
+        }
       }
       window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (session && session.user) {

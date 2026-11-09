@@ -29,7 +29,7 @@ const qr = id => {
 
 const sol = () => `<span class="badge sol">Solar now · 38 W</span>`;
 
-const need = `<section class="wrap"><h1 tabindex="-1">Sign in to rent</h1><p>Guests can browse stations. Renting needs a student account.</p><a class="btn" href="#signin">Sign in</a></section>`;
+const need = `<section class="wrap"><h1 tabindex="-1">Sign in to rent</h1><p>Guests can browse stations. Renting needs a student account.</p><a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash',location.hash)">Sign in</a></section>`;
 
 const stn = s =>
   `<a class="card tile" href="#app-station-${s.id}"><span class="k">${free(s.id)}/10 free</span><h3>${s.n}</h3>${sol()}</a>`;
@@ -225,7 +225,7 @@ const PG = {
     )}</h1><div class="grid"><div class="card"><h3>Profile</h3><p>${P}</p>${
       u
         ? `<button class="btn g" onclick="signOut()">Sign out</button>`
-        : `<a class="btn" href="#signin">${t('si')}</a>`
+        : `<a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-settings')">${t('si')}</a>`
     }</div><div class="card"><h3>Language</h3>${[
       ['en', 'English'],
       ['kn', 'ಕನ್ನಡ'],
@@ -301,7 +301,7 @@ const PG = {
         .join(''),
       hero = `<div class="card s4 hero2" style="--i:0"><svg class="dc" viewBox="0 0 200 200" style="right:60px;top:-40px;width:260px" aria-hidden="true"><circle cx="100" cy="100" r="62" fill="var(--ac)" opacity=".9"/><circle class="spin" cx="100" cy="100" r="84" fill="none" stroke="var(--fg)" stroke-width="12" stroke-dasharray="9 7"/><g fill="none" stroke="var(--fg)" stroke-width="1.2"><circle cx="100" cy="100" r="40"/><ellipse cx="100" cy="100" rx="16" ry="40"/><ellipse cx="100" cy="100" rx="32" ry="40"/><path d="M60 100h80"/></g></svg><span class="vt" aria-hidden="true">SOLARPUNK</span><span class="k">LumenGrove · Plug In</span><h1 tabindex="-1">${g}${n}</h1><span class="tag">Future is solar-charged.</span> ${sol()}<svg viewBox="0 0 182 26" width="182" height="26" style="display:block;margin-top:18px" aria-hidden="true">${bc}</svg></div>`,
       prim = !stu()
-        ? `<span class="k">Welcome</span><h2>Sign in to charge up</h2><p>Browse stations as a guest, or sign in with your RVCE email to rent a power bank.</p><a class="btn" href="#signin">${t(
+        ? `<span class="k">Welcome</span><h2>Sign in to charge up</h2><p>Browse stations as a guest, or sign in with your RVCE email to rent a power bank.</p><a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-home')">${t(
             'si'
           )}</a><p style="margin-top:16px">Best station right now: <b>${b.n}</b> (${dist(b)} m)</p>`
         : r && r.started
