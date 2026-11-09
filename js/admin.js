@@ -47,11 +47,23 @@ window.tg = id => {
 };
 
 function admin() {
-  const a = S.u && (S.u.role == 'super' || S.u.role == 'tech');
-  if (!a) return PG['admin-login']();
-  const sup = S.u.role == 'super',
+  const isStaff = S.u && (S.u.role === 'super_admin' || S.u.role === 'technician');
+  if (!isStaff) {
+    S.adminError = 'Staff session required. Please sign in with an authorized Google account.';
+    location.hash = 'admin-login';
+    return PG['admin-login']();
+  }
+  const sup = S.u.role === 'super_admin',
     hrs = [2, 1, 1, 1, 2, 3, 5, 8, 9, 7, 6, 6, 7, 6, 5, 6, 8, 9, 7, 5, 4, 3, 2, 2];
-  return `<div class="wrap"><span class="k">${sup ? 'Super admin' : 'Technician'}</span><h1 tabindex="-1">Fleet</h1><div class="grid"><div class="card"><div class="num">${ST.length}</div>stations</div><div class="card"><div class="num">${ST.reduce(
+  return `<div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:14px 18px;background:var(--card);border:1.5px solid var(--fg);box-shadow:4px 4px 0 var(--ac);border-radius:6px">
+      <div>
+        <span class="k" style="font-size:1.15rem">${sup ? 'Super admin' : 'Technician'}</span>
+        <div style="font-size:.9rem;color:var(--mut)">Signed in as <b>${S.u.name || S.u.email}</b> (${S.u.email})</div>
+      </div>
+      <button class="btn g" onclick="signOut()" style="min-height:38px;padding:6px 16px">Sign out</button>
+    </div>
+    <h1 tabindex="-1">Fleet</h1><div class="grid"><div class="card"><div class="num">${ST.length}</div>stations</div><div class="card"><div class="num">${ST.reduce(
     (a, s) => a + free(s.id),
     0
   )}</div>banks ready</div><div class="card"><div class="num">${sol().replace(
@@ -63,18 +75,22 @@ function admin() {
     .map((v, i) => `<b title="${i}:00" style="opacity:${0.2 + v / 10}">${i}</b>`)
     .join('')}</div>
   <h2 style="margin-top:32px">Security events</h2><table><tr><td>09:12</td><td>Vibration at Big Mingoes slot 4</td></tr><tr><td>11:40</td><td>Return check failed, Library slot 2</td></tr></table><h2 style="margin-top:32px">Service queue</h2><table><tr><td>Bank #7 · M.M Foods</td><td>Low health</td></tr><tr><td>Lock · Library slot 9</td><td>Sticking</td></tr></table>
-  <p><button class="btn g" onclick="toast('CSV export needs the backend')">Export logs (CSV)</button></p>${
+  ${
     sup
-      ? `<h2 style="margin-top:32px">Pricing rules</h2><div class="card"><label for="pr">Hourly rate (₹)</label><input id="pr" type="number" value="${
-          PR.rate
-        }" oninput="PR.rate=this.value;bill()"><label for="pg">Grace period (min)</label><input id="pg" type="number" value="${
-          PR.grace
-        }" oninput="PR.grace=this.value"><label for="pl">Late fee (₹)</label><input id="pl" type="number" value="${
-          PR.late
-        }" oninput="PR.late=this.value"><label for="pd">Deposit (₹)</label><input id="pd" type="number" value="${
-          PR.dep
-        }" oninput="PR.dep=this.value"><p>Bill preview, 2 h rental: <b id="bl">—</b></p></div>`
-      : ''
+      ? `<p style="margin-top:20px"><button class="btn g" onclick="toast('CSV export needs the backend')">Export logs (CSV)</button></p>
+         <h2 style="margin-top:32px">Pricing rules</h2><div class="card"><label for="pr">Hourly rate (₹)</label><input id="pr" type="number" value="${
+           PR.rate
+         }" oninput="PR.rate=this.value;bill()"><label for="pg">Grace period (min)</label><input id="pg" type="number" value="${
+           PR.grace
+         }" oninput="PR.grace=this.value"><label for="pl">Late fee (₹)</label><input id="pl" type="number" value="${
+           PR.late
+         }" oninput="PR.late=this.value"><label for="pd">Deposit (₹)</label><input id="pd" type="number" value="${
+           PR.dep
+         }" oninput="PR.dep=this.value"><p>Bill preview, 2 h rental: <b id="bl">—</b></p></div>`
+      : `<div class="card" style="margin-top:32px">
+           <span class="k">Pricing & Policy</span>
+           <p><i>${t('not_permitted')}</i></p>
+         </div>`
   }</div>`;
 }
 

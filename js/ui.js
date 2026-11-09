@@ -182,20 +182,26 @@ const PG = {
       .join('')}</div></div>`,
 
   signin: () => {
-    if (S.authStep === 'otp') {
-      return `<div class="wrap" style="max-width:520px"><span class="k">Verification</span><h1 tabindex="-1">Enter code</h1><p>We sent a 6-digit verification code to <b>${S.authEmail}</b>.</p><label for="otp">Verification code</label><input id="otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;font-size:24px;letter-spacing:6px;text-align:center"><div class="err" id="e1"></div><p style="margin-top:16px"><button class="btn" onclick="verifyStudentOtp()">Verify & Sign In</button> <button class="btn g" onclick="resendOtp()">Resend</button></p><p style="margin-top:12px"><a href="javascript:void(0)" onclick="S.authStep='email';go(1)">Use a different email</a></p></div>`;
+    if (S.needsProfile && S.u) {
+      return `<div class="wrap" style="max-width:520px"><span class="k">Welcome to LumenGrove</span><h1 tabindex="-1">Complete your profile</h1><p>To rent solar power banks on campus, please confirm your full name and contact phone number.</p><label for="prof_name">Full name</label><input id="prof_name" type="text" autocomplete="name" style="width:100%" value="${S.u.name || ''}"><label for="prof_phone">Contact phone (10-digit mobile)</label><input id="prof_phone" type="tel" placeholder="+919876543210" style="width:100%" value="${S.u.phone || ''}"><div class="err" id="prof_err" role="alert" aria-live="polite"></div><p style="margin-top:20px"><button class="btn" onclick="completeProfile()">Save and Continue</button></p></div>`;
     }
-    return `<div class="wrap" style="max-width:520px"><h1 tabindex="-1">${t(
+    return `<div class="wrap" style="max-width:520px"><span class="k">RVCE Campus Portal</span><h1 tabindex="-1">${t(
       'si'
-    )}</h1><label for="nm">Full name</label><input id="nm" autocomplete="name" style="width:100%" value="${S.tempName || ''}"><label for="em">RVCE email</label><input id="em" type="email" placeholder="name@rvce.edu.in" style="width:100%" value="${S.authEmail || ''}"><label for="ph">Contact phone (for management queries)</label><input id="ph" type="tel" placeholder="+91XXXXXXXXXX" style="width:100%" value="${S.tempPhone || ''}"><div class="err" id="e1"></div><p style="margin-top:16px"><button class="btn" onclick="sendStudentOtp()">${t(
-      'si'
-    )}</button> <button class="btn g" onclick="continueAsGuest()">${t(
+    )}</h1><p>Sign in with your official RVCE student Google account (<b>@rvce.edu.in</b>) to rent solar power banks.</p>${
+      S.authError ? `<div class="err-box" role="alert" aria-live="polite">${S.authError}</div>` : ''
+    }<p style="margin-top:20px"><button class="btn-google" onclick="signInWithGoogle()" aria-label="Sign in with Google"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span></button></p><p style="margin-top:16px"><button class="btn g" onclick="continueAsGuest()">${t(
       'guest'
-    )}</button></p></div>`;
+    )}</button></p>${
+      window.ENABLE_DEMO
+        ? `<div class="demo-box"><span class="k">Demo simulation</span><p style="margin:4px 0 12px;font-size:.85rem">Explore the full rental workflow locally without connecting to live Supabase backend.</p><button class="btn g" onclick="loginDemoStudent()">Demo student</button></div>`
+        : ''
+    }</div>`;
   },
 
   'admin-login': () =>
-    `<div class="wrap" style="max-width:520px"><span class="k">Staff only</span><h1 tabindex="-1">Staff sign in</h1><p>Authorized RVCE LumenGrove administrators and field technicians.</p><label for="adm_em">Staff email</label><input id="adm_em" type="email" placeholder="staff@example.com" autocomplete="username" style="width:100%"><label for="adm_pw">Password</label><input id="adm_pw" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%"><div class="err" id="adm_err"></div><p style="margin-top:16px"><button class="btn" onclick="staffSignIn()">Sign in to Console</button> <a class="btn g" href="#home">Back to site</a></p></div>`,
+    `<div class="wrap" style="max-width:520px"><span class="k">Internal Operations</span><h1 tabindex="-1">Staff sign in</h1><p>Authorized RVCE LumenGrove administrators and field technicians.</p>${
+      S.adminError ? `<div class="err-box" role="alert" aria-live="polite">${S.adminError}</div>` : ''
+    }<p style="margin-top:24px"><button class="btn-google" onclick="signInWithGoogle('#admin')" aria-label="Sign in with Google"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span></button></p><p style="margin-top:16px"><a class="btn g" href="#home">Back to site</a></p></div>`,
 
   'app-stations': () =>
     `<div class="wrap"><h1 tabindex="-1">${t(
@@ -381,9 +387,12 @@ function hdr(h) {
       ['app-rentals', t('rentals')],
       ['app-settings', t('me')],
       ['app-help', 'Help']
-    ];
+    ],
+    demoBanner = S.isDemo
+      ? `<div class="demo-banner" role="status"><span>Demo mode. Nothing here is real.</span><button onclick="exitDemo()">Exit demo</button></div>`
+      : '';
   document.body.className = app || ad ? 'ap' : '';
-  $('#hd').innerHTML = `<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main">${
+  $('#hd').innerHTML = `${demoBanner}<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main">${
     app || ad
       ? `<div class="sw"><a href="#home">Explore</a><a href="#app-home" class="on">Plug In</a></div>` +
         ap.map(a => `<a href="#${a[0]}" class="${h == a[0] ? 'on' : ''}">${a[1]}</a>`).join('')

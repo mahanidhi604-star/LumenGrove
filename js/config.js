@@ -1,27 +1,10 @@
-// js/config.js - Public Supabase Configuration and Client Factory
-// Only public anon key and project URL are permitted in client code.
-// Secrets belong strictly in server functions / environment variables.
+// js/config.js - Public Supabase Configuration and Feature Flags
+// Only public anon key, project URL, and client feature flags belong here.
+// NEVER put Google client secrets or the service role key in repository code.
 
-window.SUPABASE_URL = window.SUPABASE_URL || 'https://[YOUR_SUPABASE_PROJECT_ID].supabase.co';
-window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '[YOUR_SUPABASE_ANON_KEY]';
+window.SUPABASE_URL = window.SUPABASE_URL || 'https://jbwwlyebmpamangwlgog.supabase.co';
+window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'sb_publishable_kX0xur9mOPSfjhFQlvuvyA_9t2GJv7t';
 
-// Initialize Supabase Client if credentials are provided and library is present
-window.supabaseClient = null;
-if (
-  typeof window.supabase !== 'undefined' &&
-  window.SUPABASE_URL &&
-  !window.SUPABASE_URL.includes('[YOUR_SUPABASE_PROJECT_ID]')
-) {
-  try {
-    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      }
-    });
-    console.log('LumenGrove: Connected to Supabase Auth.');
-  } catch (err) {
-    console.warn('LumenGrove: Supabase client initialization error:', err);
-  }
-}
+// Feature Flag: Enable/disable demo student client simulation
+// When set to false, all demo buttons and demo code paths are completely hidden/disabled.
+window.ENABLE_DEMO = true;
