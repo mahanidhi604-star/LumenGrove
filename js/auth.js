@@ -79,15 +79,17 @@ window.signInWithGoogle = async (targetHash) => {
   const btn = $('.btn-google');
   if (btn) {
     btn.disabled = true;
-    btn.style.opacity = '0.7';
-    btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px">⌛</span> Connecting to Google...`;
+    btn.setAttribute('aria-busy', 'true');
+    btn.style.opacity = '0.75';
+    btn.innerHTML = `<span class="auth-btn-spinner" aria-hidden="true"></span> <span>${t('opening_google')}</span>`;
   }
 
   const resetBtn = () => {
     if (btn) {
       btn.disabled = false;
+      btn.removeAttribute('aria-busy');
       btn.style.opacity = '1';
-      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span>`;
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>${t('google_signin')}</span>`;
     }
   };
 
@@ -117,11 +119,16 @@ window.signInWithGoogle = async (targetHash) => {
       }
     } catch (err) {
       resetBtn();
-      showAuthError(err.message || 'Error communicating with Google Auth.', isAdmin);
+      showAuthError(err.message || 'Unable to connect to Google Auth.', isAdmin);
     }
   } else {
     resetBtn();
-    showAuthError('Supabase is not configured yet. You can test using "Demo student" or "Continue as guest".', isAdmin);
+    const isDev = window.ENABLE_DEMO || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDev) {
+      showAuthError(t('dev_note_text'), isAdmin, true);
+    } else {
+      showAuthError(t('auth_unavailable'), isAdmin);
+    }
   }
 };
 
@@ -206,7 +213,7 @@ window.continueAsGuest = () => {
   go();
 };
 
-// 6. Safe Demo Student Simulation (Isolated in-memory simulation, never gets a real JWT)
+// 6. Safe Demo Student & Staff Simulation (Isolated in-memory simulation, never gets a real JWT)
 window.loginDemoStudent = () => {
   if (!window.ENABLE_DEMO) return;
 
@@ -225,16 +232,44 @@ window.loginDemoStudent = () => {
   go(1);
 };
 
+window.loginDemoStaff = (role) => {
+  if (!window.ENABLE_DEMO) return;
+  const isSuper = role === 'super_admin';
+  S.u = {
+    id: isSuper ? 'demo-super-sim' : 'demo-tech-sim',
+    role: isSuper ? 'super_admin' : 'technician',
+    name: isSuper ? 'Demo Super Admin' : 'Demo Field Technician',
+    email: isSuper ? 'admin@rvce.edu.in' : 'tech@service.in',
+    phone: '+919876543210'
+  };
+  S.isDemo = true;
+  S.needsProfile = false;
+  sv('lg_user', JSON.stringify(S.u));
+  toast(`Entered demo ${isSuper ? 'super admin' : 'technician'} mode`);
+  location.hash = 'admin';
+  go(1);
+};
+
 window.exitDemo = () => {
   window.signOut();
 };
 
-// 7. Surface friendly auth error messages
-function showAuthError(msg, isAdmin) {
+window.escapeHtml = str => (str == null ? '' : String(str)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;'));
+
+// 7. Surface friendly auth error messages from fixed whitelist
+function showAuthError(msg, isAdmin, isDevNote) {
+  const safeMsg = escapeHtml(msg);
   if (isAdmin || (location.hash && location.hash.includes('admin'))) {
-    S.adminError = msg;
+    S.adminError = safeMsg;
+    S.adminIsDevNote = !!isDevNote;
   } else {
-    S.authError = msg;
+    S.authError = safeMsg;
+    S.authIsDevNote = !!isDevNote;
   }
   if (typeof go === 'function') go(1);
 }
@@ -255,16 +290,18 @@ function showAuthError(msg, isAdmin) {
     if (isAdminTarget) {
       friendlyMessage = errorParam === 'access_denied'
         ? 'Sign in was cancelled. Please choose an authorized staff account.'
-        : 'Access Denied: Staff authorization required (' + (errorDesc || errorParam) + ').';
+        : 'Access Denied: Staff authorization required.';
       S.adminError = friendlyMessage;
+      S.adminIsDevNote = false;
       location.hash = 'admin-login';
     } else {
       if (errorParam === 'access_denied') {
         friendlyMessage = 'Sign in was cancelled. Please choose your @rvce.edu.in Google account.';
       } else if (errorDesc && errorDesc.toLowerCase().includes('database error')) {
-        friendlyMessage = 'Registration restricted: Only official @rvce.edu.in student accounts and authorized staff are permitted.';
+        friendlyMessage = 'Please use your @rvce.edu.in Google account.';
       }
       S.authError = friendlyMessage;
+      S.authIsDevNote = false;
       location.hash = 'signin';
     }
 

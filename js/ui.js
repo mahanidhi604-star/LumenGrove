@@ -132,6 +132,194 @@ window.hask = x => {
   setTimeout(() => hs(h ? h[1] : 'I am not sure. Please file a complaint or contact management.'), 400);
 };
 
+// --- Solarpunk Auth Poster Collages & Banners ---
+function renderAuthBanner(errorMsg, isDevNote) {
+  if (!errorMsg) return '';
+  if (isDevNote) {
+    return `<div class="auth-dev-note" role="note"><span class="k">${t('dev_note_title')}</span><p>${window.escapeHtml ? window.escapeHtml(errorMsg) : errorMsg}</p></div>`;
+  }
+  return `<div class="err-box auth-banner err" role="alert" aria-live="polite">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span>${window.escapeHtml ? window.escapeHtml(errorMsg) : errorMsg}</span>
+  </div>`;
+}
+
+function renderStudentCollage() {
+  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solarpunk poster artwork">
+    <defs>
+      <radialGradient id="sunGlow" cx="65%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="var(--ac)" stop-opacity="1"/>
+        <stop offset="45%" stop-color="#f5b73b" stop-opacity="0.85"/>
+        <stop offset="75%" stop-color="var(--ac)" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="var(--ac)" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1" fill="var(--fg)" opacity="0.18"/>
+      </pattern>
+      <pattern id="diagHatch" width="12" height="12" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="0" x2="0" y2="12" stroke="var(--fg)" stroke-width="1.2" opacity="0.15"/>
+      </pattern>
+    </defs>
+    <rect width="400" height="540" fill="url(#dotGrid)"/>
+    <g stroke="var(--fg)" stroke-width="1.2" opacity="0.45">
+      <line x1="16" y1="24" x2="32" y2="24"/><line x1="24" y1="16" x2="24" y2="32"/>
+      <line x1="368" y1="24" x2="384" y2="24"/><line x1="376" y1="16" x2="376" y2="32"/>
+      <line x1="16" y1="516" x2="32" y2="516"/><line x1="24" y1="508" x2="24" y2="524"/>
+      <line x1="368" y1="516" x2="384" y2="516"/><line x1="376" y1="508" x2="376" y2="524"/>
+      <circle cx="200" cy="24" r="3" fill="var(--fg)"/>
+    </g>
+    <g transform="translate(24, 28)" opacity="0.55" fill="var(--fg)" font-family="'Barlow Condensed', monospace" font-size="7.5" letter-spacing="0.12em">
+      <text x="0" y="8">01 02 03 04 05 06 07 08 09 10</text>
+      <text x="0" y="18">11 12 13 14 15 16 17 18 19 20</text>
+      <text x="0" y="28">21 22 23 24 25 26 27 28 29 30</text>
+      <rect x="-2" y="-2" width="138" height="34" fill="none" stroke="var(--fg)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    </g>
+    <g class="auth-sun-breathe">
+      <circle cx="280" cy="150" r="125" fill="url(#sunGlow)"/>
+      <circle cx="280" cy="150" r="95" fill="var(--ac)" opacity="0.88"/>
+      <circle cx="280" cy="150" r="115" fill="none" stroke="var(--fg)" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    </g>
+    <g class="auth-gear-spin" style="transform-origin: 280px 150px">
+      <circle cx="280" cy="150" r="140" fill="none" stroke="var(--ac2)" stroke-width="2.5" stroke-dasharray="14 8" opacity="0.75"/>
+      <circle cx="280" cy="150" r="75" fill="none" stroke="var(--fg)" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.4"/>
+      <line x1="280" y1="8" x2="280" y2="32" stroke="var(--ac2)" stroke-width="3"/>
+      <line x1="280" y1="268" x2="280" y2="292" stroke="var(--ac2)" stroke-width="3"/>
+      <line x1="138" y1="150" x2="162" y2="150" stroke="var(--ac2)" stroke-width="3"/>
+      <line x1="398" y1="150" x2="422" y2="150" stroke="var(--ac2)" stroke-width="3"/>
+    </g>
+    <rect x="24" y="160" width="60" height="90" fill="url(#diagHatch)" stroke="var(--fg)" stroke-width="1.2"/>
+    <g transform="translate(85, 195)">
+      <rect x="0" y="0" width="220" height="64" fill="#0b0b0c" stroke="var(--fg)" stroke-width="1.5"/>
+      <text x="12" y="26" fill="#f5f5f0" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="16" letter-spacing="0.06em">FUTURE IS SOLAR-CHARGED.</text>
+      <text x="12" y="48" fill="var(--ac)" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="14" letter-spacing="0.08em">SOLARPUNK CAMPUS · RVCE</text>
+    </g>
+    <g transform="translate(140, 395)" class="auth-drift">
+      <path d="M0 -65 L12 -28 L0 0 L-12 -28 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M46 -46 L20 -10 L0 0 L10 -20 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M65 0 L28 12 L0 0 L28 -12 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M46 46 L10 20 L0 0 L20 10 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M0 65 L-12 28 L0 0 L12 28 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M-46 46 L-20 10 L0 0 L-10 20 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M-65 0 L-28 -12 L0 0 L-28 12 Z" fill="var(--ac2)" opacity="0.5"/>
+      <path d="M-46 -46 L-10 -20 L0 0 L-20 -10 Z" fill="var(--ac2)" opacity="0.5"/>
+      <circle cx="0" cy="0" r="44" fill="var(--card)" stroke="var(--fg)" stroke-width="1.8"/>
+      <ellipse cx="0" cy="0" rx="20" ry="44" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity="0.75"/>
+      <line x1="-44" y1="0" x2="44" y2="0" stroke="var(--fg)" stroke-width="1.2" opacity="0.75"/>
+      <line x1="-38" y1="-18" x2="38" y2="-18" stroke="var(--fg)" stroke-width="1" opacity="0.6"/>
+      <line x1="-38" y1="18" x2="38" y2="18" stroke="var(--fg)" stroke-width="1" opacity="0.6"/>
+    </g>
+    <g transform="translate(372, 480) rotate(-90)">
+      <text x="0" y="0" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="74" fill="none" stroke="var(--fg)" stroke-width="1.6" letter-spacing="0.14em" opacity="0.9">SOLAR</text>
+    </g>
+    <g transform="translate(24, 470)" fill="var(--fg)">
+      <rect x="0" y="0" width="3" height="32"/>
+      <rect x="5" y="0" width="1.5" height="32"/>
+      <rect x="9" y="0" width="4" height="32"/>
+      <rect x="15" y="0" width="2" height="32"/>
+      <rect x="19" y="0" width="1" height="32"/>
+      <rect x="23" y="0" width="3" height="32"/>
+      <rect x="28" y="0" width="5" height="32"/>
+      <rect x="35" y="0" width="2" height="32"/>
+      <rect x="39" y="0" width="3" height="32"/>
+      <rect x="44" y="0" width="1.5" height="32"/>
+      <rect x="48" y="0" width="4" height="32"/>
+      <rect x="54" y="0" width="2" height="32"/>
+      <rect x="58" y="0" width="3.5" height="32"/>
+      <rect x="64" y="0" width="1.5" height="32"/>
+      <rect x="68" y="0" width="4" height="32"/>
+      <text x="0" y="44" font-family="'Barlow Condensed', monospace" font-size="9" letter-spacing="0.1em">RVCE-LG-2026</text>
+    </g>
+    <g transform="translate(200, 464)">
+      <rect x="0" y="0" width="44" height="44" fill="var(--card)" stroke="var(--fg)" stroke-width="1.5"/>
+      <rect x="4" y="4" width="12" height="12" fill="var(--fg)"/>
+      <rect x="6" y="6" width="8" height="8" fill="var(--card)"/>
+      <rect x="28" y="4" width="12" height="12" fill="var(--fg)"/>
+      <rect x="30" y="6" width="8" height="8" fill="var(--card)"/>
+      <rect x="4" y="28" width="12" height="12" fill="var(--fg)"/>
+      <rect x="6" y="30" width="8" height="8" fill="var(--card)"/>
+      <rect x="20" y="8" width="4" height="4" fill="var(--fg)"/>
+      <rect x="20" y="20" width="8" height="8" fill="var(--fg)"/>
+      <rect x="28" y="28" width="6" height="6" fill="var(--fg)"/>
+      <rect x="36" y="36" width="4" height="4" fill="var(--fg)"/>
+    </g>
+  </svg>`;
+}
+
+function renderStaffCollage() {
+  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff operations blueprint artwork">
+    <defs>
+      <pattern id="admGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" stroke-width="0.7" opacity="0.14"/>
+      </pattern>
+      <pattern id="admStripes" width="14" height="14" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="0" x2="0" y2="14" stroke="var(--ac)" stroke-width="2.5" opacity="0.3"/>
+      </pattern>
+    </defs>
+    <rect width="400" height="540" fill="url(#admGrid)"/>
+    <g stroke="currentColor" stroke-width="1.2" opacity="0.5">
+      <line x1="20" y1="30" x2="380" y2="30"/>
+      <line x1="20" y1="510" x2="380" y2="510"/>
+      <line x1="30" y1="20" x2="30" y2="520"/>
+      <line x1="370" y1="20" x2="370" y2="520"/>
+      <circle cx="30" cy="30" r="4" fill="currentColor"/>
+      <circle cx="370" cy="30" r="4" fill="currentColor"/>
+      <circle cx="30" cy="510" r="4" fill="currentColor"/>
+      <circle cx="370" cy="510" r="4" fill="currentColor"/>
+    </g>
+    <g transform="translate(48, 48)">
+      <rect x="0" y="0" width="130" height="34" fill="var(--card)" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="90" y="0" width="40" height="34" fill="url(#admStripes)"/>
+      <text x="12" y="23" fill="currentColor" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="15" letter-spacing="0.1em">CONTROL·OPS</text>
+    </g>
+    <g transform="translate(200, 48)" font-family="'Barlow Condensed', monospace" font-size="8.5" fill="currentColor" opacity="0.75" letter-spacing="0.08em">
+      <text x="0" y="12">LAT 12.9238° N · LON 77.4987° E</text>
+      <text x="0" y="25">ELEV 840M · 4 STATIONS ONLINE</text>
+    </g>
+    <g transform="translate(200, 240)">
+      <circle cx="0" cy="0" r="130" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 6" opacity="0.4"/>
+      <circle cx="0" cy="0" r="105" fill="none" stroke="var(--ac)" stroke-width="1.8" opacity="0.6"/>
+      <circle cx="0" cy="0" r="85" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <g font-family="'Barlow Condensed', monospace" font-size="9" fill="currentColor" opacity="0.6" text-anchor="middle">
+        <text x="0" y="-112">000°</text>
+        <text x="114" y="4">090°</text>
+        <text x="0" y="122">180°</text>
+        <text x="-114" y="4">270°</text>
+      </g>
+      <g class="auth-gear-spin">
+        <circle cx="0" cy="0" r="64" fill="var(--card)" stroke="currentColor" stroke-width="2"/>
+        <circle cx="0" cy="0" r="74" fill="none" stroke="var(--ac)" stroke-width="4" stroke-dasharray="8 8"/>
+        <line x1="-80" y1="0" x2="80" y2="0" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="0" y1="-80" x2="0" y2="80" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="0" cy="0" r="28" fill="var(--ac)" opacity="0.85"/>
+        <circle cx="0" cy="0" r="8" fill="currentColor"/>
+      </g>
+    </g>
+    <g transform="translate(48, 410)">
+      <rect x="0" y="0" width="160" height="42" fill="#17140d" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="0" y="0" width="28" height="42" fill="url(#admStripes)"/>
+      <text x="38" y="26" fill="#f5f5f0" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="14" letter-spacing="0.1em">SEC·AUTH REQ</text>
+    </g>
+    <g transform="translate(366, 470) rotate(-90)">
+      <text x="0" y="0" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="64" fill="none" stroke="currentColor" stroke-width="1.5" letter-spacing="0.12em" opacity="0.85">RESTRICTED</text>
+    </g>
+    <g transform="translate(48, 470)" fill="currentColor">
+      <rect x="0" y="0" width="3" height="24"/>
+      <rect x="6" y="0" width="2" height="24"/>
+      <rect x="10" y="0" width="4" height="24"/>
+      <rect x="16" y="0" width="1.5" height="24"/>
+      <rect x="20" y="0" width="3" height="24"/>
+      <rect x="25" y="0" width="5" height="24"/>
+      <rect x="33" y="0" width="2" height="24"/>
+      <rect x="38" y="0" width="4" height="24"/>
+      <text x="0" y="34" font-family="'Barlow Condensed', monospace" font-size="8" letter-spacing="0.1em">ESP32·SOLAR·GATEWAY</text>
+    </g>
+  </svg>`;
+}
+
 const PG = {
   home: () =>
     `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
@@ -183,25 +371,152 @@ const PG = {
 
   signin: () => {
     if (S.needsProfile && S.u) {
-      return `<div class="wrap" style="max-width:520px"><span class="k">Welcome to LumenGrove</span><h1 tabindex="-1">Complete your profile</h1><p>To rent solar power banks on campus, please confirm your full name and contact phone number.</p><label for="prof_name">Full name</label><input id="prof_name" type="text" autocomplete="name" style="width:100%" value="${S.u.name || ''}"><label for="prof_phone">Contact phone (10-digit mobile)</label><input id="prof_phone" type="tel" placeholder="+919876543210" style="width:100%" value="${S.u.phone || ''}"><div class="err" id="prof_err" role="alert" aria-live="polite"></div><p style="margin-top:20px"><button class="btn" onclick="completeProfile()">Save and Continue</button></p></div>`;
+      return `<div class="wrap auth-wrap">
+        <div class="auth-poster-frame">
+          <div class="auth-split">
+            <div class="auth-form-card" role="region" aria-label="Profile completion form">
+              <span class="auth-step-pill">${t('step_1_of_1')}</span>
+              <span class="k" style="margin-top:14px">${t('rvce_portal')}</span>
+              <h1 tabindex="-1">${t('complete_profile')}</h1>
+              <p>${t('profile_sub')}</p>
+
+              <label for="prof_name">${t('full_name_label')}</label>
+              <input id="prof_name" type="text" autocomplete="name" style="width:100%" value="${window.escapeHtml ? window.escapeHtml(S.u.name || '') : (S.u.name || '')}">
+
+              <label for="prof_phone">${t('phone_label')}</label>
+              <input id="prof_phone" type="tel" placeholder="+919876543210" style="width:100%" value="${window.escapeHtml ? window.escapeHtml(S.u.phone || '') : (S.u.phone || '')}">
+
+              <div class="err" id="prof_err" role="alert" aria-live="polite"></div>
+
+              <p style="margin-top:24px">
+                <button class="btn auth-full-btn" onclick="completeProfile()">${t('save_continue')}</button>
+              </p>
+            </div>
+            <div class="auth-collage" aria-hidden="true">
+              ${renderStudentCollage()}
+            </div>
+          </div>
+        </div>
+      </div>`;
     }
-    return `<div class="wrap" style="max-width:520px"><span class="k">RVCE Campus Portal</span><h1 tabindex="-1">${t(
-      'si'
-    )}</h1><p>Sign in with your official RVCE student Google account (<b>@rvce.edu.in</b>) to rent solar power banks.</p>${
-      S.authError ? `<div class="err-box" role="alert" aria-live="polite">${S.authError}</div>` : ''
-    }<p style="margin-top:20px"><button class="btn-google" onclick="signInWithGoogle()" aria-label="Sign in with Google"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span></button></p><p style="margin-top:16px"><button class="btn g" onclick="continueAsGuest()">${t(
-      'guest'
-    )}</button></p>${
-      window.ENABLE_DEMO
-        ? `<div class="demo-box"><span class="k">Demo simulation</span><p style="margin:4px 0 12px;font-size:.85rem">Explore the full rental workflow locally without connecting to live Supabase backend.</p><button class="btn g" onclick="loginDemoStudent()">Demo student</button></div>`
-        : ''
-    }</div>`;
+
+    return `<div class="wrap auth-wrap">
+      <div class="auth-poster-frame">
+        <div class="auth-split">
+          <div class="auth-form-card" role="region" aria-label="Student sign in">
+            <span class="k">${t('rvce_portal')}</span>
+            <h1 tabindex="-1">${t('student_signin_title')}</h1>
+            <p>${t('student_signin_sub')}</p>
+
+            ${renderAuthBanner(S.authError, S.authIsDevNote)}
+
+            <p style="margin-top:20px;margin-bottom:8px">
+              <button class="btn-google" onclick="signInWithGoogle()" aria-label="${t('google_signin')}">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                  <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+                </svg>
+                <span>${t('google_signin')}</span>
+              </button>
+            </p>
+
+            <p class="auth-trust">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>${t('trust_line')}</span>
+            </p>
+
+            <div class="auth-divider" aria-hidden="true"><span>${t('or_divider')}</span></div>
+
+            <p style="margin-top:14px">
+              <button class="btn g auth-full-btn" onclick="continueAsGuest()">${t('guest')}</button>
+            </p>
+
+            ${
+              window.ENABLE_DEMO
+                ? `<div class="demo-box auth-demo-box">
+                    <span class="k">${t('demo_box_title')}</span>
+                    <p style="margin:4px 0 12px;font-size:.85rem">${t('demo_box_sub')}</p>
+                    <button class="btn g" onclick="loginDemoStudent()">${t('demo_student')}</button>
+                  </div>`
+                : ''
+            }
+
+            <div class="auth-footer-nav">
+              <a href="#home">${t('back_to_site')}</a> · <a href="#app-help">${t('Help')}</a>
+            </div>
+          </div>
+          <div class="auth-collage" aria-hidden="true">
+            ${renderStudentCollage()}
+          </div>
+        </div>
+      </div>
+    </div>`;
   },
 
   'admin-login': () =>
-    `<div class="wrap" style="max-width:520px"><span class="k">Internal Operations</span><h1 tabindex="-1">Staff sign in</h1><p>Authorized RVCE LumenGrove administrators and field technicians.</p>${
-      S.adminError ? `<div class="err-box" role="alert" aria-live="polite">${S.adminError}</div>` : ''
-    }<p style="margin-top:24px"><button class="btn-google" onclick="signInWithGoogle('#admin')" aria-label="Sign in with Google"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span></button></p><p style="margin-top:16px"><a class="btn g" href="#home">Back to site</a></p></div>`,
+    `<div class="wrap auth-wrap auth-admin-scope">
+      <div class="auth-poster-frame">
+        <div class="auth-split">
+          <div class="auth-form-card" role="region" aria-label="Staff sign in">
+            <div class="auth-station-ticker" aria-hidden="true">
+              <span><i class="auth-dot-pulse"></i> LIB: READY</span>
+              <span><i class="auth-dot-pulse"></i> MM: READY</span>
+              <span><i class="auth-dot-pulse"></i> MING: READY</span>
+              <span><i class="auth-dot-pulse"></i> CAUV: READY</span>
+            </div>
+
+            <span class="auth-restricted-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              ${t('staff_portal_tag')}
+            </span>
+
+            <h1 tabindex="-1" style="margin-top:8px">${t('staff_signin_title')}</h1>
+            <p>${t('staff_signin_sub')}</p>
+
+            ${renderAuthBanner(S.adminError, S.adminIsDevNote)}
+
+            <p style="margin-top:20px;margin-bottom:8px">
+              <button class="btn-google" onclick="signInWithGoogle('#admin')" aria-label="${t('google_signin')}">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                  <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+                </svg>
+                <span>${t('google_signin')}</span>
+              </button>
+            </p>
+
+            <p class="auth-trust">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Authorized personnel only. Sessions are audit-logged.</span>
+            </p>
+
+            ${
+              window.ENABLE_DEMO
+                ? `<div class="demo-box auth-demo-box">
+                    <span class="k">${t('demo_box_title')}</span>
+                    <p style="margin:4px 0 12px;font-size:.85rem">${t('demo_box_sub')}</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                      <button class="btn g" onclick="loginDemoStaff('technician')">${t('demo_technician')}</button>
+                      <button class="btn g" onclick="loginDemoStaff('super_admin')">${t('demo_super_admin')}</button>
+                    </div>
+                  </div>`
+                : ''
+            }
+
+            <div class="auth-footer-nav" style="margin-top:24px">
+              <a href="#home">${t('back_to_site')}</a> · <a href="#app-help">${t('Help')}</a>
+            </div>
+          </div>
+          <div class="auth-collage" aria-hidden="true">
+            ${renderStaffCollage()}
+          </div>
+        </div>
+      </div>
+    </div>`,
 
   'app-stations': () =>
     `<div class="wrap"><h1 tabindex="-1">${t(
@@ -457,3 +772,8 @@ setInterval(() => {
     .querySelectorAll('.sol')
     .forEach(b => (b.textContent = 'Solar now · ' + (34 + Math.floor(Math.random() * 9)) + ' W'));
 }, 1000);
+
+// Pause GPU animations when tab is hidden
+document.addEventListener('visibilitychange', () => {
+  document.documentElement.classList.toggle('auth-paused', document.hidden);
+});
