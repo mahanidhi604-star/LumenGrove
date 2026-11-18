@@ -320,6 +320,97 @@ function renderStaffCollage() {
   </svg>`;
 }
 
+function renderSettingsCollage() {
+  return `<svg class="settings-collage-svg" viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solarpunk matrix calibration diagram">
+    <defs>
+      <radialGradient id="setSun" cx="60%" cy="40%" r="55%">
+        <stop offset="0%" stop-color="var(--ac)" stop-opacity="0.95"/>
+        <stop offset="50%" stop-color="#f5b73b" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="var(--ac)" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="setGrid" width="16" height="16" patternUnits="userSpaceOnUse">
+        <circle cx="1.5" cy="1.5" r="0.75" fill="var(--fg)" opacity="0.16"/>
+      </pattern>
+    </defs>
+    <rect width="380" height="260" fill="url(#setGrid)"/>
+    <g stroke="var(--fg)" stroke-width="1.2" opacity="0.4">
+      <line x1="12" y1="18" x2="26" y2="18"/><line x1="19" y1="11" x2="19" y2="25"/>
+      <line x1="354" y1="18" x2="368" y2="18"/><line x1="361" y1="11" x2="361" y2="25"/>
+      <line x1="12" y1="242" x2="26" y2="242"/><line x1="19" y1="235" x2="19" y2="249"/>
+      <line x1="354" y1="242" x2="368" y2="242"/><line x1="361" y1="235" x2="361" y2="249"/>
+    </g>
+    <g class="auth-sun-breathe">
+      <circle cx="270" cy="110" r="75" fill="url(#setSun)"/>
+      <circle cx="270" cy="110" r="48" fill="var(--ac)" opacity="0.85"/>
+      <circle cx="270" cy="110" r="62" fill="none" stroke="var(--fg)" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    </g>
+    <g class="auth-gear-spin" style="transform-origin: 270px 110px">
+      <circle cx="270" cy="110" r="88" fill="none" stroke="var(--ac2)" stroke-width="2" stroke-dasharray="12 6" opacity="0.7"/>
+      <line x1="270" y1="14" x2="270" y2="30" stroke="var(--ac2)" stroke-width="2.5"/>
+      <line x1="270" y1="190" x2="270" y2="206" stroke="var(--ac2)" stroke-width="2.5"/>
+      <line x1="174" y1="110" x2="190" y2="110" stroke="var(--ac2)" stroke-width="2.5"/>
+      <line x1="350" y1="110" x2="366" y2="110" stroke="var(--ac2)" stroke-width="2.5"/>
+    </g>
+    <g transform="translate(20, 28)" opacity="0.65" fill="var(--fg)" font-family="'Barlow Condensed', monospace" font-size="7.5" letter-spacing="0.1em">
+      <text x="0" y="8">DEG // 000° 090° 180° 270°</text>
+      <text x="0" y="18">GRID // 12.9237° N · 77.4987° E</text>
+      <text x="0" y="28">SYS // SOLAR-MATRIX CALIBRATED</text>
+    </g>
+    <g transform="translate(20, 110)">
+      <rect x="0" y="0" width="180" height="48" fill="#0b0b0c" stroke="var(--fg)" stroke-width="1.4"/>
+      <text x="10" y="20" fill="#f5f5f0" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="12.5" letter-spacing="0.08em">FUTURE IS SOLAR-CHARGED.</text>
+      <text x="10" y="38" fill="var(--ac)" font-family="'Barlow Condensed', sans-serif" font-weight="800" font-size="10.5" letter-spacing="0.1em">RVCE CAMPUS MATRIX</text>
+    </g>
+    <g transform="translate(20, 195)" fill="var(--fg)" opacity="0.75">
+      <rect x="0" y="0" width="3" height="20"/><rect x="5" y="0" width="1.5" height="20"/><rect x="9" y="0" width="4" height="20"/>
+      <rect x="15" y="0" width="2" height="20"/><rect x="19" y="0" width="5" height="20"/><rect x="26" y="0" width="1.5" height="20"/>
+      <rect x="30" y="0" width="3" height="20"/><rect x="35" y="0" width="2" height="20"/><rect x="40" y="0" width="4" height="20"/>
+      <text x="50" y="14" font-family="'Barlow Condensed', monospace" font-size="8" letter-spacing="0.12em">PARAM // SYNC-READY</text>
+    </g>
+  </svg>`;
+}
+
+// Global Settings Handlers
+window.setTheme = function(x) {
+  if (typeof window.theme === 'function') window.theme(x);
+  go(1);
+  toast(x === 'olive' ? 'Theme: Olive Night' : 'Theme: Amber Sun');
+};
+
+window.setLanguage = function(x) {
+  S.l = x;
+  sv('l', x);
+  document.documentElement.lang = x;
+  go(1);
+  toast(x === 'en' ? 'Language: English' : x === 'kn' ? 'ಭಾಷೆ: ಕನ್ನಡ' : 'भाषा: हिन्दी');
+};
+
+window.toggleMotion = function(reduce) {
+  document.documentElement.classList.toggle('rm', reduce);
+  sv('rm', reduce ? '1' : '0');
+  S.rm = reduce;
+  const statusEl = document.querySelector('.toggle-status-readout');
+  if (statusEl) {
+    statusEl.className = 'toggle-status-readout ' + (reduce ? 'reduced' : 'standard');
+    statusEl.textContent = reduce ? t('motion_reduced_label') : t('motion_active_label');
+  }
+  toast(reduce ? 'Reduced motion enabled' : 'Standard motion enabled');
+};
+
+window.setPreferredStation = function(stnId) {
+  S.favStn = stnId;
+  sv('lg_fav_stn', stnId);
+  const nameMap = { library: 'Library', mm: 'M.M Foods', mingoes: 'Big Mingoes', cauvery: 'Cauvery Hostel' };
+  toast(`Preferred hub: ${nameMap[stnId] || stnId}`);
+  go(1);
+};
+
+window.toggleLiveTelemetry = function(enable) {
+  S.liveTelemetry = enable;
+  sv('lg_telemetry', enable ? '1' : '0');
+  toast(enable ? 'Live solar telemetry active' : 'Live telemetry paused');
+};
+
 const PG = {
   home: () =>
     `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
@@ -534,25 +625,309 @@ const PG = {
 
   'app-settings': () => {
     const u = S.u,
-      P = u && u.role == 'student' ? `<b>${u.name}</b><br>${u.email}<br>${u.phone}` : 'Browsing as guest';
-    return `<div class="wrap"><span class="k">Account</span><h1 tabindex="-1">${t(
-      'me'
-    )}</h1><div class="grid"><div class="card"><h3>Profile</h3><p>${P}</p>${
-      u
-        ? `<button class="btn g" onclick="signOut()">Sign out</button>`
-        : `<a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-settings')">${t('si')}</a>`
-    }</div><div class="card"><h3>Language</h3>${[
-      ['en', 'English'],
-      ['kn', 'ಕನ್ನಡ'],
-      ['hi', 'हिन्दी']
-    ]
-      .map(a => pill('l', a, x => `S.l='${x}';sv('l',S.l);go(1)`))
-      .join(' ')}</div><div class="card"><h3>Theme</h3>${[
-      ['olive', 'Olive Night'],
-      ['amber', 'Amber Sun']
-    ]
-      .map(a => pill('th', a, x => `theme('${x}');go(1)`))
-      .join(' ')}</div><div class="card"><h3>Motion</h3><label style="display:flex;gap:10px;align-items:center;margin:0"><input type="checkbox" onchange="document.documentElement.classList.toggle('rm',this.checked)"> Reduce motion</label></div></div></div>`;
+      isStu = u && u.role === 'student',
+      fav = S.favStn || 'library',
+      rm = document.documentElement.classList.contains('rm');
+
+    // Compute solar metrics
+    const chargesCount = isStu ? (S.hist ? S.hist.length : 2) : 0;
+    const cleanKwh = isStu ? (12.4 + (chargesCount * 1.8)).toFixed(1) : '0.0';
+    const cleanCo2 = isStu ? (9.8 + (chargesCount * 1.4)).toFixed(1) : '0.0';
+
+    return `<div class="wrap settings-wrap">
+      <div class="settings-poster-frame">
+        <!-- Header HUD -->
+        <div class="settings-hud-head">
+          <div class="settings-hud-left">
+            <span class="settings-sys-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+              ${t('settings_tag')}
+            </span>
+            <h1 tabindex="-1" class="settings-headline">${t('settings_title')}</h1>
+            <p class="settings-subline">${t('settings_sub')}</p>
+          </div>
+          <div class="settings-ticker-box" aria-hidden="true">
+            <div class="ticker-title">CAMPUS HUBS // STATUS</div>
+            <div class="ticker-items">
+              <span><i class="auth-dot-pulse"></i> LIB: 38W</span>
+              <span><i class="auth-dot-pulse"></i> MM: 42W</span>
+              <span><i class="auth-dot-pulse"></i> MING: 36W</span>
+              <span><i class="auth-dot-pulse"></i> CAUV: 39W</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Split Grid -->
+        <div class="settings-split-grid">
+          <!-- LEFT COLUMN: Identity, Solar Impact & Artwork -->
+          <div class="settings-col left-col">
+            <!-- 1. Technical Profile Card -->
+            <div class="settings-card profile-card" role="region" aria-label="Profile and Identity">
+              <div class="card-section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>${t('profile_heading')}</span>
+              </div>
+
+              <div class="profile-hero-row">
+                <div class="profile-avatar ${isStu ? 'stu' : 'guest'}">
+                  ${isStu 
+                    ? (u.name || 'Student').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                    : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+                  }
+                </div>
+                <div class="profile-meta-main">
+                  <div class="profile-role-badge ${isStu ? 'verified' : 'guest'}">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>${isStu ? t('profile_verified_student') : t('profile_guest')}</span>
+                  </div>
+                  <h3 class="profile-name-text">${isStu ? (window.escapeHtml ? window.escapeHtml(u.name) : u.name) : 'Guest Visitor'}</h3>
+                  <span class="profile-email-text">${isStu ? (window.escapeHtml ? window.escapeHtml(u.email) : u.email) : 'rvce.edu.in public session'}</span>
+                </div>
+              </div>
+
+              <div class="profile-spec-sheet">
+                <div class="spec-row">
+                  <span class="spec-key">INSTITUTION</span>
+                  <span class="spec-val">R.V. College of Engineering</span>
+                </div>
+                <div class="spec-row">
+                  <span class="spec-key">AUTH METHOD</span>
+                  <span class="spec-val">${isStu ? 'Google OAuth2 (PKCE Flow)' : 'Guest Session'}</span>
+                </div>
+                <div class="spec-row">
+                  <span class="spec-key">CONTACT PHONE</span>
+                  <span class="spec-val">${isStu && u.phone ? (window.escapeHtml ? window.escapeHtml(u.phone) : u.phone) : '— (Sign in required)'}</span>
+                </div>
+                <div class="spec-row">
+                  <span class="spec-key">SECURITY STATUS</span>
+                  <span class="spec-val ${isStu ? 'secure' : 'unverified'}">
+                    <i class="auth-dot-pulse"></i> ${isStu ? 'Verified Campus ID' : 'Browsing As Guest'}
+                  </span>
+                </div>
+              </div>
+
+              <div class="profile-actions-strip">
+                ${isStu || u
+                  ? `<button class="btn g settings-action-btn" onclick="signOut()">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      <span>Sign out</span>
+                    </button>`
+                  : `<a class="btn-google settings-google-link" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-settings')">
+                      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+                      <span>${t('google_signin')}</span>
+                    </a>`
+                }
+              </div>
+            </div>
+
+            <!-- 2. Solar Impact Widget -->
+            <div class="settings-card impact-card" role="region" aria-label="Campus Solar Impact">
+              <div class="card-section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <span>${t('impact_heading')}</span>
+                <span class="impact-badge-tag">100% OFF-GRID SOLAR</span>
+              </div>
+
+              <div class="impact-stats-grid">
+                <div class="impact-stat-item">
+                  <div class="stat-number-row">
+                    <span class="stat-num">${cleanKwh}</span>
+                    <span class="stat-unit">kWh</span>
+                  </div>
+                  <span class="stat-label-text">${t('impact_energy')}</span>
+                </div>
+                <div class="impact-stat-item">
+                  <div class="stat-number-row">
+                    <span class="stat-num">${cleanCo2}</span>
+                    <span class="stat-unit">kg</span>
+                  </div>
+                  <span class="stat-label-text">${t('impact_co2')}</span>
+                </div>
+                <div class="impact-stat-item">
+                  <div class="stat-number-row">
+                    <span class="stat-num">${chargesCount}</span>
+                    <span class="stat-unit">Charges</span>
+                  </div>
+                  <span class="stat-label-text">${t('impact_charges')}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Solarpunk Poster Blueprint Artwork -->
+            <div class="settings-card poster-collage-card" aria-hidden="true">
+              ${renderSettingsCollage()}
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Interactive Control Deck -->
+          <div class="settings-col right-col">
+            <!-- 4. Visual Interactive Theme Preview Cards -->
+            <div class="settings-card theme-section-card" role="region" aria-label="Visual Theme Selection">
+              <div class="card-section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M12 12l7-7M12 12l7 7"/></svg>
+                <span>${t('appearance_heading')}</span>
+              </div>
+              <p class="section-explainer">${t('appearance_sub')}</p>
+
+              <div class="theme-cards-grid" role="radiogroup" aria-label="Theme options">
+                <!-- Olive Night Theme Card -->
+                <button type="button" class="theme-select-card ${S.th === 'olive' ? 'selected' : ''}" onclick="setTheme('olive')" role="radio" aria-checked="${S.th === 'olive'}">
+                  <div class="theme-swatch-box olive-theme-swatch">
+                    <div class="mini-sun-disc"></div>
+                    <div class="mini-ui-wireframe">
+                      <div class="wire-header"></div>
+                      <div class="wire-card">
+                        <div class="wire-btn"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="theme-text-info">
+                    <div class="theme-title-row">
+                      <span class="theme-name">${t('theme_olive')}</span>
+                      ${S.th === 'olive' ? `<span class="theme-curr-badge">${t('active_badge')}</span>` : ''}
+                    </div>
+                    <span class="theme-desc">${t('theme_olive_desc')}</span>
+                  </div>
+                  <div class="theme-indicator-circle">
+                    ${S.th === 'olive' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                  </div>
+                </button>
+
+                <!-- Amber Sun Theme Card -->
+                <button type="button" class="theme-select-card ${S.th === 'amber' ? 'selected' : ''}" onclick="setTheme('amber')" role="radio" aria-checked="${S.th === 'amber'}">
+                  <div class="theme-swatch-box amber-theme-swatch">
+                    <div class="mini-gear-motif">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <div class="mini-ui-wireframe">
+                      <div class="wire-header"></div>
+                      <div class="wire-card">
+                        <div class="wire-btn"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="theme-text-info">
+                    <div class="theme-title-row">
+                      <span class="theme-name">${t('theme_amber')}</span>
+                      ${S.th === 'amber' ? `<span class="theme-curr-badge">${t('active_badge')}</span>` : ''}
+                    </div>
+                    <span class="theme-desc">${t('theme_amber_desc')}</span>
+                  </div>
+                  <div class="theme-indicator-circle">
+                    ${S.th === 'amber' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. Campus Language Selector Tiles -->
+            <div class="settings-card lang-section-card" role="region" aria-label="Campus Language Selection">
+              <div class="card-section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+                <span>${t('language_heading')}</span>
+              </div>
+              <p class="section-explainer">${t('language_sub')}</p>
+
+              <div class="lang-tiles-grid" role="radiogroup" aria-label="Language options">
+                ${[
+                  { code: 'en', codeLabel: 'EN', title: 'English', sub: 'Campus Global' },
+                  { code: 'kn', codeLabel: 'ಕನ್ನ', title: 'ಕನ್ನಡ', sub: 'ಕರ್ನಾಟಕ ರಾಜ್ಯ ಭಾಷೆ' },
+                  { code: 'hi', codeLabel: 'हिन्द', title: 'हिन्दी', sub: 'राष्ट्रभाषा' }
+                ].map(item => `
+                  <button type="button" class="lang-tile-btn ${S.l === item.code ? 'selected' : ''}" onclick="setLanguage('${item.code}')" role="radio" aria-checked="${S.l === item.code}">
+                    <div class="lang-script-badge">${item.codeLabel}</div>
+                    <div class="lang-title-group">
+                      <span class="lang-primary-title">${item.title}</span>
+                      <span class="lang-secondary-title">${item.sub}</span>
+                    </div>
+                    <div class="lang-status-dot">
+                      ${S.l === item.code ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- 6. Motion & Visual Physics Hardware Switch -->
+            <div class="settings-card motion-section-card" role="region" aria-label="Motion Controls">
+              <div class="motion-content-row">
+                <div class="motion-left-info">
+                  <div class="card-section-label" style="margin-bottom:6px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>${t('motion_heading')}</span>
+                  </div>
+                  <p class="section-explainer" style="margin-bottom:8px">${t('motion_sub')}</p>
+                  <span class="toggle-status-readout ${rm ? 'reduced' : 'standard'}">
+                    ${rm ? t('motion_reduced_label') : t('motion_active_label')}
+                  </span>
+                </div>
+                <div class="motion-toggle-wrapper">
+                  <label class="hw-switch-label" for="hw-motion-toggle" aria-label="${t('reduce_motion_label')}">
+                    <input type="checkbox" id="hw-motion-toggle" class="hw-switch-input" ${rm ? 'checked' : ''} onchange="toggleMotion(this.checked)">
+                    <span class="hw-switch-track">
+                      <span class="hw-switch-thumb"></span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. Campus Solar Preferences & Preferred Hub -->
+            <div class="settings-card campus-pref-card" role="region" aria-label="Campus Hub Preferences">
+              <div class="card-section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>${t('campus_pref_heading')}</span>
+              </div>
+              <p class="section-explainer">${t('campus_pref_sub')}</p>
+
+              <div class="hub-select-wrapper">
+                <label class="pref-micro-label">${t('preferred_hub_label')}</label>
+                <div class="hub-buttons-grid">
+                  ${[
+                    { id: 'library', code: 'LIB', n: 'Library' },
+                    { id: 'mm', code: 'MM', n: 'M.M Foods' },
+                    { id: 'mingoes', code: 'MING', n: 'Big Mingoes' },
+                    { id: 'cauvery', code: 'CAUV', n: 'Cauvery Hostel' }
+                  ].map(st => `
+                    <button type="button" class="hub-choice-btn ${fav === st.id ? 'active' : ''}" onclick="setPreferredStation('${st.id}')">
+                      <span class="hub-code-badge">${st.code}</span>
+                      <span class="hub-name-label">${st.n}</span>
+                      ${fav === st.id ? `<span class="hub-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="telemetry-toggle-row">
+                <div class="telemetry-info">
+                  <span class="telemetry-main-title">${t('live_telemetry_label')}</span>
+                  <span class="telemetry-sub-title">${t('live_telemetry_desc')}</span>
+                </div>
+                <label class="hw-switch-label small" for="hw-telemetry-toggle" aria-label="${t('live_telemetry_label')}">
+                  <input type="checkbox" id="hw-telemetry-toggle" class="hw-switch-input" ${S.liveTelemetry !== false ? 'checked' : ''} onchange="toggleLiveTelemetry(this.checked)">
+                  <span class="hw-switch-track">
+                    <span class="hw-switch-thumb"></span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Calibration Bar -->
+        <div class="settings-calibration-footer" aria-hidden="true">
+          <div class="calib-left">
+            <span class="calib-dot"></span>
+            <span>RVCE SOLAR MICROGRID · REV 3.4.1</span>
+          </div>
+          <div class="calib-right">
+            <span>AZIMUTH: 184° SSE</span>
+            <span>·</span>
+            <span>ARRAY EFFICIENCY: 94.6%</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
   },
 
   'app-rentals': () => {

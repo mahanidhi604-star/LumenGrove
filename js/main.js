@@ -90,5 +90,6 @@ if (!matchMedia('(prefers-reduced-motion:reduce)').matches) {
 
 // Initial theme and routing
 document.documentElement.dataset.t = S.th;
+if (S.rm) document.documentElement.classList.add('rm');
 addEventListener('hashchange', () => go());
 go(1);

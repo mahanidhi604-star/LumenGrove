@@ -34,7 +34,10 @@ const S = {
   authStep: 'email',
   authEmail: '',
   tempName: '',
-  tempPhone: ''
+  tempPhone: '',
+  rm: q('rm', '0') === '1',
+  favStn: q('lg_fav_stn', 'library'),
+  liveTelemetry: q('lg_telemetry', '1') === '1'
 };
 
 try {
