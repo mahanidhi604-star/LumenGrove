@@ -24,6 +24,8 @@ window.durIn = v => {
     s.textContent = mx ? 'Longest rental · charges apply per hour' : DS(S.dur);
     s.classList.toggle('mx', mx);
   }
+  const de = $('#d-est');
+  if (de) de.textContent = '₹ ' + (S.dur * (PR.rate || 10)).toFixed(0);
 };
 
 addEventListener('pointerdown', e => {
@@ -105,6 +107,7 @@ const rb2 = () => stp() + (S.pay ? payView() : rentBody());
 window.rr = () => {
   const rb = $('#rb');
   if (rb) rb.innerHTML = rb2();
+  else if (location.hash.slice(1) === 'app-home' || location.hash.slice(1) === 'plug') go(1);
   if (typeof xl === 'function') xl(location.hash.slice(1));
 };
 
@@ -134,6 +137,7 @@ window.paid = () => {
   p.b.stock[S.cat]--;
   toast('Payment received');
   if ($('#rb')) rr();
+  else if (location.hash.slice(1) === 'app-home' || location.hash.slice(1) === 'plug') go(1);
 };
 
 setInterval(() => {
