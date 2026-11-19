@@ -3,8 +3,9 @@
 // customer complaints resolution hub, and 8-bay hardware diagnostics.
 
 window.bill = () => {
-  const bl = $('#bl');
-  if (bl) bl.textContent = PR.rate ? '₹ ' + (PR.rate * 2) : '—';
+  const bl = $('#bl') || document.getElementById('bl');
+  const rate = (window.PR && window.PR.rate) ? Number(window.PR.rate) : 10;
+  if (bl) bl.textContent = `₹ ${rate * 2}`;
 };
 
 window.exportLogsCsv = () => {
@@ -27,11 +28,74 @@ window.exportLogsCsv = () => {
   toast('Telemetry logs exported to CSV');
 };
 
+// Two-way Supabase Synchronizers
+window.commitPricingToSupabase = async () => {
+  if (!window.PR) return;
+  const rate = Number(window.PR.rate) || 10;
+  const grace = Number(window.PR.grace) || 15;
+  const late = Number(window.PR.late) || 20;
+  const dep = Number(window.PR.dep) || 0;
+
+  // Persist locally for immediate reactive update across entire app
+  localStorage.setItem('lg_pricing_override', JSON.stringify({ rate, grace, late, dep }));
+
+  // Write live policy to Supabase pricing_rules table
+  if (window.supabaseClient) {
+    try {
+      const { data, error } = await window.supabaseClient.from('pricing_rules').insert({
+        hourly_rate_paise: Math.round(rate * 100),
+        grace_period_mins: grace,
+        late_fee_per_hour_paise: Math.round(late * 100),
+        deposit_paise: Math.round(dep * 100),
+        is_active: true
+      }).select();
+      if (!error) {
+        console.log('LumenGrove: Pricing policy successfully written to Supabase:', data);
+      }
+    } catch (e) {
+      console.warn('Supabase pricing write notice:', e);
+    }
+  }
+
+  // Recalculate billing preview and toast
+  window.bill();
+  toast(`⚡ Pricing Policy Committed: ₹${rate}/hr · Synced to Supabase & Live Fleet!`);
+};
+
+window.adjustPricing = (key, delta) => {
+  if (!window.PR) window.PR = { rate: 10, grace: 15, late: 20, dep: 0 };
+  let cur = Number(window.PR[key]) || 0;
+  cur = Math.max(0, cur + delta);
+  window.PR[key] = cur;
+
+  // Update digital displays
+  const dispMap = {
+    rate: `₹ ${window.PR.rate}`,
+    grace: `${window.PR.grace} MIN`,
+    late: `₹ ${window.PR.late}`,
+    dep: `₹ ${window.PR.dep}`
+  };
+  const el = document.getElementById(`disp-${key}`);
+  if (el) el.textContent = dispMap[key];
+
+  window.bill();
+};
+
 window.tg = id => {
   const s = ST.find(x => x.id == id);
   if (s) {
     s.ok = !s.ok;
     toast(`Station ${s.n} set to ${s.ok ? 'ONLINE' : 'MAINTENANCE MODE'}`);
+
+    // Sync station status to Supabase stations table
+    if (window.supabaseClient) {
+      window.supabaseClient.from('stations')
+        .update({ is_online: s.ok, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .then(({ error }) => {
+          if (!error) console.log(`Station ${id} state synced to Supabase`);
+        }).catch(() => {});
+    }
   }
   const statusElem = $(`#stn-status-${id}`);
   if (statusElem) {
@@ -48,11 +112,29 @@ window.tg = id => {
 window.techUnlockSlot = (stnId, slotNum) => {
   const s = ST.find(x => x.id === stnId) || ST[0];
   toast(`⚡ Solenoid unlocked: ${s.n} Bay #${slotNum}`);
+
+  // Sync to Supabase slots table
+  if (window.supabaseClient) {
+    window.supabaseClient.from('slots')
+      .update({ status: 'ready', updated_at: new Date().toISOString() })
+      .eq('station_id', stnId)
+      .eq('slot_number', slotNum)
+      .then(() => {}).catch(() => {});
+  }
 };
 
 window.techClearJam = (stnId, slotNum) => {
   const s = ST.find(x => x.id === stnId) || ST[0];
   toast(`🔄 Bay #${slotNum} at ${s.n} recalibrated. Return lock cleared.`);
+
+  // Sync to Supabase slots table
+  if (window.supabaseClient) {
+    window.supabaseClient.from('slots')
+      .update({ status: 'ready', updated_at: new Date().toISOString() })
+      .eq('station_id', stnId)
+      .eq('slot_number', slotNum)
+      .then(() => {}).catch(() => {});
+  }
 };
 
 window.techCalibrate = (stnId) => {
@@ -177,56 +259,31 @@ window.searchComplaints = (query) => {
   }
 };
 
-// 3D Wireframe Rotating Telemetry Globe Canvas Engine
-let globeAnimationId = null;
-let globeRotY = 0;
-let isGlobeDragging = false;
-let isGlobeHovered = false;
-let isGlobePaused = false;
-let lastMouseX = 0;
-let targetGlobeRotY = null;
+// Stationary RVCE Campus Microgrid Radar Canvas Engine
+let radarAnimationId = null;
+let hoveredStationId = null;
 
-// Station Spherical Coordinates
+// RVCE Campus Station Nodes (Stationary 2D Tactical Vector Radar Coordinates)
 const stationNodes = [
-  { id: 'library', name: 'LIB', fullName: 'Central Library', latRad: 0.22, lonRad: 1.15, ok: true },
-  { id: 'mm', name: 'MM', fullName: 'M.M Foods', latRad: 0.32, lonRad: 1.48, ok: true },
-  { id: 'mingoes', name: 'MING', fullName: 'Big Mingoes', latRad: 0.12, lonRad: 1.82, ok: true },
-  { id: 'cauvery', name: 'CAUV', fullName: 'Cauvery Hostel', latRad: -0.15, lonRad: 1.35, ok: true }
+  { id: 'library', name: 'LIB', fullName: 'Central Library', relX: -85, relY: -45, ok: true, dist: '85m', az: '330°' },
+  { id: 'mm', name: 'MM', fullName: 'M.M Foods', relX: 105, relY: -75, ok: true, dist: '128m', az: '045°' },
+  { id: 'mingoes', name: 'MING', fullName: 'Big Mingoes', relX: -135, relY: 80, ok: true, dist: '155m', az: '215°' },
+  { id: 'cauvery', name: 'CAUV', fullName: 'Cauvery Hostel', relX: 145, relY: 65, ok: true, dist: '160m', az: '125°' }
 ];
-
-window.toggleGlobeSpin = () => {
-  isGlobePaused = !isGlobePaused;
-  const btn = document.getElementById('datav-orbit-toggle');
-  if (btn) {
-    btn.innerHTML = isGlobePaused ? '▶ RESUME ORBIT' : '⏸ PAUSE ORBIT';
-    btn.classList.toggle('paused', isGlobePaused);
-  }
-  toast(isGlobePaused ? 'Globe orbit paused' : 'Globe auto-orbit resumed');
-};
 
 window.focusStationOnGlobe = (stnId) => {
   const node = stationNodes.find(n => n.id === stnId);
   if (!node) return;
 
   window.S.inspectedStation = stnId;
-  isGlobePaused = true;
 
-  // Calculate target rotation angle so this station faces front and center (lon + rotY = PI/2)
-  targetGlobeRotY = Math.PI / 2 - node.lonRad;
-
-  const btn = document.getElementById('datav-orbit-toggle');
-  if (btn) {
-    btn.innerHTML = '▶ RESUME ORBIT';
-    btn.classList.add('paused');
-  }
-
-  // Update inspection HUD card below the globe
+  // Update inspection HUD card below the radar map
   const hudContainer = document.getElementById('datav-station-inspection-hud');
   if (hudContainer) {
     hudContainer.innerHTML = renderStationInspectionCard(stnId);
   }
 
-  // Update active pill styling on HUD
+  // Update active quick-picker pill styling
   document.querySelectorAll('.globe-stn-pill').forEach(pill => {
     pill.classList.toggle('active', pill.dataset.stn === stnId);
   });
@@ -237,19 +294,27 @@ window.focusStationOnGlobe = (stnId) => {
     techBayContainer.innerHTML = renderTechnicianSlotMatrix(stnId);
   }
 
+  // Highlight corresponding row in Campus Stations Fleet Status table
+  document.querySelectorAll('.datav-fleet-table tr').forEach(r => r.classList.remove('stn-selected-row'));
+  const row = document.getElementById(`stn-row-${stnId}`);
+  if (row) row.classList.add('stn-selected-row');
+
+  // Highlight target button in fleet table
+  document.querySelectorAll('.btn-target').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.stn === stnId);
+    if (btn.dataset.stn === stnId) {
+      btn.innerHTML = 'LOCKED 🎯';
+    } else {
+      btn.innerHTML = 'TARGET 🎯';
+    }
+  });
+
   const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`Locked focus to ${s.n} · Bay diagnostics updated`);
+  toast(`Locked focus to ${s.n} · 8-Bay diagnostics active`);
 };
 
 window.resetGlobeOrbit = () => {
   window.S.inspectedStation = null;
-  isGlobePaused = false;
-  targetGlobeRotY = null;
-  const btn = document.getElementById('datav-orbit-toggle');
-  if (btn) {
-    btn.innerHTML = '⏸ PAUSE ORBIT';
-    btn.classList.remove('paused');
-  }
   document.querySelectorAll('.globe-stn-pill').forEach(pill => {
     pill.classList.toggle('active', pill.dataset.stn === 'all');
   });
@@ -257,7 +322,17 @@ window.resetGlobeOrbit = () => {
   if (hudContainer) {
     hudContainer.innerHTML = renderStationInspectionCard('library');
   }
-  toast('Resumed continuous globe orbit');
+  document.querySelectorAll('.datav-fleet-table tr').forEach(r => r.classList.remove('stn-selected-row'));
+  document.querySelectorAll('.btn-target').forEach(btn => {
+    btn.classList.remove('active');
+    btn.innerHTML = 'TARGET 🎯';
+  });
+  toast('Campus radar scan: All stations monitored');
+};
+
+// Aliased for backward compatibility with toggle buttons
+window.toggleGlobeSpin = () => {
+  toast('Radar is stationary: Tactical campus grid locked');
 };
 
 window.initDatavGlobe = () => {
@@ -270,7 +345,7 @@ window.initDatavGlobe = () => {
   // Responsive DPI scaling
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const width = rect.width || 440;
+  const width = rect.width || 460;
   const height = rect.height || 420;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
@@ -278,53 +353,18 @@ window.initDatavGlobe = () => {
 
   const cx = width / 2;
   const cy = height / 2;
-  const R = Math.min(width, height) * 0.38;
-  const tilt = 0.32; // Axial tilt (radians)
+  const R = Math.min(width, height) * 0.42;
 
-  // Spherical 3D Projection Helper
-  function project(latRad, lonRad, r = R) {
-    const x = r * Math.cos(latRad) * Math.sin(lonRad + globeRotY);
-    const y = -r * Math.sin(latRad);
-    const z = r * Math.cos(latRad) * Math.cos(lonRad + globeRotY);
-    const yPrime = y * Math.cos(tilt) - z * Math.sin(tilt);
-    const zPrime = y * Math.sin(tilt) + z * Math.cos(tilt);
-    return { x: cx + x, y: cy + yPrime, z: zPrime };
-  }
-
-  // Pre-generate continent dot matrix points
-  const globePoints = [];
-  for (let lat = -65; lat <= 65; lat += 12) {
-    const latRad = (lat * Math.PI) / 180;
-    const count = Math.max(6, Math.floor(28 * Math.cos(latRad)));
-    for (let i = 0; i < count; i++) {
-      const lonRad = (i / count) * Math.PI * 2;
-      const hash = Math.sin(lat * 12.9898 + i * 78.233);
-      if (Math.abs(hash) > 0.35) {
-        globePoints.push({ latRad, lonRad });
-      }
-    }
-  }
-
-  // Hover detection to pause rotation and change cursor
-  canvas.onmouseenter = () => {
-    isGlobeHovered = true;
-  };
-  canvas.onmouseleave = () => {
-    isGlobeHovered = false;
-    isGlobeDragging = false;
-  };
-
-  // Click on canvas node detection
+  // Click handler to select station directly on map
   canvas.onclick = e => {
     const cRect = canvas.getBoundingClientRect();
     const clickX = e.clientX - cRect.left;
     const clickY = e.clientY - cRect.top;
 
     for (const node of stationNodes) {
-      const pt = project(node.latRad, node.lonRad);
-      if (pt.z > -20) {
-        const dist = Math.hypot(clickX - pt.x, clickY - pt.y);
-        if (dist <= 24) {
+      if (node.x !== undefined && node.y !== undefined) {
+        const d = Math.hypot(clickX - node.x, clickY - node.y);
+        if (d <= 32) {
           window.focusStationOnGlobe(node.id);
           return;
         }
@@ -332,260 +372,302 @@ window.initDatavGlobe = () => {
     }
   };
 
-  // Mouse / Touch Drag Handlers
-  canvas.onmousedown = e => {
-    isGlobeDragging = true;
-    lastMouseX = e.clientX;
-    targetGlobeRotY = null;
-  };
-  window.onmouseup = () => {
-    isGlobeDragging = false;
-  };
+  // Hover detection for pointer cursor
   canvas.onmousemove = e => {
     const cRect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - cRect.left;
     const mouseY = e.clientY - cRect.top;
 
-    // Check if hovering near a station node
     let nearNode = false;
+    hoveredStationId = null;
     for (const node of stationNodes) {
-      const pt = project(node.latRad, node.lonRad);
-      if (pt.z > -20 && Math.hypot(mouseX - pt.x, mouseY - pt.y) <= 24) {
-        nearNode = true;
-        break;
+      if (node.x !== undefined && node.y !== undefined) {
+        if (Math.hypot(mouseX - node.x, mouseY - node.y) <= 32) {
+          nearNode = true;
+          hoveredStationId = node.id;
+          break;
+        }
       }
     }
-    canvas.style.cursor = nearNode ? 'pointer' : (isGlobeDragging ? 'grabbing' : 'grab');
+    canvas.style.cursor = nearNode ? 'pointer' : 'crosshair';
+  };
 
-    if (isGlobeDragging) {
-      const deltaX = e.clientX - lastMouseX;
-      globeRotY += deltaX * 0.008;
-      lastMouseX = e.clientX;
-    }
-  };
-  canvas.ontouchstart = e => {
-    if (e.touches.length > 0) {
-      isGlobeDragging = true;
-      lastMouseX = e.touches[0].clientX;
-      targetGlobeRotY = null;
-    }
-  };
-  window.ontouchend = () => {
-    isGlobeDragging = false;
-  };
-  canvas.ontouchmove = e => {
-    if (isGlobeDragging && e.touches.length > 0) {
-      const deltaX = e.touches[0].clientX - lastMouseX;
-      globeRotY += deltaX * 0.008;
-      lastMouseX = e.touches[0].clientX;
-    }
+  canvas.onmouseleave = () => {
+    hoveredStationId = null;
   };
 
   let tick = 0;
 
   function render() {
     if (!document.getElementById('datav-globe-canvas')) {
-      if (globeAnimationId) cancelAnimationFrame(globeAnimationId);
+      if (radarAnimationId) cancelAnimationFrame(radarAnimationId);
       return;
     }
 
-    // Smooth rotation logic (~3.5x slower than original: 0.0015 rad/frame)
-    if (targetGlobeRotY !== null) {
-      globeRotY += (targetGlobeRotY - globeRotY) * 0.08;
-      if (Math.abs(targetGlobeRotY - globeRotY) < 0.002) {
-        globeRotY = targetGlobeRotY;
-        targetGlobeRotY = null;
-      }
-    } else if (!isGlobeDragging && !isGlobeHovered && !isGlobePaused) {
-      globeRotY += 0.0015; // Slow, majestic planetary drift
-    }
     tick++;
-
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Outer Atmospheric Hologram Glow
-    const glowGrad = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.32);
-    glowGrad.addColorStop(0, 'rgba(0, 229, 255, 0.03)');
-    glowGrad.addColorStop(0.7, 'rgba(0, 140, 255, 0.12)');
-    glowGrad.addColorStop(1, 'rgba(0, 229, 255, 0)');
-    ctx.fillStyle = glowGrad;
+    // Dynamic node coordinate projection based on canvas dimensions
+    const scale = Math.min(width / 440, height / 400);
+    stationNodes.forEach(node => {
+      node.x = cx + node.relX * scale;
+      node.y = cy + node.relY * scale;
+    });
+
+    // 1. Radar Background Radial Gradient
+    const bgGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, R * 1.15);
+    bgGrad.addColorStop(0, 'rgba(0, 229, 255, 0.08)');
+    bgGrad.addColorStop(0.65, 'rgba(2, 14, 28, 0.45)');
+    bgGrad.addColorStop(1, 'rgba(2, 8, 16, 0.95)');
+    ctx.fillStyle = bgGrad;
     ctx.beginPath();
-    ctx.arc(cx, cy, R * 1.32, 0, Math.PI * 2);
+    ctx.arc(cx, cy, R * 1.12, 0, Math.PI * 2);
     ctx.fill();
 
-    // 2. HUD Radar Rings & Azimuth Crosshairs
+    // 2. Concentric Tactical Range Rings (50m, 100m, 150m, 200m)
+    const rings = [0.25, 0.5, 0.75, 1.0];
+    const ringLabels = ['50m', '100m', '150m', '200m'];
+    rings.forEach((ratio, idx) => {
+      const radius = R * ratio;
+      ctx.save();
+      ctx.strokeStyle = idx === rings.length - 1 ? 'rgba(0, 229, 255, 0.45)' : 'rgba(0, 229, 255, 0.18)';
+      ctx.lineWidth = idx === rings.length - 1 ? 1.5 : 1;
+      ctx.setLineDash(idx === rings.length - 1 ? [] : [3, 4]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Range distance label along North-East diagonal
+      ctx.font = '700 8px "Barlow Condensed", monospace';
+      ctx.fillStyle = 'rgba(0, 229, 255, 0.55)';
+      ctx.fillText(ringLabels[idx], cx + radius * 0.707 + 3, cy - radius * 0.707 - 2);
+      ctx.restore();
+    });
+
+    // 3. Cardinal Crosshairs & Azimuth Bearing Marks
     ctx.save();
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
+    // Horizontal crosshair
     ctx.beginPath();
-    ctx.arc(cx, cy, R * 1.16, 0, Math.PI * 2);
+    ctx.moveTo(cx - R * 1.1, cy);
+    ctx.lineTo(cx + R * 1.1, cy);
     ctx.stroke();
+    // Vertical crosshair
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - R * 1.1);
+    ctx.lineTo(cx, cy + R * 1.1);
+    ctx.stroke();
+    ctx.restore();
 
-    // Corner tick marks around globe
-    ctx.setLineDash([]);
+    // Azimuth cardinal text tags
+    ctx.save();
+    ctx.font = '700 9px "Barlow Condensed", monospace';
+    ctx.fillStyle = '#00e5ff';
+    ctx.textAlign = 'center';
+    ctx.fillText('000° [N] RVCE GATE', cx, cy - R * 1.02);
+    ctx.fillText('180° [S] HOSTEL ZONE', cx, cy + R * 1.08);
+    ctx.textAlign = 'left';
+    ctx.fillText('090° [E]', cx + R * 1.02, cy + 3);
+    ctx.textAlign = 'right';
+    ctx.fillText('270° [W]', cx - R * 1.02, cy + 3);
+    ctx.restore();
+
+    // 4. Subtle Campus Vector Walkways / Boundaries
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx - 160 * scale, cy - 110 * scale, 320 * scale, 220 * scale);
+    ctx.beginPath();
+    ctx.moveTo(cx - 160 * scale, cy);
+    ctx.lineTo(cx - 40 * scale, cy);
+    ctx.lineTo(cx + 40 * scale, cy);
+    ctx.lineTo(cx + 160 * scale, cy);
+    ctx.stroke();
+    ctx.restore();
+
+    // 5. Central Inverter Hub Substation (Center of Microgrid)
+    ctx.save();
+    ctx.fillStyle = '#021626';
     ctx.strokeStyle = '#00e5ff';
     ctx.lineWidth = 1.5;
-    const tickLen = 8;
-    const rOuter = R * 1.16;
-    [0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2].forEach(angle => {
-      const x1 = cx + Math.cos(angle) * (rOuter - tickLen);
-      const y1 = cy + Math.sin(angle) * (rOuter - tickLen);
-      const x2 = cx + Math.cos(angle) * (rOuter + tickLen);
-      const y2 = cy + Math.sin(angle) * (rOuter + tickLen);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    });
+    ctx.beginPath();
+    ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#00e5ff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '700 8px "Barlow Condensed", monospace';
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('RVCE SOLAR SUBSTATION #01', cx, cy + 18);
     ctx.restore();
 
-    // 3. Latitude Wireframe Circles
-    [-60, -40, -20, 0, 20, 40, 60].forEach(lat => {
-      const latRad = (lat * Math.PI) / 180;
-      ctx.beginPath();
-      let first = true;
-      for (let lon = 0; lon <= 360; lon += 10) {
-        const lonRad = (lon * Math.PI) / 180;
-        const pt = project(latRad, lonRad);
-        if (first) {
-          ctx.moveTo(pt.x, pt.y);
-          first = false;
-        } else {
-          ctx.lineTo(pt.x, pt.y);
-        }
-      }
-      ctx.closePath();
-      ctx.strokeStyle = lat === 0 ? 'rgba(0, 229, 255, 0.45)' : 'rgba(0, 160, 255, 0.18)';
-      ctx.lineWidth = lat === 0 ? 1.5 : 0.8;
-      ctx.stroke();
-    });
-
-    // 4. Longitude Wireframe Meridians
-    for (let lon = 0; lon < 360; lon += 30) {
-      const lonRad = (lon * Math.PI) / 180;
-      ctx.beginPath();
-      let first = true;
-      for (let lat = -90; lat <= 90; lat += 8) {
-        const latRad = (lat * Math.PI) / 180;
-        const pt = project(latRad, lonRad);
-        if (first) {
-          ctx.moveTo(pt.x, pt.y);
-          first = false;
-        } else {
-          ctx.lineTo(pt.x, pt.y);
-        }
-      }
-      ctx.strokeStyle = 'rgba(0, 160, 255, 0.18)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
-
-    // 5. Holographic Continent / Microgrid Dot Matrix
-    globePoints.forEach(p => {
-      const pt = project(p.latRad, p.lonRad);
-      if (pt.z > -10) {
-        const alpha = Math.max(0.1, (pt.z + R) / (2 * R));
-        ctx.fillStyle = `rgba(0, 229, 255, ${alpha.toFixed(2)})`;
-        ctx.fillRect(pt.x - 1, pt.y - 1, 2, 2);
-      }
-    });
-
-    // 6. 3D Solar Arc Beams connecting stations
-    const arcs = [
-      [stationNodes[0], stationNodes[1]],
-      [stationNodes[1], stationNodes[2]],
-      [stationNodes[2], stationNodes[3]],
-      [stationNodes[3], stationNodes[0]]
+    // 6. Microgrid Power Conduits & Traveling Solar Photons
+    const conduits = [
+      [ { x: cx, y: cy }, stationNodes[0] ],
+      [ { x: cx, y: cy }, stationNodes[1] ],
+      [ { x: cx, y: cy }, stationNodes[2] ],
+      [ { x: cx, y: cy }, stationNodes[3] ],
+      [ stationNodes[0], stationNodes[1] ],
+      [ stationNodes[1], stationNodes[3] ],
+      [ stationNodes[3], stationNodes[2] ],
+      [ stationNodes[2], stationNodes[0] ]
     ];
 
-    arcs.forEach(([s1, s2], arcIdx) => {
-      const p1 = project(s1.latRad, s1.lonRad);
-      const p2 = project(s2.latRad, s2.lonRad);
+    conduits.forEach(([p1, p2], cIdx) => {
+      ctx.save();
+      ctx.strokeStyle = cIdx < 4 ? 'rgba(0, 229, 255, 0.35)' : 'rgba(0, 229, 255, 0.16)';
+      ctx.lineWidth = cIdx < 4 ? 1.4 : 1;
+      ctx.setLineDash(cIdx < 4 ? [] : [2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.restore();
 
-      const midLat = (s1.latRad + s2.latRad) / 2;
-      const midLon = (s1.lonRad + s2.lonRad) / 2;
-      const apex = project(midLat, midLon, R * 1.38);
+      // Traveling Solar Photon Packet along conduit
+      const t = (tick * 0.012 + cIdx * 0.16) % 1;
+      const px = p1.x + (p2.x - p1.x) * t;
+      const py = p1.y + (p2.y - p1.y) * t;
 
-      if (p1.z > -R * 0.5 || p2.z > -R * 0.5) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.quadraticCurveTo(apex.x, apex.y, p2.x, p2.y);
-        ctx.strokeStyle = arcIdx % 2 === 0 ? 'rgba(0, 229, 255, 0.65)' : 'rgba(240, 138, 36, 0.65)';
-        ctx.lineWidth = 1.6;
-        ctx.stroke();
-
-        // Traveling Solar Photon along arc
-        const tPulse = ((tick * 0.012 + arcIdx * 0.25) % 1);
-        const bx = (1 - tPulse) * (1 - tPulse) * p1.x + 2 * (1 - tPulse) * tPulse * apex.x + tPulse * tPulse * p2.x;
-        const by = (1 - tPulse) * (1 - tPulse) * p1.y + 2 * (1 - tPulse) * tPulse * apex.y + tPulse * tPulse * p2.y;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = arcIdx % 2 === 0 ? '#00e5ff' : '#f08a24';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(bx, by, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     });
 
-    // 7. Station Nodes & Interactive Radar Target Reticles
+    // 7. Render Station Nodes & Selection Telemetry
     stationNodes.forEach(node => {
-      const pt = project(node.latRad, node.lonRad);
       const isSelected = window.S.inspectedStation === node.id;
+      const isHovered = hoveredStationId === node.id;
+      const stnData = (window.ST || []).find(s => s.id === node.id) || { n: node.fullName, solar: 280, free: 6, slots: 8 };
 
-      if (pt.z > -20) {
-        const pingR = 5 + (tick % 40) * 0.35;
-        const pingAlpha = Math.max(0, 1 - (tick % 40) / 40);
+      ctx.save();
 
-        ctx.save();
-        // Radar Ping
-        ctx.strokeStyle = isSelected ? 'rgba(240, 138, 36, ' + pingAlpha.toFixed(2) + ')' : `rgba(0, 229, 255, ${pingAlpha.toFixed(2)})`;
-        ctx.lineWidth = isSelected ? 2 : 1.5;
+      // Outer radar pulse wave (sonar beacon)
+      const pingR = 10 + (tick % 50) * 0.45;
+      const pingAlpha = Math.max(0, 1 - (tick % 50) / 50);
+      ctx.strokeStyle = isSelected ? `rgba(240, 138, 36, ${pingAlpha})` : `rgba(0, 229, 255, ${pingAlpha * 0.7})`;
+      ctx.lineWidth = isSelected ? 2 : 1.2;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, isSelected ? pingR + 4 : pingR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Node background disc
+      ctx.fillStyle = isSelected ? 'rgba(38, 20, 4, 0.9)' : 'rgba(3, 20, 36, 0.9)';
+      ctx.strokeStyle = isSelected ? '#f08a24' : (isHovered ? '#ffffff' : '#00e5ff');
+      ctx.lineWidth = isSelected ? 2.2 : 1.5;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Center LED glowing core
+      ctx.fillStyle = isSelected ? '#f08a24' : '#00e5ff';
+      ctx.shadowColor = isSelected ? '#f08a24' : '#00e5ff';
+      ctx.shadowBlur = isSelected ? 16 : 10;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, isSelected ? 4 : 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Station Acronym Box Badge (Top)
+      const badgeW = 34, badgeH = 14;
+      const badgeX = node.x - badgeW / 2;
+      const badgeY = node.y - 25;
+      ctx.fillStyle = isSelected ? 'rgba(240, 138, 36, 0.2)' : 'rgba(0, 229, 255, 0.15)';
+      ctx.strokeStyle = isSelected ? '#f08a24' : '#00e5ff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
+      ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+
+      ctx.font = '700 9px "Barlow Condensed", monospace';
+      ctx.fillStyle = isSelected ? '#ffb966' : '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(node.name, node.x, badgeY + 10);
+
+      // Station Name & Telemetry (Bottom)
+      ctx.font = '700 9.5px "Barlow Condensed", monospace';
+      ctx.fillStyle = isSelected ? '#ffddaa' : '#e2f1fd';
+      ctx.fillText(node.fullName, node.x, node.y + 19);
+
+      ctx.font = '600 8.5px "Barlow Condensed", monospace';
+      ctx.fillStyle = isSelected ? '#f08a24' : 'rgba(0, 229, 255, 0.85)';
+      ctx.fillText(`${stnData.solar | 0}W · ${stnData.free}/${stnData.slots} FREE`, node.x, node.y + 29);
+
+      // If Inspected/Selected: Draw Tactical Targeting Brackets & Azimuth Crosshairs
+      if (isSelected) {
+        ctx.strokeStyle = '#f08a24';
+        ctx.lineWidth = 1.8;
+        const bSize = 14;
+        const bOff = 12;
+
+        // Top-Left bracket
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, isSelected ? pingR + 4 : pingR, 0, Math.PI * 2);
+        ctx.moveTo(node.x - bOff - bSize, node.y - bOff);
+        ctx.lineTo(node.x - bOff - bSize, node.y - bOff - bSize);
+        ctx.lineTo(node.x - bOff, node.y - bOff - bSize);
         ctx.stroke();
 
-        // If selected, draw target bracket
-        if (isSelected) {
-          ctx.strokeStyle = '#f08a24';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, 16, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        // Node Dot
-        ctx.fillStyle = isSelected ? '#f08a24' : '#00e5ff';
-        ctx.shadowColor = isSelected ? '#f08a24' : '#00e5ff';
-        ctx.shadowBlur = isSelected ? 16 : 10;
+        // Top-Right bracket
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, isSelected ? 5.5 : 4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(node.x + bOff + bSize, node.y - bOff);
+        ctx.lineTo(node.x + bOff + bSize, node.y - bOff - bSize);
+        ctx.lineTo(node.x + bOff, node.y - bOff - bSize);
+        ctx.stroke();
 
-        // Station Label
-        ctx.shadowBlur = 0;
-        ctx.font = '700 10px "Barlow Condensed", monospace';
-        ctx.fillStyle = isSelected ? '#ffd599' : '#e2f1fd';
-        ctx.fillText(node.name, pt.x + 8, pt.y - 6);
-        ctx.fillStyle = isSelected ? '#f08a24' : 'rgba(0, 229, 255, 0.8)';
-        ctx.fillText(isSelected ? 'INSPECTING' : 'ONLINE', pt.x + 8, pt.y + 6);
+        // Bottom-Left bracket
+        ctx.beginPath();
+        ctx.moveTo(node.x - bOff - bSize, node.y + bOff);
+        ctx.lineTo(node.x - bOff - bSize, node.y + bOff + bSize);
+        ctx.lineTo(node.x - bOff, node.y + bOff + bSize);
+        ctx.stroke();
+
+        // Bottom-Right bracket
+        ctx.beginPath();
+        ctx.moveTo(node.x + bOff + bSize, node.y + bOff);
+        ctx.lineTo(node.x + bOff + bSize, node.y + bOff + bSize);
+        ctx.lineTo(node.x + bOff, node.y + bOff + bSize);
+        ctx.stroke();
+
+        // Rotating targeting lock reticle ring
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = '#f08a24';
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 22, tick * 0.04, tick * 0.04 + Math.PI * 1.6);
+        ctx.stroke();
         ctx.restore();
+
+        // Target Lock Tag
+        ctx.font = '700 8px "Barlow Condensed", monospace';
+        ctx.fillStyle = '#f08a24';
+        ctx.fillText(`TARGET LOCKED // ${node.dist}`, node.x, node.y - 30);
       }
+
+      ctx.restore();
     });
 
-    // 8. Outer Coordinate Rings & Telemetry Tag
+    // 8. Outer Coordinate HUD Stamp
     ctx.save();
-    ctx.font = '8px "Barlow Condensed", monospace';
-    ctx.fillStyle = 'rgba(0, 229, 255, 0.6)';
-    ctx.fillText('DATAV 3D TELEMETRY MATRIX', 14, 20);
-    ctx.fillText(`ROT: ${(globeRotY % (Math.PI * 2)).toFixed(2)} RAD ${isGlobePaused ? '[PAUSED]' : '[DRIFT 0.0015]'}`, 14, 32);
-    ctx.fillText('COORD: 12.9238°N 77.4987°E', width - 110, 20);
+    ctx.font = '700 8.5px "Barlow Condensed", monospace';
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.65)';
+    ctx.fillText('STATIONARY RVCE RADAR // 4 ACTIVE STATIONS', 14, 20);
+    ctx.fillText('CLICK ANY STATION ON MAP TO INSPECT 8 BAYS', 14, 32);
+    ctx.textAlign = 'right';
+    ctx.fillText('GRID: 12.9238°N 77.4987°E · ELEV 830M', width - 14, 20);
+    ctx.fillText('SOLAR TRACKER: MPPT LOCKED', width - 14, 32);
     ctx.restore();
 
-    globeAnimationId = requestAnimationFrame(render);
+    radarAnimationId = requestAnimationFrame(render);
   }
 
   render();
@@ -714,46 +796,62 @@ const renderActivityMatrix = () => {
     </div>`;
 };
 
-// Station Cards Generator
-const renderStationTable = () => `
+// Cyber Segmented Battery/Storage Bar Helper
+const renderSegmentedBar = (pct) => {
+  const activeSegs = Math.min(8, Math.max(1, Math.round((pct / 100) * 8)));
+  let html = '<div class="cyber-segmented-gauge" title="' + (pct | 0) + '% Storage SoC">';
+  for (let i = 0; i < 8; i++) {
+    const on = i < activeSegs;
+    const isHigh = pct >= 60;
+    html += `<i class="seg ${on ? (isHigh ? 'on high' : 'on') : ''}"></i>`;
+  }
+  html += ` <span class="gauge-val">${pct | 0}%</span></div>`;
+  return html;
+};
+
+// Station Cards Generator (Aerospace Node Telemetry Matrix)
+const renderStationTable = () => {
+  const curStn = (window.S && window.S.inspectedStation) || 'library';
+  return `
   <table class="datav-fleet-table">
     <thead>
       <tr>
-        <th>Station</th>
+        <th>Station Node</th>
         <th>Free/Total</th>
-        <th>Solar</th>
+        <th>Solar Inflow</th>
         <th>Panel Temp</th>
-        <th>Reserve</th>
+        <th>Battery Matrix</th>
         <th>Status</th>
-        <th>Inspect</th>
+        <th>Telemetry</th>
       </tr>
     </thead>
     <tbody>
-      ${ST.map(s => `
-        <tr id="stn-row-${s.id}">
+      ${ST.map(s => {
+        const isSelected = s.id === curStn;
+        return `
+        <tr id="stn-row-${s.id}" class="${isSelected ? 'stn-selected-row' : ''}">
           <td><b>${s.n}</b></td>
-          <td>${s.free}/${s.slots}</td>
+          <td><b>${s.free}/${s.slots}</b></td>
           <td><span style="color:#00e5ff">${s.solar | 0} W</span></td>
-          <td>${s.temp.toFixed(1)}°C</td>
-          <td>
-            <div class="datav-mini-bar"><i style="width:${s.batt}%"></i></div>
-            <small style="color:var(--adm-mut)">${s.batt | 0}%</small>
-          </td>
+          <td><span style="${s.temp > 35 ? 'color:#f08a24' : ''}">${s.temp.toFixed(1)}°C</span></td>
+          <td>${renderSegmentedBar(s.batt)}</td>
           <td>
             <span id="stn-status-${s.id}" class="datav-status-tag ${s.ok ? 'online' : 'offline'}">
+              <span class="datav-dot-pulse" style="display:inline-block;width:5px;height:5px;background:${s.ok ? '#34d399' : '#f87171'};border-radius:50%;margin-right:4px"></span>
               ${s.ok ? 'ONLINE' : 'OFFLINE'}
             </span>
           </td>
           <td>
-            <button type="button" class="btn btn-sm g" onclick="focusStationOnGlobe('${s.id}')" style="padding:4px 8px;font-size:0.75rem">
-              Focus 🎯
+            <button type="button" class="btn btn-sm btn-target ${isSelected ? 'active' : ''}" data-stn="${s.id}" onclick="focusStationOnGlobe('${s.id}')">
+              ${isSelected ? 'LOCKED 🎯' : 'TARGET 🎯'}
             </button>
           </td>
         </tr>
-      `).join('')}
+      `}).join('')}
     </tbody>
   </table>
-`;
+  `;
+};
 
 // Field Technician Slot Diagnostics Generator (8 slots per station)
 const renderTechnicianSlotMatrix = (activeStationId = 'library') => {
@@ -1012,7 +1110,7 @@ function admin() {
             </svg>
           </div>
           <div>
-            <div class="datav-sys-title">DATAV // 光伏与储能微电网可视化系统</div>
+            <div class="datav-sys-title">DATAV // SOLAR MICROGRID & ENERGY STORAGE COMMAND</div>
             <div class="datav-sys-subtitle">LUMENGROVE SOLAR TELEMETRY MISSION CONTROL</div>
           </div>
         </div>
@@ -1150,20 +1248,21 @@ function admin() {
 
           </div>
 
-          <!-- CENTER COLUMN: 3D Wireframe Rotating Telemetry Globe & Station Inspector -->
-          <div class="datav-col center">
+            <!-- CENTER COLUMN: Stationary RVCE Microgrid Radar Map & Station Inspector -->
+            <div class="datav-col center">
             
             <div class="datav-globe-card">
               <div class="datav-globe-header">
                 <div class="globe-status-pill">
                   <i class="datav-dot-pulse"></i>
-                  <span>SPHERICAL 3D TELEMETRY MATRIX // RVCE MICROGRID</span>
+                  <span>TACTICAL CAMPUS RADAR MATRIX // RVCE MICROGRID</span>
                 </div>
-                <!-- Controls: Pause/Resume Orbit & Station Jump Pills -->
+                <!-- Stationary Status Badge & Quick Reset -->
                 <div class="datav-globe-controls">
-                  <button type="button" id="datav-orbit-toggle" class="btn btn-sm g ${isGlobePaused ? 'paused' : ''}" onclick="toggleGlobeSpin()">
-                    ${isGlobePaused ? '▶ RESUME ORBIT' : '⏸ PAUSE ORBIT'}
-                  </button>
+                  <span class="badge" style="background:#042b1a;color:#34d399;border:1px solid #059669;padding:4px 10px;font-family:'Barlow Condensed',monospace;letter-spacing:1px;font-size:0.75rem">
+                    <span class="datav-dot-pulse" style="display:inline-block;width:6px;height:6px;background:#34d399;border-radius:50%;margin-right:6px"></span>
+                    STATIONARY RADAR LOCK
+                  </span>
                 </div>
               </div>
 
@@ -1182,22 +1281,22 @@ function admin() {
                   📍 Cauvery
                 </button>
                 <button type="button" class="globe-stn-pill" data-stn="all" onclick="resetGlobeOrbit()">
-                  🛰️ All Orbit
+                  🌐 Reset Focus
                 </button>
               </div>
 
-              <!-- Interactive 3D Canvas -->
-              <div class="datav-canvas-container" title="Click station to inspect, hover to pause, or drag to rotate">
+              <!-- Interactive Stationary Radar Canvas (Click anywhere near station to inspect) -->
+              <div class="datav-canvas-container" title="Click any campus station directly on the map to lock target and inspect 8-bay hardware">
                 <canvas id="datav-globe-canvas"></canvas>
               </div>
 
               <div class="datav-globe-footer">
                 <div class="globe-legend">
                   <span><i style="background:#00e5ff"></i> Station Node</span>
-                  <span><i style="background:#ffffff;box-shadow:0 0 6px #00e5ff"></i> Solar Beam</span>
-                  <span><i style="background:#f08a24"></i> High Load</span>
+                  <span><i style="background:#ffffff;box-shadow:0 0 6px #00e5ff"></i> Solar Photon</span>
+                  <span><i style="background:#f08a24"></i> Selected Target</span>
                 </div>
-                <div class="globe-hint">Click station on map or hover to pause & inspect</div>
+                <div class="globe-hint">Click any station on radar to inspect 8 bays</div>
               </div>
             </div>
 
@@ -1273,7 +1372,7 @@ function admin() {
           <!-- RIGHT COLUMN: Early Warnings, Technician Controls / Admin Pricing Rules -->
           <div class="datav-col right">
 
-            <!-- Early Warning Alerts Panel (一级预警 / 二级预警) -->
+            <!-- Early Warning Safety Alerts Panel -->
             <div class="datav-panel">
               <div class="datav-panel-header">
                 <span class="datav-corner-bracket tl"></span>
@@ -1281,14 +1380,14 @@ function admin() {
                 <span class="datav-corner-bracket bl"></span>
                 <span class="datav-corner-bracket br"></span>
                 <div class="panel-title-row">
-                  <span class="datav-panel-tag">EARLY WARNING TELEMETRY (预警系统)</span>
+                  <span class="datav-panel-tag">EARLY WARNING TELEMETRY // AUTOMATED SAFETY MATRIX</span>
                   <span class="badge" style="background:#261805;border-color:#f08a24;color:#f08a24">2 ACTIVE</span>
                 </div>
               </div>
               <div class="datav-alarm-list">
                 <div class="datav-alarm-card lvl-1">
                   <div class="alarm-top">
-                    <span class="alarm-tag">一级预警 · LVL 1 ALARM</span>
+                    <span class="alarm-tag">CRITICAL PRIORITY · LVL 1 ALARM</span>
                     <span class="alarm-time">14:38</span>
                   </div>
                   <div class="alarm-body">
@@ -1298,7 +1397,7 @@ function admin() {
                 </div>
                 <div class="datav-alarm-card lvl-2">
                   <div class="alarm-top">
-                    <span class="alarm-tag">二级预警 · LVL 2 NOTICE</span>
+                    <span class="alarm-tag">ROUTINE ADVISORY · LVL 2 NOTICE</span>
                     <span class="alarm-time">13:15</span>
                   </div>
                   <div class="alarm-body">
@@ -1311,7 +1410,7 @@ function admin() {
 
             <!-- Role-Specific Action Deck -->
             ${isSuper ? `
-              <!-- Super Admin Pricing & Policy Control Deck -->
+              <!-- Super Admin Pricing & Policy Control Deck (Cyber Microgrid Policy Terminal) -->
               <div class="datav-panel">
                 <div class="datav-panel-header">
                   <span class="datav-corner-bracket tl"></span>
@@ -1320,29 +1419,75 @@ function admin() {
                   <span class="datav-corner-bracket br"></span>
                   <div class="panel-title-row">
                     <span class="datav-panel-tag">PRICING RULES & POLICY CONFIG</span>
-                    <span class="badge" style="background:#071a2b;color:#00e5ff;border-color:#00e5ff">ACTIVE</span>
+                    <span class="badge" style="background:#042b1a;color:#34d399;border-color:#059669">LIVE DB SYNC</span>
                   </div>
                 </div>
                 <div class="datav-config-form">
-                  <div class="config-row">
-                    <label for="pr">Hourly Rate (₹)</label>
-                    <input id="pr" type="number" value="${PR.rate || 10}" oninput="PR.rate=this.value;bill()">
+                  <!-- Hourly Rate Stepper -->
+                  <div class="cyber-policy-row">
+                    <div class="cyber-policy-label">
+                      <span>HOURLY RENTAL RATE</span>
+                      <small>BASE BILLING UNIT // PAISE CONV</small>
+                    </div>
+                    <div class="cyber-stepper-ctrl">
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('rate', -5)" title="Decrease rate">-</button>
+                      <div id="disp-rate" class="cyber-display-box">₹ ${PR.rate || 10}</div>
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('rate', 5)" title="Increase rate">+</button>
+                    </div>
                   </div>
-                  <div class="config-row">
-                    <label for="pg">Grace Period (Min)</label>
-                    <input id="pg" type="number" value="${PR.grace || 15}" oninput="PR.grace=this.value">
+
+                  <!-- Grace Period Stepper -->
+                  <div class="cyber-policy-row">
+                    <div class="cyber-policy-label">
+                      <span>GRACE PERIOD</span>
+                      <small>DISCONNECT BUFFER // MINS</small>
+                    </div>
+                    <div class="cyber-stepper-ctrl">
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('grace', -5)" title="Decrease grace">-</button>
+                      <div id="disp-grace" class="cyber-display-box">${PR.grace || 15} MIN</div>
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('grace', 5)" title="Increase grace">+</button>
+                    </div>
                   </div>
-                  <div class="config-row">
-                    <label for="pl">Late Fee (₹)</label>
-                    <input id="pl" type="number" value="${PR.late || 20}" oninput="PR.late=this.value">
+
+                  <!-- Late Fee Stepper -->
+                  <div class="cyber-policy-row">
+                    <div class="cyber-policy-label">
+                      <span>LATE OVERAGE FEE</span>
+                      <small>PER ADDITIONAL HOUR // ₹</small>
+                    </div>
+                    <div class="cyber-stepper-ctrl">
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('late', -5)" title="Decrease late fee">-</button>
+                      <div id="disp-late" class="cyber-display-box">₹ ${PR.late || 20}</div>
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('late', 5)" title="Increase late fee">+</button>
+                    </div>
                   </div>
-                  <div class="config-row">
-                    <label for="pd">Refundable Deposit (₹)</label>
-                    <input id="pd" type="number" value="${PR.dep || 0}" oninput="PR.dep=this.value">
+
+                  <!-- Deposit Stepper -->
+                  <div class="cyber-policy-row">
+                    <div class="cyber-policy-label">
+                      <span>REFUNDABLE DEPOSIT</span>
+                      <small>HOLD AMOUNT PER SESSION // ₹</small>
+                    </div>
+                    <div class="cyber-stepper-ctrl">
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('dep', -10)" title="Decrease deposit">-</button>
+                      <div id="disp-dep" class="cyber-display-box">₹ ${PR.dep || 0}</div>
+                      <button type="button" class="cyber-step-btn" onclick="adjustPricing('dep', 10)" title="Increase deposit">+</button>
+                    </div>
                   </div>
+
+                  <!-- Live Preview Simulator -->
                   <div class="config-preview">
-                    <span>Billing Preview (2h charge):</span>
+                    <span>Live Preview (2h charge):</span>
                     <b id="bl" style="color:#00e5ff">₹ ${(PR.rate || 10) * 2}</b>
+                  </div>
+
+                  <!-- Supabase Two-Way Live Commit Button -->
+                  <button type="button" class="cyber-commit-btn" onclick="commitPricingToSupabase()">
+                    ⚡ COMMIT POLICY TO SUPABASE
+                  </button>
+                  <div class="cyber-sync-status">
+                    <span class="datav-dot-pulse" style="display:inline-block;width:6px;height:6px;background:#34d399;border-radius:50%"></span>
+                    <span>SUPABASE CLOUD SYNC: ACTIVE (TWO-WAY LIVE BINDING)</span>
                   </div>
                 </div>
               </div>

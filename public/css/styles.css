@@ -1276,6 +1276,65 @@ body.admin-telemetry-mode #v {
   height: 100%;
   background: #00e5ff;
 }
+
+/* Cyber Segmented Fuel / Battery Matrix Gauge */
+.cyber-segmented-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.cyber-segmented-gauge .seg {
+  display: inline-block;
+  width: 4px;
+  height: 11px;
+  background: rgba(0, 229, 255, 0.12);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 1px;
+}
+.cyber-segmented-gauge .seg.on {
+  background: #00e5ff;
+  border-color: #00e5ff;
+  box-shadow: 0 0 4px rgba(0, 229, 255, 0.7);
+}
+.cyber-segmented-gauge .seg.on.high {
+  background: #34d399;
+  border-color: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.7);
+}
+.cyber-segmented-gauge .gauge-val {
+  font-family: 'Barlow Condensed', monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #e2f1fd;
+  margin-left: 5px;
+  min-width: 28px;
+}
+
+/* Active Station Target Row in Fleet Status Table */
+.datav-fleet-table tr.stn-selected-row {
+  background: rgba(0, 229, 255, 0.1) !important;
+  border-left: 3px solid #f08a24;
+}
+.btn-target {
+  font-family: 'Barlow Condensed', monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  font-size: 0.75rem !important;
+  padding: 3px 8px !important;
+  border: 1px solid #00e5ff !important;
+  color: #00e5ff !important;
+  background: rgba(0, 229, 255, 0.05) !important;
+}
+.btn-target:hover {
+  background: rgba(0, 229, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+.btn-target.active {
+  border-color: #f08a24 !important;
+  color: #f08a24 !important;
+  background: rgba(240, 138, 36, 0.16) !important;
+  box-shadow: 0 0 8px rgba(240, 138, 36, 0.4);
+}
 .datav-status-tag {
   display: inline-block;
   padding: 2px 6px;
@@ -1412,26 +1471,76 @@ body.admin-telemetry-mode #v {
 .datav-config-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
-.config-row {
+.cyber-policy-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 6px 8px;
+  background: rgba(4, 18, 34, 0.6);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 4px;
 }
-.config-row label {
+.cyber-policy-label {
+  display: flex;
+  flex-direction: column;
+}
+.cyber-policy-label span {
   font-size: 0.82rem;
-  color: var(--adm-fg);
+  color: #e2f1fd;
+  font-weight: 600;
+  font-family: 'Barlow Condensed', monospace;
+  letter-spacing: 0.5px;
 }
-.config-row input {
-  width: 90px;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  text-align: right;
-  background: #040c17;
-  border: 1px solid rgba(0, 229, 255, 0.3);
+.cyber-policy-label small {
+  font-size: 0.68rem;
+  color: var(--adm-mut);
+  font-family: 'Barlow Condensed', monospace;
+  letter-spacing: 0.5px;
+}
+.cyber-stepper-ctrl {
+  display: flex;
+  align-items: center;
+  background: #020b14;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+}
+.cyber-step-btn {
+  background: rgba(0, 229, 255, 0.08);
+  border: none;
   color: #00e5ff;
-  border-radius: 3px;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.cyber-step-btn:hover {
+  background: rgba(0, 229, 255, 0.3);
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+}
+.cyber-step-btn:active {
+  background: #00e5ff;
+  color: #02111d;
+}
+.cyber-display-box {
+  min-width: 68px;
+  text-align: center;
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #00e5ff;
+  padding: 0 4px;
+  letter-spacing: 0.5px;
 }
 .config-preview {
   display: flex;
@@ -1442,6 +1551,46 @@ body.admin-telemetry-mode #v {
   border: 1px dashed rgba(0, 229, 255, 0.35);
   border-radius: 4px;
   font-size: 0.82rem;
+  font-family: 'Barlow Condensed', monospace;
+}
+.cyber-commit-btn {
+  width: 100%;
+  margin-top: 4px;
+  background: linear-gradient(135deg, #00e5ff, #0284c7) !important;
+  color: #02111d !important;
+  font-weight: 800 !important;
+  font-family: 'Barlow Condensed', monospace !important;
+  font-size: 0.88rem !important;
+  letter-spacing: 1.2px !important;
+  padding: 9px 14px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.cyber-commit-btn:hover {
+  box-shadow: 0 0 22px rgba(0, 229, 255, 0.7);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.cyber-commit-btn:active {
+  transform: translateY(1px);
+}
+.cyber-sync-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #34d399;
+  font-family: 'Barlow Condensed', monospace;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 
 .datav-matrix-grid {

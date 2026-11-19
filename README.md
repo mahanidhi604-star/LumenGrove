@@ -25,15 +25,17 @@ The platform integrates:
 
 ## 📸 Visual Showcase & UI Gallery
 
-### 1. Cyber Aerospace Telemetry Command Center (`#admin`)
-*Isolated 10k Mission Control with interactive 3D spherical microgrid globe, station focus reticle, and 8-bay hardware diagnostics.*
+### 1. Stationary Campus Microgrid Radar Map & Mission Control (`#admin`)
+*Isolated 10k Mission Control with stationary RVCE vector radar, click-to-select station targeting, and 8-bay hardware diagnostics.*
 
-![DataV Aerospace Telemetry Command Center](docs/screenshots/01_admin_datav_telemetry.png)
+| Stationary RVCE Campus Microgrid Radar Map | Cyber Pricing Deck & Segmented Battery Matrix |
+|:---:|:---:|
+| ![Stationary Campus Radar Inspected](docs/screenshots/10_stationary_radar_inspected.png) | ![Cyber Pricing and Fleet Status](docs/screenshots/11_cyber_pricing_and_fleet.png) |
 
-### 2. Real-Time Customer Complaints Hub (Sub-Page)
-*Staff ticketing hub with live KPI counters, keyword search, verified student `+91` contact details, and one-click dispatch/resolution.*
-
-![Customer Complaints Hub](docs/screenshots/02_admin_complaints_hub.png)
+### 2. Clean Student Bento Rental Hub (`#app-home`) & Complaints Hub
+| Clean Sign-In Experience (`#app-home`) | Customer Complaints Resolution Hub |
+|:---:|:---:|
+| ![App Home Clean Sign-In](docs/screenshots/09_app_home_clean_signin.png) | ![Customer Complaints Hub](docs/screenshots/02_admin_complaints_hub.png) |
 
 ### 3. Student Bento Rental Hub & Guest Lockout Overlay
 | Unlocked Student Portal | Guest Lockout Protection Overlay |
@@ -43,6 +45,7 @@ The platform integrates:
 ### 4. Interactive Campus GPS Navigation & Mobile Telemetry
 | RVCE Campus Radar & Device Geolocation | Mobile Telemetry Viewport |
 |:---:|:---:|
+| ![Campus Map GPS Location](docs/screenshots/05_campus_map_gps.png) | ![Mobile Telemetry Viewport](docs/screenshots/06_mobile_telemetry.png) |
 | ![Campus Map GPS Location](docs/screenshots/05_campus_map_gps.png) | ![Mobile Telemetry Viewport](docs/screenshots/06_mobile_telemetry.png) |
 
 ---
@@ -58,10 +61,15 @@ The platform integrates:
 ### 2. 🛰️ Mission Control Telemetry Dashboard (`#admin`)
 - **Complete Theme Isolation**: High-tech cyber aerospace design (`.admin-telemetry-mode`) that completely hides public navigation and offers a one-click `[🌐 Public Portal]` return button.
 - **Campus Energy Flow Topology Radar**: Real-time vector radar monitoring solar inverter inputs, microgrid harmonic balance ($50.02\text{ Hz}$), and active fleet throughput.
-- **Interactive 3D Microgrid Globe**:
-  - Smooth orbit with hover-to-pause and manual toggle.
-  - Quick-jump station pills (`[📍 Library]`, `[📍 M.M Foods]`, `[📍 Big Mingoes]`, `[📍 Cauvery]`).
-  - Target reticle focus locking onto campus nodes, displaying live **Station Inspection HUDs**, and synchronizing the **8-Bay Hardware Diagnostics Matrix**.
+- **Stationary RVCE Campus Microgrid Radar Map**:
+  - 2D tactical vector radar locked directly onto the 4 campus solar stations.
+  - Interactive click-to-select targeting: click any station on the map to lock target reticles, display live **Station Inspection HUDs**, and synchronize the **8-Bay Hardware Diagnostics Matrix**.
+  - Concentric polar range rings ($50\text{m}, 100\text{m}, 150\text{m}, 200\text{m}$) and cardinal azimuth headings ($000^\circ\text{ N}, 090^\circ\text{ E}, 180^\circ\text{ S}, 270^\circ\text{ W}$).
+  - Microgrid conduits with traveling solar photon animations connecting to central inverter substation.
+- **Cyber Fleet Status & Stepper Pricing Terminal**:
+  - Segmented LED fuel/battery matrix gauges replacing generic bars.
+  - High-tech digital stepper controls (`[-]` / `[+]`) for hourly rates, grace periods, and late fees.
+  - Direct two-way Supabase database synchronization (`[⚡ COMMIT POLICY TO SUPABASE]`).
 
 ### 3. 📋 Customer Complaints Hub (Sub-Page)
 - Real-time ticket feed with live KPI metrics (Open, In Progress, Resolved, and Resolution Rate).

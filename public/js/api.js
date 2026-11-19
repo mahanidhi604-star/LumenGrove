@@ -199,3 +199,118 @@ window.getApi = () => {
   }
   return window.demoApi;
 };
+
+// Comprehensive Two-Way Supabase State Synchronization
+window.syncSupabaseState = async () => {
+  // 0. Load Local Pricing Overrides if previously committed by Admin
+  try {
+    const savedOverride = localStorage.getItem('lg_pricing_override');
+    if (savedOverride && window.PR) {
+      const parsed = JSON.parse(savedOverride);
+      if (parsed.rate) window.PR.rate = Number(parsed.rate);
+      if (parsed.grace) window.PR.grace = Number(parsed.grace);
+      if (parsed.late) window.PR.late = Number(parsed.late);
+      if (parsed.dep !== undefined) window.PR.dep = Number(parsed.dep);
+      console.log('LumenGrove: Loaded pricing override from local policy storage:', window.PR);
+    }
+  } catch (e) {}
+
+  if (!window.supabaseClient) return;
+
+  // 1. Fetch Pricing from Supabase
+  try {
+    const { data: pricingData } = await window.supabaseClient
+      .from('pricing_rules')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pricingData && window.PR) {
+      window.PR.rate = Math.round(pricingData.hourly_rate_paise / 100);
+      window.PR.grace = pricingData.grace_period_mins;
+      window.PR.late = Math.round((pricingData.late_fee_per_hour_paise || 2000) / 100);
+      window.PR.dep = Math.round((pricingData.deposit_paise || 0) / 100);
+      console.log('LumenGrove: Live pricing loaded from Supabase:', window.PR);
+    }
+  } catch (e) {
+    console.warn('Supabase pricing fetch notice:', e);
+  }
+
+  // 2. Fetch Stations from Supabase
+  try {
+    const { data: stnData } = await window.supabaseClient
+      .from('stations')
+      .select('*');
+
+    if (Array.isArray(stnData) && stnData.length > 0 && window.ST) {
+      stnData.forEach(remoteStn => {
+        const local = window.ST.find(s => s.id === remoteStn.id);
+        if (local) {
+          local.n = remoteStn.name || local.n;
+          local.slots = remoteStn.total_slots || local.slots;
+          local.ok = remoteStn.is_online !== false;
+        }
+      });
+      console.log('LumenGrove: Live station metadata synced from Supabase.');
+    }
+  } catch (e) {
+    console.warn('Supabase stations fetch notice:', e);
+  }
+
+  // 3. Fetch Hardware Slots from Supabase
+  try {
+    const { data: slotData } = await window.supabaseClient
+      .from('slots')
+      .select('*');
+
+    if (Array.isArray(slotData) && slotData.length > 0 && window.ST) {
+      if (window.S) window.S.supabaseSlots = slotData;
+      // Calculate dynamic free slots per station
+      window.ST.forEach(stn => {
+        const stationSlots = slotData.filter(s => s.station_id === stn.id);
+        if (stationSlots.length > 0) {
+          const readyCount = stationSlots.filter(s => s.status === 'ready').length;
+          stn.free = readyCount;
+          stn.slots = stationSlots.length;
+        }
+      });
+      console.log('LumenGrove: Live hardware slot matrix synced from Supabase.');
+    }
+  } catch (e) {
+    console.warn('Supabase slots fetch notice:', e);
+  }
+
+  // 4. Fetch Complaints from Supabase
+  try {
+    const { data: complaintData } = await window.supabaseClient
+      .from('complaints')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (Array.isArray(complaintData) && complaintData.length > 0 && window.S) {
+      window.S.complaints = complaintData.map(c => ({
+        id: c.id,
+        user: c.user_name || 'RVCE Student',
+        phone: c.user_phone || '+919876543210',
+        email: c.user_email || 'student@rvce.edu.in',
+        station: c.station_name || 'Central Library',
+        bay: c.slot_number ? `Bay #${c.slot_number}` : 'Kiosk',
+        issue: c.issue_type || 'Kiosk Alert',
+        category: c.category || 'Hardware',
+        time: c.created_at ? new Date(c.created_at).toLocaleTimeString() : 'Recently',
+        status: c.status || 'OPEN',
+        details: c.details || 'Reported via campus kiosk'
+      }));
+      console.log('LumenGrove: Live customer complaints synced from Supabase.');
+    }
+  } catch (e) {}
+};
+
+// Initiate background Supabase sync on load
+setTimeout(() => {
+  if (typeof window.syncSupabaseState === 'function') {
+    window.syncSupabaseState();
+  }
+}, 150);
