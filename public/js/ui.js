@@ -1554,6 +1554,17 @@ addEventListener('resize', syncHeaderHeight);
 
 function hdr(h) {
   const isAuth = h === 'signin' || h === 'admin-login';
+  const isAdmin = h === 'admin';
+
+  // Completely decouple and isolate #admin command center from student layout
+  if (isAdmin) {
+    document.body.className = 'admin-telemetry-mode';
+    const hd = $('#hd'); if (hd) hd.innerHTML = '';
+    const sb = $('#sb'); if (sb) sb.innerHTML = '';
+    const tb = $('#tb'); if (tb) tb.innerHTML = '';
+    return;
+  }
+
   const app = /^(app|plug)/.test(h) && !isAuth,
     ad = h.startsWith('admin') && !isAuth,
     inPlug = (app || ad) && !isAuth,

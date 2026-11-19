@@ -1,5 +1,6 @@
 // js/admin.js - DataV Aerospace Telemetry Command Center for Super Admin & Field Technician
-// Styled after high-tech telemetry mission control with rotating 3D wireframe globe, HUD gauges, and live fleet diagnostics.
+// Full-bleed cyber telemetry mission control with rotating 3D wireframe globe, station inspection HUD,
+// customer complaints resolution hub, and 8-bay hardware diagnostics.
 
 window.bill = () => {
   const bl = $('#bl');
@@ -37,28 +38,227 @@ window.tg = id => {
     statusElem.textContent = s.ok ? 'ONLINE' : 'OFFLINE';
     statusElem.className = `datav-status-tag ${s.ok ? 'online' : 'offline'}`;
   }
+  const inspectStatus = $('#inspect-stn-status');
+  if (inspectStatus && s) {
+    inspectStatus.textContent = s.ok ? 'ONLINE' : 'OFFLINE';
+    inspectStatus.className = `datav-status-tag ${s.ok ? 'online' : 'offline'}`;
+  }
 };
 
 window.techUnlockSlot = (stnId, slotNum) => {
   const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`⚡ Solenoid unlocked: ${s.n} Slot #${slotNum}`);
+  toast(`⚡ Solenoid unlocked: ${s.n} Bay #${slotNum}`);
 };
 
 window.techClearJam = (stnId, slotNum) => {
   const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`🔄 Slot #${slotNum} at ${s.n} recalibrated. Return lock cleared.`);
+  toast(`🔄 Bay #${slotNum} at ${s.n} recalibrated. Return lock cleared.`);
 };
 
 window.techCalibrate = (stnId) => {
   const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`🩺 Station ${s.n} full health diagnostic OK (8/8 slots verified, MPPT active)`);
+  toast(`🩺 Station ${s.n} full health diagnostic OK (8/8 bays verified, MPPT active)`);
+};
+
+// Customer Complaints Hub State & Actions
+const defaultComplaints = [
+  {
+    id: 'CMP-1048',
+    student: 'Aarav Sharma',
+    email: 'aarav.sharma@rvce.edu.in',
+    phone: '+919876543210',
+    station: 'Central Library',
+    stationId: 'library',
+    slotNum: 2,
+    issue: 'Lock stuck after payment',
+    category: 'Lock Stuck',
+    time: '12 mins ago',
+    status: 'OPEN',
+    details: 'QR payment of ₹20 completed successfully via UPI, but slot 2 solenoid did not release the power bank.'
+  },
+  {
+    id: 'CMP-1047',
+    student: 'Priya Patel',
+    email: 'priya.patel@rvce.edu.in',
+    phone: '+919812345678',
+    station: 'M.M Foods',
+    stationId: 'mm',
+    slotNum: 4,
+    issue: 'Power bank not charging device',
+    category: 'Bank Fault',
+    time: '45 mins ago',
+    status: 'INVESTIGATING',
+    details: 'Grove Fast power bank output port seems loose. Disconnects charging repeatedly.'
+  },
+  {
+    id: 'CMP-1045',
+    student: 'Rohan Deshmukh',
+    email: 'rohan.d@rvce.edu.in',
+    phone: '+919988776655',
+    station: 'Big Mingoes',
+    stationId: 'mingoes',
+    slotNum: 1,
+    issue: 'Charged twice during payment',
+    category: 'Wrong Amount',
+    time: '2 hours ago',
+    status: 'RESOLVED',
+    details: 'Transaction duplicated on Google Pay. Transaction reference LG-TX-8829.'
+  },
+  {
+    id: 'CMP-1042',
+    student: 'Sneha Kulkarni',
+    email: 'sneha.k@rvce.edu.in',
+    phone: '+919765432109',
+    station: 'Cauvery Hostel',
+    stationId: 'cauvery',
+    slotNum: 6,
+    issue: 'Station touchscreen unresponsive',
+    category: 'Kiosk Offline',
+    time: 'Yesterday',
+    status: 'RESOLVED',
+    details: 'Touchscreen digitizer froze while typing PIN. Kiosk soft reboot performed.'
+  }
+];
+
+if (!window.S.complaints) {
+  window.S.complaints = defaultComplaints;
+}
+window.S.complaintFilter = window.S.complaintFilter || 'ALL';
+window.S.complaintSearch = window.S.complaintSearch || '';
+window.S.complaintStation = window.S.complaintStation || 'ALL';
+window.S.adminTab = window.S.adminTab || 'telemetry';
+window.S.inspectedStation = window.S.inspectedStation || 'library';
+
+window.rerAdmin = () => {
+  const v = $('#v');
+  if (v && location.hash === '#admin') {
+    v.innerHTML = admin();
+  }
+};
+
+window.switchAdminTab = (tab) => {
+  window.S.adminTab = tab;
+  window.rerAdmin();
+};
+
+window.resolveComplaint = (id) => {
+  const item = (window.S.complaints || []).find(c => c.id === id);
+  if (item) {
+    item.status = 'RESOLVED';
+    toast(`Ticket ${id} marked as RESOLVED`);
+    window.rerAdmin();
+  }
+};
+
+window.dispatchTech = (id) => {
+  const item = (window.S.complaints || []).find(c => c.id === id);
+  if (item) {
+    item.status = 'INVESTIGATING';
+    toast(`Field Technician dispatched to ${item.station} for ${id}`);
+    window.rerAdmin();
+  }
+};
+
+window.filterComplaints = (filterKey) => {
+  window.S.complaintFilter = filterKey;
+  window.rerAdmin();
+};
+
+window.filterComplaintsStation = (stnId) => {
+  window.S.complaintStation = stnId;
+  window.rerAdmin();
+};
+
+window.searchComplaints = (query) => {
+  window.S.complaintSearch = (query || '').toLowerCase();
+  const listContainer = document.getElementById('datav-complaints-list');
+  if (listContainer) {
+    listContainer.innerHTML = renderComplaintsCards();
+  }
 };
 
 // 3D Wireframe Rotating Telemetry Globe Canvas Engine
 let globeAnimationId = null;
 let globeRotY = 0;
 let isGlobeDragging = false;
+let isGlobeHovered = false;
+let isGlobePaused = false;
 let lastMouseX = 0;
+let targetGlobeRotY = null;
+
+// Station Spherical Coordinates
+const stationNodes = [
+  { id: 'library', name: 'LIB', fullName: 'Central Library', latRad: 0.22, lonRad: 1.15, ok: true },
+  { id: 'mm', name: 'MM', fullName: 'M.M Foods', latRad: 0.32, lonRad: 1.48, ok: true },
+  { id: 'mingoes', name: 'MING', fullName: 'Big Mingoes', latRad: 0.12, lonRad: 1.82, ok: true },
+  { id: 'cauvery', name: 'CAUV', fullName: 'Cauvery Hostel', latRad: -0.15, lonRad: 1.35, ok: true }
+];
+
+window.toggleGlobeSpin = () => {
+  isGlobePaused = !isGlobePaused;
+  const btn = document.getElementById('datav-orbit-toggle');
+  if (btn) {
+    btn.innerHTML = isGlobePaused ? '▶ RESUME ORBIT' : '⏸ PAUSE ORBIT';
+    btn.classList.toggle('paused', isGlobePaused);
+  }
+  toast(isGlobePaused ? 'Globe orbit paused' : 'Globe auto-orbit resumed');
+};
+
+window.focusStationOnGlobe = (stnId) => {
+  const node = stationNodes.find(n => n.id === stnId);
+  if (!node) return;
+
+  window.S.inspectedStation = stnId;
+  isGlobePaused = true;
+
+  // Calculate target rotation angle so this station faces front and center (lon + rotY = PI/2)
+  targetGlobeRotY = Math.PI / 2 - node.lonRad;
+
+  const btn = document.getElementById('datav-orbit-toggle');
+  if (btn) {
+    btn.innerHTML = '▶ RESUME ORBIT';
+    btn.classList.add('paused');
+  }
+
+  // Update inspection HUD card below the globe
+  const hudContainer = document.getElementById('datav-station-inspection-hud');
+  if (hudContainer) {
+    hudContainer.innerHTML = renderStationInspectionCard(stnId);
+  }
+
+  // Update active pill styling on HUD
+  document.querySelectorAll('.globe-stn-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.stn === stnId);
+  });
+
+  // Automatically switch Technician 8-Bay Hardware Diagnostics Matrix below
+  const techBayContainer = document.getElementById('datav-tech-bays-container');
+  if (techBayContainer) {
+    techBayContainer.innerHTML = renderTechnicianSlotMatrix(stnId);
+  }
+
+  const s = ST.find(x => x.id === stnId) || ST[0];
+  toast(`Locked focus to ${s.n} · Bay diagnostics updated`);
+};
+
+window.resetGlobeOrbit = () => {
+  window.S.inspectedStation = null;
+  isGlobePaused = false;
+  targetGlobeRotY = null;
+  const btn = document.getElementById('datav-orbit-toggle');
+  if (btn) {
+    btn.innerHTML = '⏸ PAUSE ORBIT';
+    btn.classList.remove('paused');
+  }
+  document.querySelectorAll('.globe-stn-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.stn === 'all');
+  });
+  const hudContainer = document.getElementById('datav-station-inspection-hud');
+  if (hudContainer) {
+    hudContainer.innerHTML = renderStationInspectionCard('library');
+  }
+  toast('Resumed continuous globe orbit');
+};
 
 window.initDatavGlobe = () => {
   const canvas = document.getElementById('datav-globe-canvas');
@@ -71,7 +271,7 @@ window.initDatavGlobe = () => {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   const width = rect.width || 440;
-  const height = rect.height || 440;
+  const height = rect.height || 420;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   ctx.scale(dpr, dpr);
@@ -98,7 +298,6 @@ window.initDatavGlobe = () => {
     const count = Math.max(6, Math.floor(28 * Math.cos(latRad)));
     for (let i = 0; i < count; i++) {
       const lonRad = (i / count) * Math.PI * 2;
-      // Filter pseudo-continents / station cluster microgrid
       const hash = Math.sin(lat * 12.9898 + i * 78.233);
       if (Math.abs(hash) > 0.35) {
         globePoints.push({ latRad, lonRad });
@@ -106,26 +305,61 @@ window.initDatavGlobe = () => {
     }
   }
 
-  // Station Coordinates mapped to spherical nodes
-  const stationNodes = [
-    { id: 'library', name: 'LIB', latRad: 0.22, lonRad: 1.15, ok: true },
-    { id: 'mm', name: 'MM', latRad: 0.32, lonRad: 1.48, ok: true },
-    { id: 'mingoes', name: 'MING', latRad: 0.12, lonRad: 1.82, ok: true },
-    { id: 'cauvery', name: 'CAUV', latRad: -0.15, lonRad: 1.35, ok: true }
-  ];
+  // Hover detection to pause rotation and change cursor
+  canvas.onmouseenter = () => {
+    isGlobeHovered = true;
+  };
+  canvas.onmouseleave = () => {
+    isGlobeHovered = false;
+    isGlobeDragging = false;
+  };
+
+  // Click on canvas node detection
+  canvas.onclick = e => {
+    const cRect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - cRect.left;
+    const clickY = e.clientY - cRect.top;
+
+    for (const node of stationNodes) {
+      const pt = project(node.latRad, node.lonRad);
+      if (pt.z > -20) {
+        const dist = Math.hypot(clickX - pt.x, clickY - pt.y);
+        if (dist <= 24) {
+          window.focusStationOnGlobe(node.id);
+          return;
+        }
+      }
+    }
+  };
 
   // Mouse / Touch Drag Handlers
   canvas.onmousedown = e => {
     isGlobeDragging = true;
     lastMouseX = e.clientX;
+    targetGlobeRotY = null;
   };
   window.onmouseup = () => {
     isGlobeDragging = false;
   };
   canvas.onmousemove = e => {
+    const cRect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - cRect.left;
+    const mouseY = e.clientY - cRect.top;
+
+    // Check if hovering near a station node
+    let nearNode = false;
+    for (const node of stationNodes) {
+      const pt = project(node.latRad, node.lonRad);
+      if (pt.z > -20 && Math.hypot(mouseX - pt.x, mouseY - pt.y) <= 24) {
+        nearNode = true;
+        break;
+      }
+    }
+    canvas.style.cursor = nearNode ? 'pointer' : (isGlobeDragging ? 'grabbing' : 'grab');
+
     if (isGlobeDragging) {
       const deltaX = e.clientX - lastMouseX;
-      globeRotY += deltaX * 0.01;
+      globeRotY += deltaX * 0.008;
       lastMouseX = e.clientX;
     }
   };
@@ -133,6 +367,7 @@ window.initDatavGlobe = () => {
     if (e.touches.length > 0) {
       isGlobeDragging = true;
       lastMouseX = e.touches[0].clientX;
+      targetGlobeRotY = null;
     }
   };
   window.ontouchend = () => {
@@ -141,7 +376,7 @@ window.initDatavGlobe = () => {
   canvas.ontouchmove = e => {
     if (isGlobeDragging && e.touches.length > 0) {
       const deltaX = e.touches[0].clientX - lastMouseX;
-      globeRotY += deltaX * 0.01;
+      globeRotY += deltaX * 0.008;
       lastMouseX = e.touches[0].clientX;
     }
   };
@@ -154,8 +389,15 @@ window.initDatavGlobe = () => {
       return;
     }
 
-    if (!isGlobeDragging) {
-      globeRotY += 0.005; // Constant smooth celestial rotation
+    // Smooth rotation logic (~3.5x slower than original: 0.0015 rad/frame)
+    if (targetGlobeRotY !== null) {
+      globeRotY += (targetGlobeRotY - globeRotY) * 0.08;
+      if (Math.abs(targetGlobeRotY - globeRotY) < 0.002) {
+        globeRotY = targetGlobeRotY;
+        targetGlobeRotY = null;
+      }
+    } else if (!isGlobeDragging && !isGlobeHovered && !isGlobePaused) {
+      globeRotY += 0.0015; // Slow, majestic planetary drift
     }
     tick++;
 
@@ -261,7 +503,6 @@ window.initDatavGlobe = () => {
       const p1 = project(s1.latRad, s1.lonRad);
       const p2 = project(s2.latRad, s2.lonRad);
 
-      // Arc apex in space
       const midLat = (s1.latRad + s2.latRad) / 2;
       const midLon = (s1.lonRad + s2.lonRad) / 2;
       const apex = project(midLat, midLon, R * 1.38);
@@ -276,7 +517,7 @@ window.initDatavGlobe = () => {
         ctx.stroke();
 
         // Traveling Solar Photon along arc
-        const tPulse = ((tick * 0.015 + arcIdx * 0.25) % 1);
+        const tPulse = ((tick * 0.012 + arcIdx * 0.25) % 1);
         const bx = (1 - tPulse) * (1 - tPulse) * p1.x + 2 * (1 - tPulse) * tPulse * apex.x + tPulse * tPulse * p2.x;
         const by = (1 - tPulse) * (1 - tPulse) * p1.y + 2 * (1 - tPulse) * tPulse * apex.y + tPulse * tPulse * p2.y;
 
@@ -290,36 +531,47 @@ window.initDatavGlobe = () => {
       }
     });
 
-    // 7. Station Nodes & Radar Pings
+    // 7. Station Nodes & Interactive Radar Target Reticles
     stationNodes.forEach(node => {
       const pt = project(node.latRad, node.lonRad);
+      const isSelected = window.S.inspectedStation === node.id;
+
       if (pt.z > -20) {
         const pingR = 5 + (tick % 40) * 0.35;
         const pingAlpha = Math.max(0, 1 - (tick % 40) / 40);
 
         ctx.save();
         // Radar Ping
-        ctx.strokeStyle = `rgba(0, 229, 255, ${pingAlpha.toFixed(2)})`;
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = isSelected ? 'rgba(240, 138, 36, ' + pingAlpha.toFixed(2) + ')' : `rgba(0, 229, 255, ${pingAlpha.toFixed(2)})`;
+        ctx.lineWidth = isSelected ? 2 : 1.5;
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pingR, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, isSelected ? pingR + 4 : pingR, 0, Math.PI * 2);
         ctx.stroke();
 
+        // If selected, draw target bracket
+        if (isSelected) {
+          ctx.strokeStyle = '#f08a24';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 16, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
         // Node Dot
-        ctx.fillStyle = '#00e5ff';
-        ctx.shadowColor = '#00e5ff';
-        ctx.shadowBlur = 10;
+        ctx.fillStyle = isSelected ? '#f08a24' : '#00e5ff';
+        ctx.shadowColor = isSelected ? '#f08a24' : '#00e5ff';
+        ctx.shadowBlur = isSelected ? 16 : 10;
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, isSelected ? 5.5 : 4, 0, Math.PI * 2);
         ctx.fill();
 
         // Station Label
         ctx.shadowBlur = 0;
         ctx.font = '700 10px "Barlow Condensed", monospace';
-        ctx.fillStyle = '#e2f1fd';
+        ctx.fillStyle = isSelected ? '#ffd599' : '#e2f1fd';
         ctx.fillText(node.name, pt.x + 8, pt.y - 6);
-        ctx.fillStyle = 'rgba(0, 229, 255, 0.8)';
-        ctx.fillText('ONLINE', pt.x + 8, pt.y + 6);
+        ctx.fillStyle = isSelected ? '#f08a24' : 'rgba(0, 229, 255, 0.8)';
+        ctx.fillText(isSelected ? 'INSPECTING' : 'ONLINE', pt.x + 8, pt.y + 6);
         ctx.restore();
       }
     });
@@ -329,7 +581,7 @@ window.initDatavGlobe = () => {
     ctx.font = '8px "Barlow Condensed", monospace';
     ctx.fillStyle = 'rgba(0, 229, 255, 0.6)';
     ctx.fillText('DATAV 3D TELEMETRY MATRIX', 14, 20);
-    ctx.fillText(`ROT: ${(globeRotY % (Math.PI * 2)).toFixed(2)} RAD`, 14, 32);
+    ctx.fillText(`ROT: ${(globeRotY % (Math.PI * 2)).toFixed(2)} RAD ${isGlobePaused ? '[PAUSED]' : '[DRIFT 0.0015]'}`, 14, 32);
     ctx.fillText('COORD: 12.9238°N 77.4987°E', width - 110, 20);
     ctx.restore();
 
@@ -354,10 +606,60 @@ window.startDatavClock = () => {
   setInterval(update, 85);
 };
 
+// Station Inspection HUD Card (rendered beneath globe when a station is clicked/inspected)
+const renderStationInspectionCard = (stnId) => {
+  const s = ST.find(x => x.id === stnId) || ST[0];
+  return `
+    <div class="datav-panel datav-inspect-card">
+      <div class="datav-panel-header">
+        <span class="datav-corner-bracket tl"></span>
+        <span class="datav-corner-bracket tr"></span>
+        <span class="datav-corner-bracket bl"></span>
+        <span class="datav-corner-bracket br"></span>
+        <div class="panel-title-row">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="datav-dot-pulse"></span>
+            <span class="datav-panel-tag">INSPECTING STATION // ${s.n.toUpperCase()}</span>
+          </div>
+          <span id="inspect-stn-status" class="datav-status-tag ${s.ok ? 'online' : 'offline'}">${s.ok ? 'ONLINE' : 'OFFLINE'}</span>
+        </div>
+      </div>
+      <div class="inspect-body-grid">
+        <div class="inspect-metric">
+          <small>CURRENT SOLAR</small>
+          <b style="color:#00e5ff">${s.solar | 0} W</b>
+        </div>
+        <div class="inspect-metric">
+          <small>BATTERY SoC</small>
+          <b style="color:#34d399">${s.batt | 0}%</b>
+        </div>
+        <div class="inspect-metric">
+          <small>PANEL TEMP</small>
+          <b style="${s.temp > 35 ? 'color:#f08a24' : ''}">${s.temp.toFixed(1)}°C</b>
+        </div>
+        <div class="inspect-metric">
+          <small>FREE BAYS</small>
+          <b>${s.free}/${s.slots}</b>
+        </div>
+      </div>
+      <div class="inspect-stock-row">
+        <span class="stock-item">Fast: <b>${s.stock.fast || 0}</b></span>
+        <span class="stock-item">Wireless: <b>${s.stock.wireless || 0}</b></span>
+        <span class="stock-item">Standard: <b>${s.stock.standard || 0}</b></span>
+        <span class="stock-item">Laptop: <b>${s.stock.laptop || 0}</b></span>
+      </div>
+      <div class="inspect-actions-row">
+        <button class="btn btn-sm g" onclick="tg('${s.id}')">Toggle Power</button>
+        <button class="btn btn-sm g" onclick="techCalibrate('${s.id}')">Run Diagnostics</button>
+        <button class="btn btn-sm" onclick="document.getElementById('datav-tech-bays-container')?.scrollIntoView({behavior:'smooth'})">Inspect 8 Bays ↓</button>
+      </div>
+    </div>
+  `;
+};
+
 // SVG Area Wave Throughput Chart (24h Load & Solar Curve)
 const renderWaveChart = () => {
   const w = 320, h = 90;
-  // Curve points simulating solar generation peak at noon
   const points = [
     [0, 80], [30, 78], [60, 72], [90, 55], [120, 35],
     [150, 18], [180, 12], [210, 25], [240, 48], [270, 68], [300, 76], [320, 82]
@@ -373,13 +675,10 @@ const renderWaveChart = () => {
           <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.02"/>
         </linearGradient>
       </defs>
-      <!-- Grid lines -->
       <line x1="0" y1="25" x2="${w}" y2="25" stroke="rgba(0,229,255,0.12)" stroke-dasharray="2 3"/>
       <line x1="0" y1="55" x2="${w}" y2="55" stroke="rgba(0,229,255,0.12)" stroke-dasharray="2 3"/>
-      <!-- Filled glowing wave -->
       <path d="${areaD}" fill="url(#waveGrad)"/>
       <path d="${d}" fill="none" stroke="#00e5ff" stroke-width="2"/>
-      <!-- Peak indicator dot -->
       <circle cx="180" cy="12" r="3.5" fill="#ffffff" stroke="#00e5ff" stroke-width="2"/>
       <text x="180" y="8" font-size="8" fill="#00e5ff" font-family="'Barlow Condensed', monospace" text-anchor="middle" font-weight="700">PEAK 348W</text>
     </svg>`;
@@ -426,7 +725,7 @@ const renderStationTable = () => `
         <th>Panel Temp</th>
         <th>Reserve</th>
         <th>Status</th>
-        <th>Action</th>
+        <th>Inspect</th>
       </tr>
     </thead>
     <tbody>
@@ -446,8 +745,8 @@ const renderStationTable = () => `
             </span>
           </td>
           <td>
-            <button type="button" class="btn btn-sm g" onclick="tg('${s.id}')" style="padding:4px 8px;font-size:0.75rem">
-              Toggle
+            <button type="button" class="btn btn-sm g" onclick="focusStationOnGlobe('${s.id}')" style="padding:4px 8px;font-size:0.75rem">
+              Focus 🎯
             </button>
           </td>
         </tr>
@@ -468,10 +767,10 @@ const renderTechnicianSlotMatrix = (activeStationId = 'library') => {
         <span class="datav-corner-bracket tr"></span>
         <span class="datav-corner-bracket bl"></span>
         <span class="datav-corner-bracket br"></span>
-        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;flex-wrap:wrap;gap:8px">
           <div>
-            <h3 style="margin:0;color:#00e5ff">SLOT HARDWARE DIAGNOSTICS</h3>
-            <small style="color:var(--adm-mut)">Live Telemetry for <b>${stn.n}</b> (8/8 Physical Bays)</small>
+            <h3 style="margin:0;color:#00e5ff">8-BAY HARDWARE DIAGNOSTICS</h3>
+            <small style="color:var(--adm-mut)">Physical Bay Status for <b>${stn.n}</b></small>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm g" onclick="techCalibrate('${stn.id}')">🩺 Health Ping</button>
@@ -517,6 +816,164 @@ const renderTechnicianSlotMatrix = (activeStationId = 'library') => {
   `;
 };
 
+// Customer Complaints Hub Cards
+const renderComplaintsCards = () => {
+  const all = window.S.complaints || [];
+  const filter = window.S.complaintFilter || 'ALL';
+  const query = window.S.complaintSearch || '';
+  const stn = window.S.complaintStation || 'ALL';
+
+  const filtered = all.filter(c => {
+    if (filter !== 'ALL' && c.status !== filter) return false;
+    if (stn !== 'ALL' && c.stationId !== stn) return false;
+    if (query) {
+      const match = c.student.toLowerCase().includes(query) ||
+                    c.email.toLowerCase().includes(query) ||
+                    c.phone.includes(query) ||
+                    c.issue.toLowerCase().includes(query) ||
+                    c.id.toLowerCase().includes(query);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    return `<div class="datav-panel" style="text-align:center;padding:32px 16px;color:var(--adm-mut)">
+      <p style="font-size:1.1rem;margin:0">✓ No complaints found matching current filters.</p>
+    </div>`;
+  }
+
+  return `
+    <div class="complaints-cards-grid">
+      ${filtered.map(c => {
+        const isOpen = c.status === 'OPEN';
+        const isInvestigating = c.status === 'INVESTIGATING';
+        const isResolved = c.status === 'RESOLVED';
+
+        return `
+          <div class="datav-panel complaint-ticket-card ${c.status.toLowerCase()}">
+            <span class="datav-corner-bracket tl"></span>
+            <span class="datav-corner-bracket tr"></span>
+            <span class="datav-corner-bracket bl"></span>
+            <span class="datav-corner-bracket br"></span>
+            <div class="ticket-header">
+              <div style="display:flex;align-items:center;gap:8px">
+                <b class="ticket-code">${c.id}</b>
+                <span class="ticket-cat-badge">${c.category}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="ticket-status-pill ${c.status.toLowerCase()}">● ${c.status}</span>
+                <span class="ticket-time">${c.time}</span>
+              </div>
+            </div>
+
+            <div class="ticket-body">
+              <h4 class="ticket-issue">${c.issue}</h4>
+              <p class="ticket-details">“${c.details}”</p>
+              
+              <div class="ticket-meta-grid">
+                <div>
+                  <small>STUDENT NAME</small>
+                  <b>${c.student}</b>
+                </div>
+                <div>
+                  <small>VERIFIED PHONE</small>
+                  <b style="color:#00e5ff">${c.phone}</b>
+                </div>
+                <div>
+                  <small>STUDENT EMAIL</small>
+                  <span>${c.email}</span>
+                </div>
+                <div>
+                  <small>STATION & BAY</small>
+                  <span>${c.station} · Bay #${c.slotNum}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ticket-actions">
+              ${isOpen ? `
+                <button class="btn btn-sm g" onclick="dispatchTech('${c.id}')">🛠️ Dispatch Technician</button>
+                <button class="btn btn-sm" onclick="resolveComplaint('${c.id}')">✔ Mark as Resolved</button>
+              ` : isInvestigating ? `
+                <button class="btn btn-sm" onclick="resolveComplaint('${c.id}')">✔ Complete & Resolve</button>
+              ` : `
+                <span class="resolved-badge">✓ Ticket Resolved & Archived</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+};
+
+// Customer Complaints Hub Sub-Page View
+const renderComplaintsHub = () => {
+  const all = window.S.complaints || [];
+  const openCount = all.filter(c => c.status === 'OPEN').length;
+  const invCount = all.filter(c => c.status === 'INVESTIGATING').length;
+  const resCount = all.filter(c => c.status === 'RESOLVED').length;
+  const currFilter = window.S.complaintFilter || 'ALL';
+
+  return `
+    <div class="datav-complaints-view">
+      <!-- 1. KPI Metric Badges -->
+      <div class="complaints-kpi-row">
+        <div class="datav-panel kpi-card">
+          <small>TOTAL TICKETS</small>
+          <b>${all.length}</b>
+        </div>
+        <div class="datav-panel kpi-card urgent">
+          <small>OPEN TICKETS</small>
+          <b style="color:#f08a24">${openCount}</b>
+        </div>
+        <div class="datav-panel kpi-card">
+          <small>IN PROGRESS</small>
+          <b style="color:#00e5ff">${invCount}</b>
+        </div>
+        <div class="datav-panel kpi-card">
+          <small>RESOLVED TICKETS</small>
+          <b style="color:#34d399">${resCount}</b>
+        </div>
+        <div class="datav-panel kpi-card">
+          <small>RESOLUTION RATE</small>
+          <b style="color:#34d399">96.4%</b>
+        </div>
+      </div>
+
+      <!-- 2. Search & Filter Bar -->
+      <div class="datav-panel complaints-filter-panel">
+        <div class="complaints-filter-bar">
+          <div class="search-box">
+            <input type="text" placeholder="Search by student, phone (+91), ticket ID..." value="${window.S.complaintSearch || ''}" oninput="searchComplaints(this.value)">
+          </div>
+          <div class="filter-pills">
+            <button class="filter-pill ${currFilter === 'ALL' ? 'active' : ''}" onclick="filterComplaints('ALL')">ALL (${all.length})</button>
+            <button class="filter-pill ${currFilter === 'OPEN' ? 'active' : ''}" onclick="filterComplaints('OPEN')">OPEN (${openCount})</button>
+            <button class="filter-pill ${currFilter === 'INVESTIGATING' ? 'active' : ''}" onclick="filterComplaints('INVESTIGATING')">IN PROGRESS (${invCount})</button>
+            <button class="filter-pill ${currFilter === 'RESOLVED' ? 'active' : ''}" onclick="filterComplaints('RESOLVED')">RESOLVED (${resCount})</button>
+          </div>
+          <div class="station-filter">
+            <select onchange="filterComplaintsStation(this.value)">
+              <option value="ALL">All Campus Stations</option>
+              <option value="library" ${window.S.complaintStation === 'library' ? 'selected' : ''}>Central Library</option>
+              <option value="mm" ${window.S.complaintStation === 'mm' ? 'selected' : ''}>M.M Foods</option>
+              <option value="mingoes" ${window.S.complaintStation === 'mingoes' ? 'selected' : ''}>Big Mingoes</option>
+              <option value="cauvery" ${window.S.complaintStation === 'cauvery' ? 'selected' : ''}>Cauvery Hostel</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Complaints Cards Feed -->
+      <div id="datav-complaints-list">
+        ${renderComplaintsCards()}
+      </div>
+    </div>
+  `;
+};
+
 // Main Admin & Technician Command Center View
 function admin() {
   const isStaff = S.u && (S.u.role === 'super_admin' || S.u.role === 'technician');
@@ -531,10 +988,17 @@ function admin() {
   const totalFree = ST.reduce((a, s) => a + s.free, 0);
   const totalSolar = ST.reduce((a, s) => a + s.solar, 0) | 0;
 
-  setTimeout(() => {
-    initDatavGlobe();
-    startDatavClock();
-  }, 50);
+  const activeTab = window.S.adminTab || 'telemetry';
+  const allComplaints = window.S.complaints || [];
+  const openComplaintsCount = allComplaints.filter(c => c.status === 'OPEN').length;
+  const inspectedStnId = window.S.inspectedStation || 'library';
+
+  if (activeTab === 'telemetry') {
+    setTimeout(() => {
+      initDatavGlobe();
+      startDatavClock();
+    }, 50);
+  }
 
   return `
     <div class="datav-wrapper admin-blueprint-scope">
@@ -553,13 +1017,25 @@ function admin() {
           </div>
         </div>
 
-        <div class="datav-telemetry-badge">
-          <span class="datav-dot-pulse"></span>
-          <span id="datav-live-clock">SYNCING UTC/IST HIGH-PRECISION CLOCK…</span>
-          <span class="datav-chip">&lt;ORBITAL_SYNC_OK&gt;</span>
-        </div>
+        <!-- Sub-Page Switcher Tabs -->
+        <nav class="datav-subnav" aria-label="Command Center Views">
+          <button type="button" class="datav-tab-btn ${activeTab === 'telemetry' ? 'active' : ''}" onclick="switchAdminTab('telemetry')">
+            <span class="tab-indicator"></span>
+            <span class="tab-icon">🛰️</span>
+            <span>GLOBAL FLEET TELEMETRY</span>
+          </button>
+          <button type="button" class="datav-tab-btn ${activeTab === 'complaints' ? 'active' : ''}" onclick="switchAdminTab('complaints')">
+            <span class="tab-indicator"></span>
+            <span class="tab-icon">📋</span>
+            <span>CUSTOMER COMPLAINTS</span>
+            <span class="datav-tab-badge ${openComplaintsCount > 0 ? 'urgent' : ''}">${openComplaintsCount} PENDING</span>
+          </button>
+        </nav>
 
         <div class="datav-operator-card">
+          <button type="button" class="btn btn-sm g datav-portal-btn" onclick="location.hash='app-home';go(1);" title="Return to student rental portal">
+            <span>🌐 Public Portal</span>
+          </button>
           <div class="operator-meta">
             <span class="operator-role">${isSuper ? 'SUPER_ADMIN // LVL-1' : 'FIELD_TECHNICIAN // HARDWARE'}</span>
             <b class="operator-name">${S.u.name || S.u.email}</b>
@@ -568,134 +1044,14 @@ function admin() {
         </div>
       </header>
 
-      <!-- 2. Main 3-Column DataV Command Center Grid -->
-      <div class="datav-main-grid">
-        
-        <!-- LEFT COLUMN: Generation, Throughput & Fleet Dispatch -->
-        <div class="datav-col left">
+      ${activeTab === 'complaints' ? renderComplaintsHub() : `
+        <!-- 2. Main 3-Column DataV Command Center Grid -->
+        <div class="datav-main-grid">
           
-          <!-- Station Silhouette & Capacity Metrics Card -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">HARDWARE SILHOUETTE</span>
-                <span class="datav-code">&lt;UX2513_GS2513&gt;</span>
-              </div>
-            </div>
-            <div class="datav-silhouette-body">
-              <div class="silhouette-graphic">
-                <svg width="60" height="40" viewBox="0 0 60 40" fill="none" aria-hidden="true">
-                  <path d="M30 4 L34 16 L56 22 L56 26 L34 24 L34 32 L40 36 L40 38 L30 36 L20 38 L20 36 L26 32 L26 24 L4 26 L4 22 L26 16 Z" fill="rgba(0,229,255,0.2)" stroke="#00e5ff" stroke-width="1.5"/>
-                </svg>
-              </div>
-              <div class="silhouette-stats">
-                <div>
-                  <small>TOTAL WH</small>
-                  <b id="datav-wh">28,689</b>
-                </div>
-                <div>
-                  <small>SOLAR INFLOW</small>
-                  <b id="datav-inflow" style="color:#00e5ff">${totalSolar} W</b>
-                </div>
-                <div>
-                  <small>ACTIVE FLEET</small>
-                  <b>30,690 m</b>
-                </div>
-                <div>
-                  <small>EFFICIENCY</small>
-                  <b style="color:#34d399">98.845%</b>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Real-Time Throughput / Check-In Wave -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">24H POWER THROUGHPUT & DEMAND</span>
-                <small style="color:var(--adm-mut)">Waveform Area</small>
-              </div>
-            </div>
-            ${renderWaveChart()}
-          </div>
-
-          <!-- Harmonic Balancing Frequency Wave -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">MICROGRID HARMONICS (SIN/COS)</span>
-                <span class="badge" style="background:#071c26;border-color:#00e5ff;color:#00e5ff">50.02 Hz</span>
-              </div>
-            </div>
-            ${renderFrequencyWave()}
-          </div>
-
-          <!-- Station Fleet Logistics Table -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">CAMPUS STATIONS FLEET STATUS</span>
-                <span class="badge" style="background:#042b1a;color:#34d399;border-color:#059669">${totalFree}/${totalSlots} READY</span>
-              </div>
-            </div>
-            <div style="overflow-x:auto">
-              ${renderStationTable()}
-            </div>
-          </div>
-
-        </div>
-
-        <!-- CENTER COLUMN: 3D Wireframe Rotating Telemetry Globe -->
-        <div class="datav-col center">
-          
-          <div class="datav-globe-card">
-            <div class="datav-globe-header">
-              <div class="globe-status-pill">
-                <i class="datav-dot-pulse"></i>
-                <span>SPHERICAL 3D TELEMETRY MATRIX // RVCE MICROGRID</span>
-              </div>
-              <div class="globe-latlon">
-                LAT: 12.9238°N · LON: 77.4987°E · ALT: 840M
-              </div>
-            </div>
-
-            <!-- Interactive 3D Canvas -->
-            <div class="datav-canvas-container">
-              <canvas id="datav-globe-canvas"></canvas>
-            </div>
-
-            <div class="datav-globe-footer">
-              <div class="globe-legend">
-                <span><i style="background:#00e5ff"></i> Active Station Node</span>
-                <span><i style="background:#ffffff;box-shadow:0 0 6px #00e5ff"></i> Solar Beam Photon</span>
-                <span><i style="background:#f08a24"></i> High Load Node</span>
-              </div>
-              <div class="globe-hint">Drag canvas to rotate view</div>
-            </div>
-          </div>
-
-          <!-- If Field Technician: Show Slot Hardware Diagnostics in the Center Bottom! -->
-          ${!isSuper ? renderTechnicianSlotMatrix('library') : ''}
-
-          <!-- If Super Admin: Show Security Event Log Audit Table -->
-          ${isSuper ? `
+          <!-- LEFT COLUMN: Generation, Throughput & Fleet Dispatch -->
+          <div class="datav-col left">
+            
+            <!-- Campus Photovoltaic Energy Flow Topology Radar (Replaces airplane silhouette) -->
             <div class="datav-panel">
               <div class="datav-panel-header">
                 <span class="datav-corner-bracket tl"></span>
@@ -703,98 +1059,49 @@ function admin() {
                 <span class="datav-corner-bracket bl"></span>
                 <span class="datav-corner-bracket br"></span>
                 <div class="panel-title-row">
-                  <span class="datav-panel-tag">SECURITY & ANOMALY AUDIT TRAIL</span>
-                  <button class="btn btn-sm g" onclick="exportLogsCsv()">Export CSV</button>
+                  <span class="datav-panel-tag">CAMPUS ENERGY FLOW TOPOLOGY</span>
+                  <span class="datav-code">&lt;SOLAR_MICROGRID_SYNC&gt;</span>
                 </div>
               </div>
-              <table class="datav-fleet-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Station</th>
-                    <th>Event Code</th>
-                    <th>Severity</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>09:12:44</td>
-                    <td>Big Mingoes</td>
-                    <td>VIBRATION_TRIGGER</td>
-                    <td><span style="color:#f08a24">WARN</span></td>
-                    <td>Resolved</td>
-                  </tr>
-                  <tr>
-                    <td>11:40:18</td>
-                    <td>Library</td>
-                    <td>RETURN_RETRY_PASS</td>
-                    <td><span style="color:#00e5ff">INFO</span></td>
-                    <td>Cleared</td>
-                  </tr>
-                  <tr>
-                    <td>14:05:02</td>
-                    <td>M.M Foods</td>
-                    <td>SOLAR_MPPT_SYNC</td>
-                    <td><span style="color:#34d399">OPTIMAL</span></td>
-                    <td>Active</td>
-                  </tr>
-                  <tr>
-                    <td>14:42:19</td>
-                    <td>Cauvery</td>
-                    <td>SESSION_VERIFIED</td>
-                    <td><span style="color:#00e5ff">AUTH</span></td>
-                    <td>Completed</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          ` : ''}
-
-        </div>
-
-        <!-- RIGHT COLUMN: Early Warnings, Technician Controls / Admin Pricing Rules -->
-        <div class="datav-col right">
-
-          <!-- Early Warning Alerts Panel (一级预警 / 二级预警) -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">EARLY WARNING TELEMETRY (预警系统)</span>
-                <span class="badge" style="background:#261805;border-color:#f08a24;color:#f08a24">2 ACTIVE</span>
-              </div>
-            </div>
-            <div class="datav-alarm-list">
-              <div class="datav-alarm-card lvl-1">
-                <div class="alarm-top">
-                  <span class="alarm-tag">一级预警 · LVL 1 ALARM</span>
-                  <span class="alarm-time">14:38</span>
+              <div class="datav-silhouette-body">
+                <div class="silhouette-graphic topology-graphic" title="Campus Solar Microgrid Topology">
+                  <svg width="78" height="66" viewBox="0 0 78 66" fill="none" aria-hidden="true">
+                    <!-- Central Solar Inverter Node -->
+                    <circle cx="39" cy="33" r="12" fill="rgba(0,229,255,0.18)" stroke="#00e5ff" stroke-width="1.8"/>
+                    <circle cx="39" cy="33" r="4.5" fill="#f08a24"/>
+                    <!-- Vectors to 4 Stations -->
+                    <line x1="31" y1="25" x2="14" y2="12" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="3 2"/>
+                    <circle cx="14" cy="12" r="5" fill="#041829" stroke="#00e5ff" stroke-width="1.2"/>
+                    <line x1="47" y1="25" x2="64" y2="12" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="3 2"/>
+                    <circle cx="64" cy="12" r="5" fill="#041829" stroke="#00e5ff" stroke-width="1.2"/>
+                    <line x1="31" y1="41" x2="14" y2="54" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="3 2"/>
+                    <circle cx="14" cy="54" r="5" fill="#041829" stroke="#00e5ff" stroke-width="1.2"/>
+                    <line x1="47" y1="41" x2="64" y2="54" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="3 2"/>
+                    <circle cx="64" cy="54" r="5" fill="#041829" stroke="#00e5ff" stroke-width="1.2"/>
+                  </svg>
                 </div>
-                <div class="alarm-body">
-                  <b>Library Kiosk Slot #4: Temp Spike 42.1°C</b>
-                  <p>Panel ambient elevated. Active cooling fan engaged.</p>
-                </div>
-              </div>
-              <div class="datav-alarm-card lvl-2">
-                <div class="alarm-top">
-                  <span class="alarm-tag">二级预警 · LVL 2 NOTICE</span>
-                  <span class="alarm-time">13:15</span>
-                </div>
-                <div class="alarm-body">
-                  <b>M.M Foods: Routine Solar Tracker Calibration</b>
-                  <p>Inverter telemetry synced to central microgrid grid.</p>
+                <div class="silhouette-stats">
+                  <div>
+                    <small>TOTAL WH</small>
+                    <b id="datav-wh">28,689</b>
+                  </div>
+                  <div>
+                    <small>SOLAR INFLOW</small>
+                    <b id="datav-inflow" style="color:#00e5ff">${totalSolar} W</b>
+                  </div>
+                  <div>
+                    <small>ACTIVE FLEET</small>
+                    <b>30,690 m</b>
+                  </div>
+                  <div>
+                    <small>EFFICIENCY</small>
+                    <b style="color:#34d399">98.845%</b>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Role-Specific Action Deck -->
-          ${isSuper ? `
-            <!-- Super Admin Pricing & Policy Control Deck -->
+            <!-- Real-Time Throughput / Check-In Wave -->
             <div class="datav-panel">
               <div class="datav-panel-header">
                 <span class="datav-corner-bracket tl"></span>
@@ -802,35 +1109,14 @@ function admin() {
                 <span class="datav-corner-bracket bl"></span>
                 <span class="datav-corner-bracket br"></span>
                 <div class="panel-title-row">
-                  <span class="datav-panel-tag">PRICING RULES & POLICY CONFIG</span>
-                  <span class="badge" style="background:#071a2b;color:#00e5ff;border-color:#00e5ff">ACTIVE</span>
+                  <span class="datav-panel-tag">24H POWER THROUGHPUT & DEMAND</span>
+                  <small style="color:var(--adm-mut)">Waveform Area</small>
                 </div>
               </div>
-              <div class="datav-config-form">
-                <div class="config-row">
-                  <label for="pr">Hourly Rate (₹)</label>
-                  <input id="pr" type="number" value="${PR.rate || 10}" oninput="PR.rate=this.value;bill()">
-                </div>
-                <div class="config-row">
-                  <label for="pg">Grace Period (Min)</label>
-                  <input id="pg" type="number" value="${PR.grace || 15}" oninput="PR.grace=this.value">
-                </div>
-                <div class="config-row">
-                  <label for="pl">Late Fee (₹)</label>
-                  <input id="pl" type="number" value="${PR.late || 20}" oninput="PR.late=this.value">
-                </div>
-                <div class="config-row">
-                  <label for="pd">Refundable Deposit (₹)</label>
-                  <input id="pd" type="number" value="${PR.dep || 0}" oninput="PR.dep=this.value">
-                </div>
-                <div class="config-preview">
-                  <span>Billing Preview (2h charge):</span>
-                  <b id="bl" style="color:#00e5ff">₹ ${(PR.rate || 10) * 2}</b>
-                </div>
-              </div>
+              ${renderWaveChart()}
             </div>
-          ` : `
-            <!-- Field Technician Fast Operations Card -->
+
+            <!-- Harmonic Balancing Frequency Wave -->
             <div class="datav-panel">
               <div class="datav-panel-header">
                 <span class="datav-corner-bracket tl"></span>
@@ -838,49 +1124,281 @@ function admin() {
                 <span class="datav-corner-bracket bl"></span>
                 <span class="datav-corner-bracket br"></span>
                 <div class="panel-title-row">
-                  <span class="datav-panel-tag">FIELD TECHNICIAN DISPATCH</span>
-                  <span class="badge" style="background:#072418;color:#34d399;border-color:#059669">RADIO ON</span>
+                  <span class="datav-panel-tag">MICROGRID HARMONICS (SIN/COS)</span>
+                  <span class="badge" style="background:#071c26;border-color:#00e5ff;color:#00e5ff">50.02 Hz</span>
                 </div>
               </div>
-              <div style="display:flex;flex-direction:column;gap:8px;padding:8px 0">
-                <button class="btn g" onclick="techCalibrate('library')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
-                  <span>🩺 Ping Central Library Kiosk</span>
-                  <span style="color:#00e5ff">OK</span>
-                </button>
-                <button class="btn g" onclick="techCalibrate('mm')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
-                  <span>🩺 Ping M.M Foods Kiosk</span>
-                  <span style="color:#00e5ff">OK</span>
-                </button>
-                <button class="btn g" onclick="techCalibrate('mingoes')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
-                  <span>🩺 Ping Big Mingoes Kiosk</span>
-                  <span style="color:#00e5ff">OK</span>
-                </button>
-                <button class="btn g" onclick="techCalibrate('cauvery')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
-                  <span>🩺 Ping Cauvery Hostel Kiosk</span>
-                  <span style="color:#00e5ff">OK</span>
-                </button>
-              </div>
+              ${renderFrequencyWave()}
             </div>
-          `}
 
-          <!-- 7-Day Operational Matrix Performance -->
-          <div class="datav-panel">
-            <div class="datav-panel-header">
-              <span class="datav-corner-bracket tl"></span>
-              <span class="datav-corner-bracket tr"></span>
-              <span class="datav-corner-bracket bl"></span>
-              <span class="datav-corner-bracket br"></span>
-              <div class="panel-title-row">
-                <span class="datav-panel-tag">WEEKLY FLEET UPTIME MATRIX</span>
-                <small style="color:#34d399">99.8% AVAILABILITY</small>
+            <!-- Station Fleet Logistics Table -->
+            <div class="datav-panel">
+              <div class="datav-panel-header">
+                <span class="datav-corner-bracket tl"></span>
+                <span class="datav-corner-bracket tr"></span>
+                <span class="datav-corner-bracket bl"></span>
+                <span class="datav-corner-bracket br"></span>
+                <div class="panel-title-row">
+                  <span class="datav-panel-tag">CAMPUS STATIONS FLEET STATUS</span>
+                  <span class="badge" style="background:#042b1a;color:#34d399;border-color:#059669">${totalFree}/${totalSlots} READY</span>
+                </div>
+              </div>
+              <div style="overflow-x:auto">
+                ${renderStationTable()}
               </div>
             </div>
-            ${renderActivityMatrix()}
+
+          </div>
+
+          <!-- CENTER COLUMN: 3D Wireframe Rotating Telemetry Globe & Station Inspector -->
+          <div class="datav-col center">
+            
+            <div class="datav-globe-card">
+              <div class="datav-globe-header">
+                <div class="globe-status-pill">
+                  <i class="datav-dot-pulse"></i>
+                  <span>SPHERICAL 3D TELEMETRY MATRIX // RVCE MICROGRID</span>
+                </div>
+                <!-- Controls: Pause/Resume Orbit & Station Jump Pills -->
+                <div class="datav-globe-controls">
+                  <button type="button" id="datav-orbit-toggle" class="btn btn-sm g ${isGlobePaused ? 'paused' : ''}" onclick="toggleGlobeSpin()">
+                    ${isGlobePaused ? '▶ RESUME ORBIT' : '⏸ PAUSE ORBIT'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Station Quick Picker Pills -->
+              <div class="globe-station-pills-row">
+                <button type="button" class="globe-stn-pill ${inspectedStnId === 'library' ? 'active' : ''}" data-stn="library" onclick="focusStationOnGlobe('library')">
+                  📍 Library
+                </button>
+                <button type="button" class="globe-stn-pill ${inspectedStnId === 'mm' ? 'active' : ''}" data-stn="mm" onclick="focusStationOnGlobe('mm')">
+                  📍 M.M Foods
+                </button>
+                <button type="button" class="globe-stn-pill ${inspectedStnId === 'mingoes' ? 'active' : ''}" data-stn="mingoes" onclick="focusStationOnGlobe('mingoes')">
+                  📍 Big Mingoes
+                </button>
+                <button type="button" class="globe-stn-pill ${inspectedStnId === 'cauvery' ? 'active' : ''}" data-stn="cauvery" onclick="focusStationOnGlobe('cauvery')">
+                  📍 Cauvery
+                </button>
+                <button type="button" class="globe-stn-pill" data-stn="all" onclick="resetGlobeOrbit()">
+                  🛰️ All Orbit
+                </button>
+              </div>
+
+              <!-- Interactive 3D Canvas -->
+              <div class="datav-canvas-container" title="Click station to inspect, hover to pause, or drag to rotate">
+                <canvas id="datav-globe-canvas"></canvas>
+              </div>
+
+              <div class="datav-globe-footer">
+                <div class="globe-legend">
+                  <span><i style="background:#00e5ff"></i> Station Node</span>
+                  <span><i style="background:#ffffff;box-shadow:0 0 6px #00e5ff"></i> Solar Beam</span>
+                  <span><i style="background:#f08a24"></i> High Load</span>
+                </div>
+                <div class="globe-hint">Click station on map or hover to pause & inspect</div>
+              </div>
+            </div>
+
+            <!-- Dynamic Station Inspection HUD Card -->
+            <div id="datav-station-inspection-hud">
+              ${renderStationInspectionCard(inspectedStnId)}
+            </div>
+
+            <!-- 8-Bay Hardware Diagnostics Matrix (Automatically synced to selected station) -->
+            <div id="datav-tech-bays-container">
+              ${renderTechnicianSlotMatrix(inspectedStnId)}
+            </div>
+
+            <!-- If Super Admin: Show Security Event Log Audit Table -->
+            ${isSuper ? `
+              <div class="datav-panel">
+                <div class="datav-panel-header">
+                  <span class="datav-corner-bracket tl"></span>
+                  <span class="datav-corner-bracket tr"></span>
+                  <span class="datav-corner-bracket bl"></span>
+                  <span class="datav-corner-bracket br"></span>
+                  <div class="panel-title-row">
+                    <span class="datav-panel-tag">SECURITY & ANOMALY AUDIT TRAIL</span>
+                    <button class="btn btn-sm g" onclick="exportLogsCsv()">Export CSV</button>
+                  </div>
+                </div>
+                <table class="datav-fleet-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Station</th>
+                      <th>Event Code</th>
+                      <th>Severity</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>09:12:44</td>
+                      <td>Big Mingoes</td>
+                      <td>VIBRATION_TRIGGER</td>
+                      <td><span style="color:#f08a24">WARN</span></td>
+                      <td>Resolved</td>
+                    </tr>
+                    <tr>
+                      <td>11:40:18</td>
+                      <td>Library</td>
+                      <td>RETURN_RETRY_PASS</td>
+                      <td><span style="color:#00e5ff">INFO</span></td>
+                      <td>Cleared</td>
+                    </tr>
+                    <tr>
+                      <td>14:05:02</td>
+                      <td>M.M Foods</td>
+                      <td>SOLAR_MPPT_SYNC</td>
+                      <td><span style="color:#34d399">OPTIMAL</span></td>
+                      <td>Active</td>
+                    </tr>
+                    <tr>
+                      <td>14:42:19</td>
+                      <td>Cauvery</td>
+                      <td>SESSION_VERIFIED</td>
+                      <td><span style="color:#00e5ff">AUTH</span></td>
+                      <td>Completed</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+
+          </div>
+
+          <!-- RIGHT COLUMN: Early Warnings, Technician Controls / Admin Pricing Rules -->
+          <div class="datav-col right">
+
+            <!-- Early Warning Alerts Panel (一级预警 / 二级预警) -->
+            <div class="datav-panel">
+              <div class="datav-panel-header">
+                <span class="datav-corner-bracket tl"></span>
+                <span class="datav-corner-bracket tr"></span>
+                <span class="datav-corner-bracket bl"></span>
+                <span class="datav-corner-bracket br"></span>
+                <div class="panel-title-row">
+                  <span class="datav-panel-tag">EARLY WARNING TELEMETRY (预警系统)</span>
+                  <span class="badge" style="background:#261805;border-color:#f08a24;color:#f08a24">2 ACTIVE</span>
+                </div>
+              </div>
+              <div class="datav-alarm-list">
+                <div class="datav-alarm-card lvl-1">
+                  <div class="alarm-top">
+                    <span class="alarm-tag">一级预警 · LVL 1 ALARM</span>
+                    <span class="alarm-time">14:38</span>
+                  </div>
+                  <div class="alarm-body">
+                    <b>Library Kiosk Slot #4: Temp Spike 42.1°C</b>
+                    <p>Panel ambient elevated. Active cooling fan engaged.</p>
+                  </div>
+                </div>
+                <div class="datav-alarm-card lvl-2">
+                  <div class="alarm-top">
+                    <span class="alarm-tag">二级预警 · LVL 2 NOTICE</span>
+                    <span class="alarm-time">13:15</span>
+                  </div>
+                  <div class="alarm-body">
+                    <b>M.M Foods: Routine Solar Tracker Calibration</b>
+                    <p>Inverter telemetry synced to central microgrid grid.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role-Specific Action Deck -->
+            ${isSuper ? `
+              <!-- Super Admin Pricing & Policy Control Deck -->
+              <div class="datav-panel">
+                <div class="datav-panel-header">
+                  <span class="datav-corner-bracket tl"></span>
+                  <span class="datav-corner-bracket tr"></span>
+                  <span class="datav-corner-bracket bl"></span>
+                  <span class="datav-corner-bracket br"></span>
+                  <div class="panel-title-row">
+                    <span class="datav-panel-tag">PRICING RULES & POLICY CONFIG</span>
+                    <span class="badge" style="background:#071a2b;color:#00e5ff;border-color:#00e5ff">ACTIVE</span>
+                  </div>
+                </div>
+                <div class="datav-config-form">
+                  <div class="config-row">
+                    <label for="pr">Hourly Rate (₹)</label>
+                    <input id="pr" type="number" value="${PR.rate || 10}" oninput="PR.rate=this.value;bill()">
+                  </div>
+                  <div class="config-row">
+                    <label for="pg">Grace Period (Min)</label>
+                    <input id="pg" type="number" value="${PR.grace || 15}" oninput="PR.grace=this.value">
+                  </div>
+                  <div class="config-row">
+                    <label for="pl">Late Fee (₹)</label>
+                    <input id="pl" type="number" value="${PR.late || 20}" oninput="PR.late=this.value">
+                  </div>
+                  <div class="config-row">
+                    <label for="pd">Refundable Deposit (₹)</label>
+                    <input id="pd" type="number" value="${PR.dep || 0}" oninput="PR.dep=this.value">
+                  </div>
+                  <div class="config-preview">
+                    <span>Billing Preview (2h charge):</span>
+                    <b id="bl" style="color:#00e5ff">₹ ${(PR.rate || 10) * 2}</b>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <!-- Field Technician Fast Operations Card -->
+              <div class="datav-panel">
+                <div class="datav-panel-header">
+                  <span class="datav-corner-bracket tl"></span>
+                  <span class="datav-corner-bracket tr"></span>
+                  <span class="datav-corner-bracket bl"></span>
+                  <span class="datav-corner-bracket br"></span>
+                  <div class="panel-title-row">
+                    <span class="datav-panel-tag">FIELD TECHNICIAN DISPATCH</span>
+                    <span class="badge" style="background:#072418;color:#34d399;border-color:#059669">RADIO ON</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;padding:8px 0">
+                  <button class="btn g" onclick="techCalibrate('library')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
+                    <span>🩺 Ping Central Library Kiosk</span>
+                    <span style="color:#00e5ff">OK</span>
+                  </button>
+                  <button class="btn g" onclick="techCalibrate('mm')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
+                    <span>🩺 Ping M.M Foods Kiosk</span>
+                    <span style="color:#00e5ff">OK</span>
+                  </button>
+                  <button class="btn g" onclick="techCalibrate('mingoes')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
+                    <span>🩺 Ping Big Mingoes Kiosk</span>
+                    <span style="color:#00e5ff">OK</span>
+                  </button>
+                  <button class="btn g" onclick="techCalibrate('cauvery')" style="width:100%;text-align:left;display:flex;justify-content:space-between">
+                    <span>🩺 Ping Cauvery Hostel Kiosk</span>
+                    <span style="color:#00e5ff">OK</span>
+                  </button>
+                </div>
+              </div>
+            `}
+
+            <!-- 7-Day Operational Matrix Performance -->
+            <div class="datav-panel">
+              <div class="datav-panel-header">
+                <span class="datav-corner-bracket tl"></span>
+                <span class="datav-corner-bracket tr"></span>
+                <span class="datav-corner-bracket bl"></span>
+                <span class="datav-corner-bracket br"></span>
+                <div class="panel-title-row">
+                  <span class="datav-panel-tag">WEEKLY FLEET UPTIME MATRIX</span>
+                  <small style="color:#34d399">99.8% AVAILABILITY</small>
+                </div>
+              </div>
+              ${renderActivityMatrix()}
+            </div>
+
           </div>
 
         </div>
-
-      </div>
+      `}
 
       <!-- 3. Bottom DataV Telemetry Strip -->
       <footer class="datav-bottom-strip">
@@ -919,3 +1437,5 @@ setInterval(() => {
     if (inflowEl) inflowEl.textContent = `${totalSolar} W`;
   }
 }, 1000);
+
+window.admin = admin;

@@ -64,6 +64,8 @@ const S = {
   })()
 };
 
+window.S = S;
+
 try {
   const u = q('lg_user', '');
   if (u) S.u = JSON.parse(u);
