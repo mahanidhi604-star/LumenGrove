@@ -411,6 +411,247 @@ window.toggleLiveTelemetry = function(enable) {
   toast(enable ? 'Live solar telemetry active' : 'Live telemetry paused');
 };
 
+// --- Solarpunk Archetype & Profile Customization ---
+window.getArchetypeIcon = function(arch, sz = 20) {
+  switch (arch) {
+    case 'botanist':
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22c0-8 9-10 9-17a9 9 0 0 0-18 0c0 7 9 9 9 17z" fill="currentColor" fill-opacity="0.25"/><path d="M12 9v11M8 14l4-3 4 3"/></svg>`;
+    case 'warden':
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7" fill="currentColor" fill-opacity="0.25"/><path d="M13 6l-4 7h4l-2 7 6-8h-4z" fill="currentColor"/></svg>`;
+    case 'pilot':
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l9 18-9-4-9 4z" fill="currentColor" fill-opacity="0.25"/><circle cx="12" cy="14" r="2.5" fill="currentColor"/></svg>`;
+    case 'helios':
+    default:
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity="0.3"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>`;
+  }
+};
+
+window.getArchetypeName = function(arch) {
+  switch (arch) {
+    case 'botanist': return 'Bio-Groove · Solarpunk Botanist';
+    case 'warden': return 'Volt Warden · Grid Guardian';
+    case 'pilot': return 'Photon Pilot · Kinetic Voyager';
+    case 'helios':
+    default: return 'Helios Prime · Solar Architect';
+  }
+};
+
+window.openProfilePopup = function() {
+  const root = $('#profile-modal-root');
+  if (!root) return;
+
+  const u = S.u;
+  const isStu = stu();
+  const prof = S.profile || {
+    archetype: 'helios',
+    callsign: '',
+    dept: 'CSE',
+    year: '3rd Year',
+    accent: '#f08a24'
+  };
+  const currentCallsign = prof.callsign || (u && u.name ? u.name.split(' ')[0] : 'Explorer');
+
+  const archetypes = [
+    {
+      id: 'helios',
+      name: 'Helios Prime',
+      title: 'Solar Architect',
+      desc: 'Optimized for high-yield solar collection and daytime battery reserve planning.',
+      color: '#f08a24'
+    },
+    {
+      id: 'botanist',
+      name: 'Bio-Groove',
+      title: 'Solarpunk Botanist',
+      desc: 'Harmonizes campus green corridors with photovoltaic microgrid sensors.',
+      color: '#8fbf6a'
+    },
+    {
+      id: 'warden',
+      name: 'Volt Warden',
+      title: 'Grid Guardian',
+      desc: 'High-voltage 100W multi-device protocol enforcement and cycle health monitoring.',
+      color: '#38bdf8'
+    },
+    {
+      id: 'pilot',
+      name: 'Photon Pilot',
+      title: 'Kinetic Voyager',
+      desc: 'Rapid campus transit navigator. Prioritizes shortest walking routes to free slots.',
+      color: '#e05248'
+    }
+  ];
+
+  const depts = ['CSE', 'AI-ML', 'ISE', 'ECE', 'EEE', 'Mech', 'Civil', 'Biotech', 'Chemical', 'RVU'];
+  const years = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'M.Tech / Research', 'Staff / Faculty'];
+  const colors = [
+    ['#f08a24', 'Solar Amber'],
+    ['#8fbf6a', 'Bio Emerald'],
+    ['#38bdf8', 'Volt Cyan'],
+    ['#e05248', 'Photon Red']
+  ];
+
+  root.innerHTML = `
+    <div class="profile-modal-overlay" onclick="if(event.target===this)closeProfilePopup()">
+      <div class="profile-modal-box" role="dialog" aria-labelledby="pm-title" aria-modal="true">
+        <button class="profile-modal-close" onclick="closeProfilePopup()" aria-label="Close dialog">×</button>
+        
+        <div class="pm-head-tag">// RVCE SOLAR IDENTITY PROTOCOL · ARCHETYPE MATRIX</div>
+        <h2 id="pm-title" style="margin:6px 0 16px">Customize Profile</h2>
+        
+        <!-- Live Archetype Hero Preview -->
+        <div class="pm-preview-hero" style="border-color:${prof.accent || 'var(--ac)'}">
+          <div class="pm-preview-avatar" style="background:${prof.accent || 'var(--ac)'}">
+            ${getArchetypeIcon(prof.archetype, 38)}
+          </div>
+          <div class="pm-preview-meta">
+            <span class="badge" style="background:${prof.accent || 'var(--ac)'};color:#000;font-weight:800" id="pm-live-badge">
+              ${getArchetypeName(prof.archetype)}
+            </span>
+            <h3 style="margin:4px 0 2px" id="pm-live-callsign">${escapeHtml ? escapeHtml(currentCallsign) : currentCallsign}</h3>
+            <span style="font-size:.85rem;color:var(--mut)">${isStu ? (escapeHtml ? escapeHtml(u.email || 'Verified Student') : u.email) : 'Guest Session · Public Explorer'} · <span id="pm-live-dept">${prof.dept || 'CSE'}</span> (<span id="pm-live-year">${prof.year || '3rd Year'}</span>)</span>
+          </div>
+        </div>
+
+        <form id="profile-custom-form" onsubmit="event.preventDefault();saveProfileCustomization();">
+          <!-- Callsign Field -->
+          <div class="pm-field-group">
+            <label for="pm-callsign">Solar Callsign / Display Name</label>
+            <input id="pm-callsign" type="text" maxlength="24" required value="${escapeHtml ? escapeHtml(currentCallsign) : currentCallsign}" oninput="$('#pm-live-callsign').textContent=this.value||'Explorer'">
+          </div>
+
+          <!-- Archetype Selection -->
+          <div class="pm-field-group">
+            <label>Select Solarpunk Archetype</label>
+            <div class="pm-archetype-grid">
+              ${archetypes.map(a => `
+                <label class="pm-arch-card ${prof.archetype === a.id ? 'active' : ''}">
+                  <input type="radio" name="archetype" value="${a.id}" ${prof.archetype === a.id ? 'checked' : ''} onchange="window.updateArchetypePreview('${a.id}')">
+                  <div class="pm-arch-icon" style="color:${a.color}">${getArchetypeIcon(a.id, 24)}</div>
+                  <div class="pm-arch-info">
+                    <b>${a.name}</b>
+                    <small>${a.title}</small>
+                  </div>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Dept & Year Row -->
+          <div class="pm-row-2">
+            <div class="pm-field-group">
+              <label for="pm-dept">Campus Department / Branch</label>
+              <select id="pm-dept" onchange="$('#pm-live-dept').textContent=this.value">
+                ${depts.map(d => `<option value="${d}" ${prof.dept === d ? 'selected' : ''}>${d}</option>`).join('')}
+              </select>
+            </div>
+            <div class="pm-field-group">
+              <label for="pm-year">Academic Year / Role</label>
+              <select id="pm-year" onchange="$('#pm-live-year').textContent=this.value">
+                ${years.map(y => `<option value="${y}" ${prof.year === y ? 'selected' : ''}>${y}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <!-- Accent Badge Color -->
+          <div class="pm-field-group">
+            <label>Profile Accent Color</label>
+            <div class="pm-color-swatches">
+              ${colors.map(c => `
+                <label class="pm-color-swatch ${(prof.accent || '#f08a24') === c[0] ? 'selected' : ''}" style="background:${c[0]}" title="${c[1]}">
+                  <input type="radio" name="accent" value="${c[0]}" ${(prof.accent || '#f08a24') === c[0] ? 'checked' : ''} onchange="window.updateAccentPreview('${c[0]}')">
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pm-action-row">
+            <button type="submit" class="btn" style="flex:1">Save & Apply Profile</button>
+            <button type="button" class="btn g" onclick="closeProfilePopup()">Cancel</button>
+            ${isStu ? `<button type="button" class="btn g" style="border-color:#e05248;color:#e05248" onclick="closeProfilePopup();signOut();">Sign out</button>` : ''}
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  root.removeAttribute('aria-hidden');
+  const input = $('#pm-callsign');
+  if (input) input.focus();
+};
+
+window.closeProfilePopup = function() {
+  const root = $('#profile-modal-root');
+  if (root) {
+    root.innerHTML = '';
+    root.setAttribute('aria-hidden', 'true');
+  }
+};
+
+window.updateArchetypePreview = function(arch) {
+  document.querySelectorAll('.pm-arch-card').forEach(c => {
+    const r = c.querySelector('input');
+    c.classList.toggle('active', r && r.value === arch);
+  });
+  const preview = document.querySelector('.pm-preview-avatar');
+  if (preview) preview.innerHTML = getArchetypeIcon(arch, 38);
+  const badge = document.querySelector('#pm-live-badge');
+  if (badge) badge.textContent = getArchetypeName(arch);
+};
+
+window.updateAccentPreview = function(color) {
+  document.querySelectorAll('.pm-color-swatch').forEach(s => {
+    const r = s.querySelector('input');
+    s.classList.toggle('selected', r && r.value === color);
+  });
+  const hero = document.querySelector('.pm-preview-hero');
+  if (hero) hero.style.borderColor = color;
+  const avatar = document.querySelector('.pm-preview-avatar');
+  if (avatar) avatar.style.background = color;
+  const badge = document.querySelector('#pm-live-badge');
+  if (badge) badge.style.background = color;
+};
+
+window.saveProfileCustomization = function() {
+  const callsign = ($('#pm-callsign')?.value || '').trim();
+  const archetype = document.querySelector('input[name="archetype"]:checked')?.value || 'helios';
+  const dept = $('#pm-dept')?.value || 'CSE';
+  const year = $('#pm-year')?.value || '3rd Year';
+  const accent = document.querySelector('input[name="accent"]:checked')?.value || '#f08a24';
+
+  S.profile = {
+    archetype,
+    callsign: callsign || (S.u && S.u.name ? S.u.name.split(' ')[0] : 'Explorer'),
+    dept,
+    year,
+    accent
+  };
+  sv('lg_profile_custom', JSON.stringify(S.profile));
+  closeProfilePopup();
+  toast('Profile customized & synchronized');
+  rer();
+};
+
+window.initStickyHudObserver = function() {
+  const hero = document.querySelector('.solarpunk-bento-hero');
+  const hud = document.getElementById('bento-sticky-hud');
+  if (!hero || !hud) return;
+
+  const updateVisibility = () => {
+    const rect = hero.getBoundingClientRect();
+    if (rect.bottom < 110) {
+      hud.classList.add('visible');
+    } else {
+      hud.classList.remove('visible');
+    }
+  };
+
+  window.removeEventListener('scroll', window._hudScrollHandler);
+  window._hudScrollHandler = updateVisibility;
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  updateVisibility();
+};
+
 function renderBentoHub(activeView) {
   const r = S.rent,
     b = best(),
@@ -630,6 +871,38 @@ function renderBentoHub(activeView) {
       .join('')}</div>
   </div>`;
 
+  const prof = S.profile || { archetype: 'helios', callsign: '', dept: 'CSE', year: '3rd Year', accent: '#f08a24' };
+  const u = S.u;
+  const isStu = stu();
+  const callsign = (prof && prof.callsign) || (u && u.name ? u.name.split(' ')[0] : 'Explorer');
+
+  const stickyHud = activeView === 'home' ? `<div id="bento-sticky-hud" class="bento-sticky-hud" role="region" aria-label="Quick Hub Headbar">
+    <div class="bento-sticky-hud-inner">
+      <div class="hud-left">
+        <a class="hud-brand" href="#app-home" title="LumenGrove Rental Hub">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 3c11 6 16 15 16 26a16 16 0 0 1-32 0C8 18 13 9 24 3z" fill="#8fbf6a"/><path d="M27 13 17 28h6l-2 9 11-16h-7z" fill="#f08a24"/></svg>
+          <span class="hud-brand-text">LumenGrove</span>
+        </a>
+        <button type="button" class="hud-stn-pill" onclick="S.pick=ST.find(x=>x.id==='${cur.id}');rer();document.querySelector('.bento-map-card')?.scrollIntoView({behavior:'smooth'});" title="View station on map">
+          <i class="auth-dot-pulse"></i>
+          <b>${cur.n}</b>
+          <span class="hud-stn-sub">${dist(cur)}m · ${cur.free} free</span>
+        </button>
+        <span class="badge hud-solar-badge sol">Solar now · 38 W</span>
+      </div>
+      <div class="hud-right">
+        <button class="btn btn-sm hud-rent-btn" onclick="startR()">⚡ Rent</button>
+        <button type="button" class="hud-profile-pill" onclick="openProfilePopup()" aria-label="Open profile customization modal">
+          <span class="hud-avatar-circle" style="background:${prof.accent || 'var(--ac)'}">
+            ${getArchetypeIcon(prof.archetype, 16)}
+          </span>
+          <span class="hud-callsign">${window.escapeHtml ? window.escapeHtml(callsign) : callsign}</span>
+          <span class="hud-role-dot ${isStu ? 'verified' : 'guest'}"></span>
+        </button>
+      </div>
+    </div>
+  </div>` : '';
+
   let orderedCards;
   if (activeView === 'stations') {
     orderedCards = `${hero}${prim}${stationsCard}${mapCard}${banksCard}${rateCard}`;
@@ -639,7 +912,7 @@ function renderBentoHub(activeView) {
     orderedCards = `${hero}${prim}${rateCard}${payCard}${mapCard}${stationsCard}${banksCard}`;
   }
 
-  return `<div class="wrap"><div class="bento">${orderedCards}</div></div>`;
+  return `${stickyHud}<div class="wrap"><div class="bento">${orderedCards}</div></div>`;
 }
 
 const PG = {
@@ -932,6 +1205,10 @@ const PG = {
               </div>
 
               <div class="profile-actions-strip">
+                <button type="button" class="btn g settings-action-btn" onclick="openProfilePopup()" style="border-color:var(--ac);color:var(--fg)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <span>Customize Archetype</span>
+                </button>
                 ${isStu || u
                   ? `<button class="btn g settings-action-btn" onclick="signOut()">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1248,7 +1525,10 @@ function hdr(h) {
   const firstLetter = rawName ? rawName.charAt(0).toUpperCase() : '';
   const safeName = window.escapeHtml ? window.escapeHtml(rawName) : rawName;
   const acctLabel = safeName ? `${safeName} · ${t('me')}` : t('me');
-  const acctInner = firstLetter
+  const prof = S.profile || { archetype: 'helios', callsign: '', accent: '#f08a24' };
+  const acctInner = isSignedIn
+    ? `<span class="nav-arch-badge" style="display:inline-flex;align-items:center;justify-content:center;color:${prof.accent || 'var(--ac)'}">${getArchetypeIcon(prof.archetype, 18)}</span>`
+    : firstLetter
     ? (window.escapeHtml ? window.escapeHtml(firstLetter) : firstLetter)
     : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
@@ -1305,6 +1585,9 @@ function go(same) {
       const f = v.querySelector('h1');
       if (f && !same) f.focus({ preventScroll: true });
       if (!same) scrollTo(0, 0);
+      if (h === 'app-home' || h === 'home') {
+        setTimeout(initStickyHudObserver, 120);
+      }
     };
   if (
     same ||

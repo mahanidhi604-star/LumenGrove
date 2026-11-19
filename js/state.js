@@ -13,6 +13,15 @@ const sv = (k, v) => {
   } catch (e) {}
 };
 
+window.toast = function(m) {
+  const e = $('#toast');
+  if (!e) return;
+  e.textContent = typeof trT === 'function' ? trT(m) : m;
+  e.classList.add('on');
+  setTimeout(() => e.classList.remove('on'), 2200);
+};
+var toast = window.toast;
+
 const S = {
   l: q('l', 'en'),
   th: ['olive', 'amber'].includes(q('th', 'olive')) ? q('th', 'olive') : 'olive',
@@ -37,7 +46,22 @@ const S = {
   tempPhone: '',
   rm: q('rm', '0') === '1',
   favStn: q('lg_fav_stn', 'library'),
-  liveTelemetry: q('lg_telemetry', '1') === '1'
+  liveTelemetry: q('lg_telemetry', '1') === '1',
+  gpsActive: false,
+  gpsCoords: null,
+  profile: (() => {
+    try {
+      const p = q('lg_profile_custom', '');
+      if (p) return JSON.parse(p);
+    } catch (e) {}
+    return {
+      archetype: 'helios',
+      callsign: '',
+      dept: 'CSE',
+      year: '3rd Year',
+      accent: '#f08a24'
+    };
+  })()
 };
 
 try {
