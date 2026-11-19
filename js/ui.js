@@ -1041,10 +1041,20 @@ const PG = {
       )}</div><input id="hi" aria-label="Message Lumi" placeholder="Type your question and press Enter" style="width:100%;margin-top:10px" onkeydown="if(event.key=='Enter')hask(this.value)"></div><div class="card"><h3>FAQ</h3><details><summary>How does renting work?</summary><p>Choose a bank and duration, pay by QR, then enter your PIN at the station kiosk.</p></details><details><summary>Charged but no PIN?</summary><p>File a complaint with the transaction ID from My rentals.</p></details><details><summary>How long can I rent?</summary><p>From 30 minutes to 6 hours.</p></details><details><summary>What if I return late?</summary><p>Late rules will be announced with pricing.</p></details><details><summary>Which bank fits my laptop?</summary><p>Grove Laptop for laptops only, Grove Fast for a laptop and phone together.</p></details></div><div class="card"><h3>Something wrong?</h3><p>Tell us about a stuck lock, a bank that is not charging, or a wrong amount.</p><button class="btn" onclick="cmp()">File a complaint</button></div><div class="card"><h3>Contact management</h3><p>Phone: to be added<br>Email: to be added<br>Office hours: to be added</p></div></div></div>`
 };
 
+function syncHeaderHeight() {
+  const hd = $('#hd');
+  if (hd) {
+    document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px');
+  }
+}
+
+addEventListener('resize', syncHeaderHeight);
+
 function hdr(h) {
   const app = /^(app|plug|signin)/.test(h),
     ad = h.startsWith('admin'),
-    ex = ['home', 'how', 'tech', 'impact', 'about'],
+    inPlug = app || ad,
+    ex = ['how', 'tech', 'impact', 'about'],
     ap = [
       ['app-home', t('rental_hub')],
       ['app-rentals', t('rental_history')],
@@ -1054,14 +1064,23 @@ function hdr(h) {
     demoBanner = S.isDemo
       ? `<div class="demo-banner" role="status"><span>Demo mode. Nothing here is real.</span><button onclick="exitDemo()">Exit demo</button></div>`
       : '';
-  document.body.className = app || ad ? 'ap' : '';
-  $('#hd').innerHTML = `${demoBanner}<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main">${
-    app || ad
-      ? `<div class="sw"><a href="#home">Explore</a><a href="#app-home" class="on">Plug In</a></div>` +
-        ap.map(a => `<a href="#${a[0]}" class="${h == a[0] ? 'on' : ''}">${a[1]}</a>`).join('')
-      : ex.map(k => `<a href="#${k}" class="${h == k ? 'on' : ''}">${t(k)}</a>`).join('') +
-        `<a class="btn plug" href="#app-home">${t('plug')} ⚡</a>`
-  }</nav><select aria-label="Theme" onchange="theme(this.value)">${[
+
+  const u = S.u;
+  const rawName = (u && u.name ? String(u.name).trim() : '') || (u && u.email ? String(u.email).trim() : '');
+  const isSignedIn = !!(u && u.role && u.role !== 'guest');
+  const firstLetter = rawName ? rawName.charAt(0).toUpperCase() : '';
+  const safeName = window.escapeHtml ? window.escapeHtml(rawName) : rawName;
+  const acctLabel = safeName ? `${safeName} · ${t('me')}` : t('me');
+  const acctInner = firstLetter
+    ? (window.escapeHtml ? window.escapeHtml(firstLetter) : firstLetter)
+    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+  document.body.className = inPlug ? 'ap' : '';
+  $('#hd').innerHTML = `${demoBanner}<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main"><div class="sw"><a href="#home" class="${
+    !inPlug ? 'on' : ''
+  }">Explore</a><a href="#app-home" class="${inPlug ? 'on' : ''}">${t('plug')}</a></div>${ex
+    .map(k => `<a href="#${k}" class="${h == k ? 'on' : ''}">${t(k)}</a>`)
+    .join('')}</nav><div class="hdr-actions"><select aria-label="Theme" onchange="theme(this.value)">${[
     ['olive', 'Olive Night'],
     ['amber', 'Amber Sun']
   ]
@@ -1072,12 +1091,25 @@ function hdr(h) {
     ['hi', 'हि']
   ]
     .map(a => `<option value="${a[0]}"${S.l == a[0] ? ' selected' : ''}>${a[1]}</option>`)
-    .join('')}</select></header>`;
+    .join('')}</select><a class="nav-acct ${isSignedIn ? 'signed-in' : 'guest'}${
+    h == 'app-settings' ? ' on' : ''
+  }" href="#app-settings" title="${acctLabel}" aria-label="${acctLabel}">${acctInner}</a></div></header>`;
+
+  const sb = $('#sb');
+  if (sb) {
+    sb.innerHTML = inPlug
+      ? `<div class="side-nav">${ap
+          .map(a => `<a href="#${a[0]}" class="${h == a[0] ? 'on' : ''}">${a[1]}</a>`)
+          .join('')}</div>`
+      : '';
+  }
+
   $('#tb').innerHTML = app
     ? ap
         .map(a => `<a href="#${a[0]}" class="${h == a[0] ? 'on' : ''}">${a[1]}</a>`)
         .join('')
     : '';
+  syncHeaderHeight();
 }
 
 function go(same) {
