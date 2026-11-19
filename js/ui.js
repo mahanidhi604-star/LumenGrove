@@ -831,7 +831,7 @@ function renderBentoHub(activeView) {
               <b style="font-size:1rem">${s.n}</b>
               ${isSel ? '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>' : ''}
             </div>
-            <small style="color:var(--mut)">${dist(s)} m away · ${s.stock[S.cat]} ${CATS[S.cat].n} ready</small>
+            <small style="color:var(--mut)">${window.fmtDist ? window.fmtDist(dist(s)) : dist(s) + ' m'} away · ${s.stock[S.cat]} ${CATS[S.cat].n} ready</small>
           </div>
           <div style="text-align:right">
             <span class="badge" style="${isSel ? 'background:var(--ac);color:var(--on)' : ''}">${s.ok ? s.free + ' free' : 'offline'}</span>
@@ -886,7 +886,7 @@ function renderBentoHub(activeView) {
         <button type="button" class="hud-stn-pill" onclick="S.pick=ST.find(x=>x.id==='${cur.id}');rer();document.querySelector('.bento-map-card')?.scrollIntoView({behavior:'smooth'});" title="View station on map">
           <i class="auth-dot-pulse"></i>
           <b>${cur.n}</b>
-          <span class="hud-stn-sub">${dist(cur)}m · ${cur.free} free</span>
+          <span class="hud-stn-sub">${window.fmtDist ? window.fmtDist(dist(cur)) : dist(cur) + ' m'} · ${cur.free} free</span>
         </button>
         <span class="badge hud-solar-badge sol">Solar now · 38 W</span>
       </div>
@@ -1587,6 +1587,11 @@ function go(same) {
       if (!same) scrollTo(0, 0);
       if (h === 'app-home' || h === 'home') {
         setTimeout(initStickyHudObserver, 120);
+      }
+      if (h === 'app-home' || h === 'app-stations' || h === 'home' || h === 'app-rent') {
+        if (typeof window.locateDeviceGps === 'function' && !S.gpsActive && !S.gpsDenied) {
+          setTimeout(() => window.locateDeviceGps(false), 200);
+        }
       }
     };
   if (

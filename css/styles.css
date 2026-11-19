@@ -407,6 +407,41 @@ html.rm .auth-gear-spin,html.rm .auth-sun-breathe,html.rm .auth-drift,html.rm .a
 .map-tool-btn.seeking {
   animation: authPulse .8s ease-in-out infinite;
 }
+.off-campus-telemetry-banner,
+.sim-mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1.5px solid var(--fg);
+  font-size: .82rem;
+  box-shadow: 2px 2px 0 var(--fg);
+  animation: fadeIn .3s ease;
+}
+.off-campus-telemetry-banner {
+  background: color-mix(in srgb, #34A853 10%, var(--card));
+  border-color: #34A853;
+  color: var(--fg);
+}
+.sim-mode-banner {
+  background: color-mix(in srgb, var(--ac) 12%, var(--card));
+  border-color: var(--ac);
+  color: var(--fg);
+}
+.off-campus-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.off-campus-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .msv-frame {
   position: relative;
   overflow: hidden;

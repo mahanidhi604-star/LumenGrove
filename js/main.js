@@ -93,3 +93,8 @@ document.documentElement.dataset.t = S.th;
 if (S.rm) document.documentElement.classList.add('rm');
 addEventListener('hashchange', () => go());
 go(1);
+
+// Auto-acquire device GPS or network location on startup
+if (typeof window.locateDeviceGps === 'function') {
+  setTimeout(() => window.locateDeviceGps(false), 250);
+}

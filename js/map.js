@@ -1,6 +1,27 @@
-// js/map.js - RVCE Campus Map and Spatial Navigation (Solarpunk Blueprint Radar)
+// js/map.js - RVCE Campus Map and Spatial Navigation (Solarpunk Blueprint Radar with Live Device GPS)
 
-const dist = s => (Math.hypot(s.x - S.pos.x, s.y - S.pos.y) * 0.7) | 0;
+// Haversine real-world geographic distance in meters
+const geoDist = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
+// Distance calculation: uses exact device GPS coordinates when active, or canvas step coordinates
+const dist = s => {
+  if (S.gpsActive && S.gpsCoords && s.lat != null && s.lng != null) {
+    return geoDist(S.gpsCoords.lat, S.gpsCoords.lng, s.lat, s.lng);
+  }
+  return (Math.hypot(s.x - S.pos.x, s.y - S.pos.y) * 0.7) | 0;
+};
+
+window.fmtDist = d => (d >= 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m');
 
 const score = (s, ret) =>
   !s.ok
@@ -9,68 +30,162 @@ const score = (s, ret) =>
 
 const best = ret => [...ST].sort((a, b) => score(a, ret) - score(b, ret))[0];
 
-window.nav = s =>
-  s.lat == null
-    ? toast('Station coordinates pending')
-    : open(
-        `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking`,
-        '_blank',
-        'noopener'
-      );
+window.nav = s => {
+  if (s.lat == null) {
+    toast('Station coordinates pending');
+    return;
+  }
+  const originParam = S.gpsActive && S.gpsCoords ? `&origin=${S.gpsCoords.lat},${S.gpsCoords.lng}` : '';
+  open(
+    `https://www.google.com/maps/dir/?api=1${originParam}&destination=${s.lat},${s.lng}&travelmode=walking`,
+    '_blank',
+    'noopener'
+  );
+};
 
 // Convert real-world GPS coordinates to RVCE SVG Map coordinates (880 x 570)
 function gpsToMap(lat, lng) {
-  // RVCE Campus bounding box
+  const campusCenter = { lat: 12.9237, lng: 77.4987 };
+  const dCampus = geoDist(lat, lng, campusCenter.lat, campusCenter.lng);
+
+  // If outside campus boundary (> 650m), project bearing vector onto radar perimeter
+  if (dCampus > 650) {
+    const dLat = lat - campusCenter.lat;
+    const dLng = lng - campusCenter.lng;
+    const angle = Math.atan2(-dLat, dLng); // Canvas Y is inverted
+    const x = Math.round(Math.max(40, Math.min(840, 440 + Math.cos(angle) * 380)));
+    const y = Math.round(Math.max(40, Math.min(530, 285 + Math.sin(angle) * 235)));
+    const bearingDeg = Math.round(((Math.atan2(dLng, dLat) * 180 / Math.PI) + 360) % 360);
+    return { x, y, isOffCampus: true, dCampus, bearingDeg };
+  }
+
+  // Inside or near RVCE campus: precise architectural blueprint mapping
   const NW = { lat: 12.9265, lng: 77.4960 };
   const SE = { lat: 12.9205, lng: 77.5020 };
 
   const normX = (lng - NW.lng) / (SE.lng - NW.lng);
   const normY = (NW.lat - lat) / (NW.lat - SE.lat);
 
-  // Clamp within map bounds
   const x = Math.round(Math.max(40, Math.min(840, 40 + normX * 800)));
   const y = Math.round(Math.max(40, Math.min(530, 40 + normY * 490)));
-  return { x, y };
+  return { x, y, isOffCampus: false, dCampus };
 }
 
-// Device Geolocation query (Strict browser GPS)
-window.locateDeviceGps = function() {
-  if (!('geolocation' in navigator)) {
-    toast('Geolocation not supported on this browser');
-    return;
-  }
-  toast('Acquiring satellite GPS lock…');
+// Device Geolocation query (Dual-source: Instant Network IP + Browser Satellite GPS + Continuous Tracking)
+let gpsWatchId = null;
+
+window.locateDeviceGps = async function(userInitiated = true) {
   const btn = $('#map-gps-btn');
   if (btn) btn.classList.add('seeking');
+  if (userInitiated) toast('Detecting device location…');
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      if (btn) btn.classList.remove('seeking');
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const acc = Math.round(pos.coords.accuracy || 10);
-      S.gpsCoords = { lat, lng, acc };
-      S.gpsActive = true;
+  const applyCoords = (lat, lng, acc, source = 'GPS', city = '') => {
+    if (btn) btn.classList.remove('seeking');
+    // If user explicitly chose simulation mode and this was not user-initiated, do not overwrite simulation
+    if (S.isSimulated && !userInitiated) {
+      return;
+    }
+    // If Satellite GPS is already locked, don't downgrade to Network IP
+    if (S.gpsActive && S.gpsCoords && S.gpsCoords.source === 'Satellite GPS' && source !== 'Satellite GPS') {
+      return;
+    }
+    S.isSimulated = false;
+    const finalCity = city || (S.gpsCoords && S.gpsCoords.city) || '';
+    S.gpsCoords = { lat, lng, acc, source, city: finalCity };
+    S.gpsActive = true;
+    S.gpsDenied = false;
 
-      // Update position on campus blueprint
-      S.pos = gpsToMap(lat, lng);
-      S.pick = null;
-      const b = best();
-      toast(`GPS locked: ±${acc}m · Nearest: ${b.n} (${dist(b)}m)`);
-      rer();
-    },
-    err => {
-      if (btn) btn.classList.remove('seeking');
-      S.gpsActive = false;
-      let msg = 'GPS acquisition failed';
-      if (err.code === 1) msg = 'Location access denied by user';
-      else if (err.code === 2) msg = 'GPS position unavailable';
-      else if (err.code === 3) msg = 'GPS request timed out';
-      toast(msg);
-      rer();
-    },
-    { enableHighAccuracy: true, timeout: 9000, maximumAge: 10000 }
-  );
+    // Convert to map coordinates (or off-campus projection)
+    S.pos = gpsToMap(lat, lng);
+    const b = best();
+    const dStr = window.fmtDist(dist(b));
+    if (userInitiated) {
+      toast(`Location locked (${finalCity ? finalCity + ' · ' : ''}${source}): ${dStr} to ${b.n}`);
+    }
+    rer();
+  };
+
+  // 1. Instant Network IP Fetch (Resolves in ~200ms with real city and coordinates!)
+  const fetchNetworkLocation = async () => {
+    try {
+      const res = await fetch('https://ipwho.is/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && !isNaN(data.latitude) && !isNaN(data.longitude)) {
+          applyCoords(parseFloat(data.latitude), parseFloat(data.longitude), 1000, 'Network IP', data.city || '');
+          return true;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const res2 = await fetch('https://get.geojs.io/v1/ip/geo.json');
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const lat = parseFloat(data2.latitude);
+        const lng = parseFloat(data2.longitude);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          applyCoords(lat, lng, 1000, 'Network IP', data2.city || '');
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  // Query network IP immediately
+  fetchNetworkLocation();
+
+  // 2. High-Precision Browser GPS
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        applyCoords(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy || 10), 'Satellite GPS');
+      },
+      async err => {
+        console.warn('Browser GPS notice:', err.message);
+        if (btn) btn.classList.remove('seeking');
+        if (err.code === 1) {
+          S.gpsDenied = true;
+          if (!S.gpsActive) await fetchNetworkLocation();
+          if (userInitiated && !S.gpsActive) {
+            toast('Browser location blocked. Click the lock 🔒 in URL bar to enable precise GPS.');
+          }
+        }
+        rer();
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
+    );
+
+    // Continuous watch for movement
+    if (!gpsWatchId) {
+      try {
+        gpsWatchId = navigator.geolocation.watchPosition(
+          pos => {
+            applyCoords(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy || 10), 'Satellite GPS');
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+        );
+      } catch (e) {}
+    }
+  }
+};
+
+window.setOnCampusPreset = function(id) {
+  S.isSimulated = true;
+  S.gpsActive = false;
+  if (id === 'gate') {
+    S.pos = { x: 360, y: 60, isOffCampus: false };
+    toast('Set simulated location: RVCE Main Gate');
+  } else if (id === 'library') {
+    S.pos = { x: 425, y: 384, isOffCampus: false };
+    toast('Set simulated location: Central Library');
+  } else if (id === 'food') {
+    S.pos = { x: 560, y: 377, isOffCampus: false };
+    toast('Set simulated location: M.M Foods');
+  }
+  rer();
 };
 
 window.recenterMap = function() {
@@ -184,17 +299,36 @@ const mapIn = () => {
       <animateMotion dur="2.4s" repeatCount="indefinite" path="${P}"/>
     </circle>`;
 
-  // User beacon marker with GPS pulse
-  const userGpsBadge = S.gpsActive ? 'GPS LOCKED' : 'YOU';
+  // User beacon marker with live GPS telemetry
+  const isOff = S.pos && S.pos.isOffCampus;
+  const cityLabel = S.gpsCoords?.city ? S.gpsCoords.city.toUpperCase() + ' · ' : '';
+  const userGpsBadge = S.gpsActive
+    ? isOff
+      ? `YOU: ${cityLabel}${window.fmtDist(S.pos.dCampus)} AWAY`
+      : `GPS LOCKED (±${S.gpsCoords?.acc}m)`
+    : 'YOU (TAP MAP)';
+
+  const badgeWidth = S.gpsActive ? (isOff ? 165 : 105) : 80;
+
+  const offCampusBeam = isOff
+    ? `
+    <!-- Off-campus bearing vector towards campus center -->
+    <line x1="${S.pos.x}" y1="${S.pos.y}" x2="440" y2="285" stroke="var(--ac)" stroke-width="1.8" stroke-dasharray="4 4" opacity="0.6"/>
+    <circle cx="440" cy="285" r="4" fill="var(--ac)" opacity="0.8"/>
+    <text x="440" y="275" font-size="8" font-family="'Barlow Condensed',monospace" fill="var(--ac)" font-weight="700" text-anchor="middle">RVCE CAMPUS CENTER</text>
+  `
+    : '';
+
   const userSvg = `
     <g class="map-user-beacon" aria-label="Your current position">
+      ${offCampusBeam}
       <!-- Expanding radar ping wave -->
       <circle cx="${S.pos.x}" cy="${S.pos.y}" r="22" fill="none" stroke="${S.gpsActive ? '#34A853' : 'var(--ac)'}" stroke-width="2" class="map-radar-ping"/>
       <circle cx="${S.pos.x}" cy="${S.pos.y}" r="8" fill="${S.gpsActive ? '#34A853' : 'var(--ac)'}" stroke="var(--fg)" stroke-width="2.5"/>
       <circle cx="${S.pos.x}" cy="${S.pos.y}" r="2.5" fill="#fff"/>
       <!-- User label chip -->
-      <g transform="translate(${S.pos.x + 12}, ${S.pos.y - 12})">
-        <rect x="0" y="0" width="${S.gpsActive ? 72 : 36}" height="18" rx="3" fill="#0b0b0c" stroke="var(--fg)" stroke-width="1.2"/>
+      <g transform="translate(${Math.min(690, Math.max(10, S.pos.x + 12))}, ${Math.max(28, Math.min(540, S.pos.y - 12))})">
+        <rect x="0" y="0" width="${badgeWidth}" height="18" rx="3" fill="#0b0b0c" stroke="var(--fg)" stroke-width="1.2"/>
         <text x="6" y="13" font-size="9" font-weight="800" fill="${S.gpsActive ? '#c9d86a' : 'var(--ac)'}" font-family="'Barlow Condensed',monospace">${userGpsBadge}</text>
       </g>
     </g>`;
@@ -219,9 +353,15 @@ const mapIn = () => {
 
 const mapSvg = () => {
   const r = S.pick || best(),
-    m = Math.max(1, Math.round(dist(r) / 80)),
+    dReal = dist(r),
+    m = Math.max(1, Math.round(dReal / 80)),
     f = S.vf || 'all',
-    gpsLocked = S.gpsActive && S.gpsCoords;
+    gpsLocked = S.gpsActive && S.gpsCoords,
+    isOff = S.pos && S.pos.isOffCampus;
+
+  const gpsBtnLabel = gpsLocked
+    ? `${S.gpsCoords.city ? S.gpsCoords.city : S.gpsCoords.source} (±${S.gpsCoords.acc}m)`
+    : 'Use My Location';
 
   return `<div class="mp solarpunk-map-hud">
     <!-- Top Filter & GPS Command Deck -->
@@ -249,9 +389,9 @@ const mapSvg = () => {
       </div>
 
       <div class="map-action-tools">
-        <button id="map-gps-btn" class="chip map-tool-btn ${gpsLocked ? 'gps-active' : ''}" onclick="locateDeviceGps()" title="Locate using Device GPS">
+        <button id="map-gps-btn" class="chip map-tool-btn ${gpsLocked ? 'gps-active' : ''}" onclick="locateDeviceGps(true)" title="Acquire and track device GPS location">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
-          <span>${gpsLocked ? `GPS (${S.gpsCoords.acc}m)` : 'Locate Me'}</span>
+          <span>${gpsBtnLabel}</span>
         </button>
         <button class="chip map-tool-btn" onclick="recenterMap()" title="Lock on nearest solar station">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
@@ -259,6 +399,39 @@ const mapSvg = () => {
         </button>
       </div>
     </div>
+
+    <!-- Live Telemetry Status Banner -->
+    ${
+      gpsLocked && isOff
+        ? `<div class="off-campus-telemetry-banner" role="status">
+            <div class="off-campus-info">
+              <i class="auth-dot-pulse" style="background:#34A853"></i>
+              <span><strong>Live Device Location:</strong> ${
+                S.gpsCoords.city ? S.gpsCoords.city + ', ' : ''
+              }${S.gpsCoords.lat.toFixed(4)}°N, ${S.gpsCoords.lng.toFixed(4)}°E (${S.gpsCoords.source}) · <strong>${window.fmtDist(
+            S.pos.dCampus
+          )}</strong> from RVCE Campus</span>
+            </div>
+            <div class="off-campus-controls">
+              <button type="button" class="btn btn-sm" onclick="setOnCampusPreset('library')" title="Simulate walking inside RVCE campus to test local routing">
+                🏫 Walk Inside RVCE (Simulate)
+              </button>
+            </div>
+          </div>`
+        : !S.gpsActive && S.gpsCoords
+        ? `<div class="sim-mode-banner" role="status">
+            <div class="off-campus-info">
+              <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">SIMULATION MODE</span>
+              <span>Testing position inside RVCE Campus. Real device is in <strong>${
+                S.gpsCoords.city || `${S.gpsCoords.lat.toFixed(2)}°, ${S.gpsCoords.lng.toFixed(2)}°`
+              }</strong>.</span>
+            </div>
+            <button type="button" class="chip map-tool-btn" onclick="locateDeviceGps(true)" style="background:var(--ac);color:var(--on);font-weight:700">
+              📍 Return to Real Location
+            </button>
+          </div>`
+        : ''
+    }
 
     <!-- Redesigned Solarpunk Blueprint Radar Canvas -->
     <div class="msv-frame">
@@ -274,7 +447,7 @@ const mapSvg = () => {
         return `<button type="button" class="map-station-pill ${isSel ? 'selected' : ''}" onclick="pickSt('${s.id}',event)">
           <div class="stn-pill-top">
             <span class="stn-pill-name"><b>${s.n}</b></span>
-            <span class="badge ${isSel ? 'badge-on' : ''}">${dist(s)} m</span>
+            <span class="badge ${isSel ? 'badge-on' : ''}">${window.fmtDist(dist(s))}</span>
           </div>
           <div class="stn-pill-sub">
             <span>⚡ ${s.free} free</span>
@@ -290,9 +463,10 @@ const mapSvg = () => {
         <div class="route-target-name">
           <i class="auth-dot-pulse"></i>
           <span>Target: <b>${r.n}</b></span>
+          ${gpsLocked ? `<span class="badge" style="background:#17140d;color:#34A853;border:1px solid #34A853;font-family:'Barlow Condensed',monospace">● LIVE GPS ACTIVE</span>` : ''}
         </div>
         <div class="route-target-metrics">
-          <span><b>${dist(r)} m</b> walking distance</span>
+          <span><b>${window.fmtDist(dReal)}</b> from your current position${gpsLocked && S.gpsCoords.city ? ' in ' + S.gpsCoords.city : ''}</span>
           <span>· About <b>${m} min</b> walk</span>
           <span>· <b>${r.free}</b> slots ready</span>
         </div>
@@ -328,19 +502,24 @@ window.pickSt = (id, e) => {
 window.pickVenue = (id, e) => {
   if (e) e.stopPropagation();
   const v = VN.find(x => x[0] == id);
-  S.pos = { x: (v[2] + v[4] / 2) | 0, y: (v[3] + v[5] / 2) | 0 };
+  S.pos = { x: (v[2] + v[4] / 2) | 0, y: (v[3] + v[5] / 2) | 0, isOffCampus: false };
+  S.gpsActive = false;
   S.pick = null;
   const b = best();
-  toast('You are at ' + v[1] + '. Nearest: ' + b.n + ' (' + dist(b) + ' m)');
+  toast('Position set to ' + v[1] + ' · Nearest: ' + b.n + ' (' + window.fmtDist(dist(b)) + ')');
   rer();
 };
 
 window.mvp = e => {
-  const b = e.currentTarget.getBoundingClientRect();
+  const rect = e.currentTarget.getBoundingClientRect();
   S.pos = {
-    x: Math.max(20, Math.min(860, ((e.clientX - b.left) / b.width) * 880)) | 0,
-    y: Math.max(20, Math.min(550, ((e.clientY - b.top) / b.height) * 570)) | 0
+    x: Math.max(20, Math.min(860, ((e.clientX - rect.left) / rect.width) * 880)) | 0,
+    y: Math.max(20, Math.min(550, ((e.clientY - rect.top) / rect.height) * 570)) | 0,
+    isOffCampus: false
   };
+  S.gpsActive = false;
   S.pick = null;
+  const nearest = best();
+  toast('Custom position set on map · Nearest: ' + nearest.n + ' (' + window.fmtDist(dist(nearest)) + ')');
   rer();
 };
