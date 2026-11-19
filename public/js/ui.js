@@ -569,7 +569,7 @@ window.openProfilePopup = function() {
           <div class="pm-action-row">
             <button type="submit" class="btn" style="flex:1">Save & Apply Profile</button>
             <button type="button" class="btn g" onclick="closeProfilePopup()">Cancel</button>
-            ${isStu ? `<button type="button" class="btn g" style="border-color:#e05248;color:#e05248" onclick="closeProfilePopup();signOut();">Sign out</button>` : ''}
+            ${S.u && S.u.role !== 'guest' ? `<button type="button" class="btn g" style="border-color:#e05248;color:#e05248" onclick="closeProfilePopup();signOut();">Sign out</button>` : ''}
           </div>
         </form>
       </div>
@@ -734,9 +734,13 @@ function renderBentoHub(activeView) {
       <span class="k">Account & Access</span>
       <h2>Sign in to charge up</h2>
       <p>Browse campus stations and available solar power banks as a guest, or sign in with your official RVCE student Google account (@rvce.edu.in) to reserve and rent.</p>
-      <p style="margin-top:16px">
+      <div style="margin:16px 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-google" onclick="signInWithGoogle('#app-home')" aria-label="Sign in with Google">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+          <span>Sign in with Google</span>
+        </button>
         <a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-home')">${t('si')}</a>
-      </p>
+      </div>
       <p style="margin-top:14px;font-size:.9rem;color:var(--mut)">Best station right now: <b>${b.n}</b> (${dist(b)} m away)</p>
     </div>`;
   } else if (r && r.started) {
@@ -799,9 +803,14 @@ function renderBentoHub(activeView) {
         </div>
         <h4 class="lockon-heading">🔒 Student Sign-In Required</h4>
         <p class="lockon-info">Duration selection and rental passes are restricted to verified students. Sign in to unlock charging hours.</p>
-        <button type="button" class="btn btn-sm lockon-cta-btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';">
-          ⚡ Sign In to Unlock Duration & Rent
-        </button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm lockon-cta-btn" onclick="signInWithGoogle('#app-home')" style="background:var(--fg);color:var(--bg)">
+            ⚡ Sign In with Google
+          </button>
+          <button type="button" class="btn btn-sm lockon-cta-btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';">
+            Demo Student
+          </button>
+        </div>
       </div>
     </div>` : '';
 
@@ -819,9 +828,15 @@ function renderBentoHub(activeView) {
               <h3 style="margin:4px 0">Ready to charge at <b style="color:var(--ac)">${cur.n}</b>?</h3>
               <p style="font-size:0.85rem;color:var(--mut);margin:0">Sign in with your RVCE Student ID to authorize this terminal & generate your UPI / PIN pass.</p>
             </div>
-            <button class="btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';" style="min-height:46px;padding:8px 22px">
-              ⚡ Sign In to Rent Power Bank
-            </button>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn-google" onclick="signInWithGoogle('#app-home')" style="min-height:44px;padding:8px 18px" aria-label="Sign in with Google">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+                <span>Sign in with Google</span>
+              </button>
+              <button class="btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';" style="min-height:44px;padding:8px 18px">
+                ⚡ Sign In
+              </button>
+            </div>
           </div>
         </div>`
       : `<div class="card s4 bento-checkout-preview-card" style="--i:6">
@@ -1024,6 +1039,9 @@ const PG = {
               <span class="k" style="margin-top:14px">${t('rvce_portal')}</span>
               <h1 tabindex="-1">${t('complete_profile')}</h1>
               <p>${t('profile_sub')}</p>
+              <div style="padding:10px 14px;background:var(--bg);border-radius:6px;border:1px solid var(--ln);margin-bottom:18px;font-size:.88rem">
+                Signed in as: <b>${window.escapeHtml ? window.escapeHtml(S.u.email || S.u.name || '') : (S.u.email || S.u.name || '')}</b>
+              </div>
 
               <label for="prof_name">${t('full_name_label')}</label>
               <input id="prof_name" type="text" autocomplete="name" style="width:100%" value="${window.escapeHtml ? window.escapeHtml(S.u.name || '') : (S.u.name || '')}">
@@ -1033,9 +1051,32 @@ const PG = {
 
               <div class="err" id="prof_err" role="alert" aria-live="polite"></div>
 
-              <p style="margin-top:24px">
+              <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
                 <button class="btn auth-full-btn" onclick="completeProfile()">${t('save_continue')}</button>
-              </p>
+                <button type="button" class="btn g auth-full-btn" onclick="signOut()">Sign out & use another account</button>
+                <button type="button" class="btn g auth-full-btn" style="border:none;color:var(--mut);font-size:.85rem" onclick="continueAsGuest()">Skip for now & browse as guest</button>
+              </div>
+            </div>
+            <div class="auth-collage" aria-hidden="true">
+              ${renderStudentCollage()}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    if (S.u && S.u.role && S.u.role !== 'guest' && !S.needsProfile) {
+      return `<div class="wrap auth-wrap">
+        <div class="auth-poster-frame">
+          <div class="auth-split">
+            <div class="auth-form-card" role="region" aria-label="Signed in status">
+              <span class="k">${t('rvce_portal')}</span>
+              <h1 tabindex="-1">Active Student Session</h1>
+              <p>You are signed in as <b>${window.escapeHtml ? window.escapeHtml(S.u.email || S.u.name || '') : (S.u.email || S.u.name || '')}</b>.</p>
+              <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+                <a class="btn auth-full-btn" href="#app-home">Continue to Rental Hub</a>
+                <button type="button" class="btn g auth-full-btn" onclick="signOut()">Sign out</button>
+              </div>
             </div>
             <div class="auth-collage" aria-hidden="true">
               ${renderStudentCollage()}

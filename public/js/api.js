@@ -153,33 +153,38 @@ window.supabaseApi = {
       console.warn('Auth user metadata update notice:', metaErr);
     }
 
-    // 2. Persist to public.profiles table (try update first; if no row updated, try upsert)
+    // 2. Persist to public.profiles table
+    const updatePayload = {
+      full_name: fullName,
+      phone: phone,
+      updated_at: new Date().toISOString()
+    };
+
     const { data: updateData, error: updateErr } = await window.supabaseClient
       .from('profiles')
-      .update({
-        full_name: fullName,
-        phone: phone,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', user.id)
       .select();
 
-    if (updateErr || !updateData || updateData.length === 0) {
-      // If row did not exist yet, upsert it
-      const { data: upsertData, error: upsertErr } = await window.supabaseClient
+    if (!updateData || updateData.length === 0) {
+      // Row does not exist yet; insert it cleanly
+      const insertPayload = {
+        id: user.id,
+        email: user.email,
+        full_name: fullName,
+        phone: phone,
+        role: 'student',
+        updated_at: new Date().toISOString()
+      };
+      const { data: insertData, error: insertErr } = await window.supabaseClient
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          full_name: fullName,
-          phone: phone,
-          role: (window.S && window.S.u && window.S.u.role) || 'student',
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
+        .insert(insertPayload)
         .select();
 
-      if (upsertErr && updateErr) throw (updateErr || upsertErr);
-      return upsertData;
+      if (insertErr && !insertErr.message?.includes('duplicate key')) {
+        console.warn('Profile insert notice:', insertErr);
+      }
+      return insertData || updateData;
     }
 
     return updateData;

@@ -12,6 +12,8 @@ const sv = (k, v) => {
     localStorage.setItem(k, v);
   } catch (e) {}
 };
+window.sv = sv;
+window.q = q;
 
 window.toast = function(m) {
   const e = $('#toast');

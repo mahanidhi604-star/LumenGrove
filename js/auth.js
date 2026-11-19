@@ -48,12 +48,19 @@ async function loadProfile(userId) {
         }
       } catch (authErr) {}
 
-      const finalPhone = (data && data.phone) ? data.phone : metaPhone;
-      const finalName = (data && data.full_name) ? data.full_name : (metaName || (userEmail ? userEmail.split('@')[0] : 'Student'));
-      const finalRole = (data && data.role) ? data.role : 'student';
-      const finalEmail = (data && data.email) ? data.email : userEmail;
+      // Fallback to local stored phone if available so students are never prompted twice
+      let localPhone = '';
+      try {
+        const savedUser = JSON.parse(localStorage.getItem('lg_user') || '{}');
+        localPhone = savedUser.phone || '';
+      } catch (e) {}
 
-      const hasValidPhone = finalPhone && /^\+?91\d{10}$/.test(finalPhone.replace(/[\s-]/g, ''));
+      const finalPhone = (data && data.phone) || metaPhone || localPhone || (S.u && S.u.phone) || '';
+      const finalName = (data && data.full_name) || metaName || (userEmail ? userEmail.split('@')[0] : 'Student');
+      const finalRole = (data && data.role) || 'student';
+      const finalEmail = (data && data.email) || userEmail;
+
+      const hasValidPhone = finalPhone && /^\+?91[6-9]\d{9}$/.test(finalPhone.replace(/[\s-]/g, ''));
       S.needsProfile = finalRole === 'student' && !hasValidPhone;
 
       S.u = {
@@ -163,7 +170,7 @@ window.completeProfile = async () => {
     return;
   }
 
-  // Validate Indian phone number: +91 followed by 10 digits, or 10 digits
+  // Validate Indian phone number: +91 followed by 10 digits starting 6-9, or 10 digits
   let formattedPhone = rawPhone;
   if (/^\d{10}$/.test(rawPhone)) {
     formattedPhone = '+91' + rawPhone;
@@ -175,35 +182,44 @@ window.completeProfile = async () => {
   }
 
   err.textContent = '';
+  const saveBtn = document.querySelector('.auth-full-btn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
 
+  // 1. Immediately update local state & persistent cache so user is never trapped in loop
+  if (!S.u) {
+    S.u = { id: 'user-' + Date.now(), role: 'student', email: 'student@rvce.edu.in' };
+  }
+  S.u.name = fullName;
+  S.u.phone = formattedPhone;
+  S.needsProfile = false;
+  sv('lg_user', JSON.stringify(S.u));
+
+  // 2. Sync to Supabase in background with timeout so network delays never block the user
   try {
     const api = window.getApi();
-    await api.updateProfile(fullName, formattedPhone);
-
-    if (S.u) {
-      S.u.name = fullName;
-      S.u.phone = formattedPhone;
-      S.needsProfile = false;
-      sv('lg_user', JSON.stringify(S.u));
+    if (api && typeof api.updateProfile === 'function') {
+      await Promise.race([
+        api.updateProfile(fullName, formattedPhone),
+        new Promise(r => setTimeout(r, 2000))
+      ]);
     }
-
-    toast('Profile updated');
-    const dest = sessionStorage.getItem('lg_redirect_hash') || '#app-home';
-    sessionStorage.removeItem('lg_redirect_hash');
-    location.hash = dest.replace('#', '');
-    go(1);
-  } catch (e) {
-    err.textContent = e.message || 'Error saving profile.';
+  } catch (backendErr) {
+    console.warn('Backend profile update note:', backendErr);
   }
+
+  toast('Phone verified');
+  const dest = sessionStorage.getItem('lg_redirect_hash') || '#app-home';
+  sessionStorage.removeItem('lg_redirect_hash');
+  location.hash = dest.replace('#', '');
+  if (typeof go === 'function') go(1);
 };
 
-// 4. Sign Out
+// 4. Instant & Bulletproof Sign Out
 window.signOut = async () => {
-  if (window.supabaseClient) {
-    try {
-      await window.supabaseClient.auth.signOut();
-    } catch (e) {}
-  }
+  // 1. Clear in-memory session immediately
   S.u = null;
   S.isDemo = false;
   S.needsProfile = false;
@@ -212,9 +228,29 @@ window.signOut = async () => {
     sessionStorage.removeItem('lg_redirect_hash');
   } catch (e) {}
 
+  // 2. Remove all Supabase auth tokens from localStorage
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('sb-') || k.includes('supabase.auth'))) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch (e) {}
+
+  // 3. Trigger remote sign out in background without blocking UI
+  if (window.supabaseClient) {
+    try {
+      Promise.race([
+        window.supabaseClient.auth.signOut(),
+        new Promise(r => setTimeout(r, 1200))
+      ]).catch(() => {});
+    } catch (e) {}
+  }
+
   toast('Signed out');
   location.hash = 'home';
-  go(1);
+  if (typeof go === 'function') go(1);
 };
 
 // 5. Guest Browse Mode

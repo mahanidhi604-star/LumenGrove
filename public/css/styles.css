@@ -142,9 +142,9 @@ html.auth-paused *{animation-play-state:paused!important}
 html:lang(kn) :is(.auth-restricted-tag,.auth-step-pill,.auth-divider),html:lang(hi) :is(.auth-restricted-tag,.auth-step-pill,.auth-divider){font-family:'Noto Sans Kannada','Noto Sans Devanagari',sans-serif;text-transform:none;letter-spacing:0;line-height:1.3}
 @media(max-width:899px){
   .auth-split{grid-template-columns:1fr;gap:16px}
-  .auth-collage{height:160px;min-height:160px;max-height:160px;order:-1}
-  .auth-form-card{padding:24px 20px}
-  .auth-form-card h1{font-size:2.4rem}
+  .auth-form-card{order:1;padding:24px 20px}
+  .auth-collage{display:none}
+  .auth-form-card h1{font-size:2.2rem}
 }
 @media(prefers-reduced-motion:reduce){
   .auth-gear-spin,.auth-sun-breathe,.auth-drift,.auth-dot-pulse{animation:none!important}
