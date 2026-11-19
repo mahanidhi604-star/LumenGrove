@@ -1,0 +1,396 @@
+// js/auth.js - Supabase PKCE Google Authentication, Session Management, and Demo Simulation
+
+const stu = () => S.u && S.u.role === 'student' && !S.needsProfile;
+
+// Initialize Supabase Client with PKCE Flow
+window.supabaseClient = null;
+if (
+  typeof window.supabase !== 'undefined' &&
+  window.SUPABASE_URL &&
+  !window.SUPABASE_URL.includes('[YOUR_SUPABASE_PROJECT_ID]')
+) {
+  try {
+    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+      auth: {
+        flowType: 'pkce',
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      }
+    });
+    console.log('LumenGrove: Supabase PKCE Auth client initialized.');
+  } catch (err) {
+    console.warn('LumenGrove: Supabase client initialization error:', err);
+  }
+}
+
+// 1. Fetch user profile from public.profiles table
+// Authorization roles are strictly database-enforced; client-supplied metadata is never trusted.
+async function loadProfile(userId) {
+  if (window.supabaseClient) {
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('profiles')
+        .select('id, email, full_name, phone, role')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data) {
+        // Enforce phone completion for student users before allowing rental access
+        const hasValidPhone = data.phone && /^\+?91\d{10}$/.test(data.phone.replace(/[\s-]/g, ''));
+        S.needsProfile = data.role === 'student' && !hasValidPhone;
+
+        S.u = {
+          id: data.id,
+          role: data.role,
+          name: data.full_name || (data.email ? data.email.split('@')[0] : 'Student'),
+          email: data.email,
+          phone: data.phone || ''
+        };
+        S.isDemo = false;
+        sv('lg_user', JSON.stringify(S.u));
+        return S.u;
+      }
+    } catch (e) {
+      console.warn('Profile fetch error:', e);
+    }
+  }
+  return S.u;
+}
+
+// 2. Sign In With Google (PKCE Flow with official branding hints)
+window.signInWithGoogle = async (targetHash) => {
+  const isAdmin = targetHash === '#admin' || (location.hash && location.hash.includes('admin'));
+  let destination = targetHash;
+  if (!destination) {
+    const saved = sessionStorage.getItem('lg_redirect_hash');
+    if (saved && saved !== '#signin' && saved !== '#admin-login') {
+      destination = saved;
+    } else {
+      const cur = location.hash;
+      destination = (cur && cur !== '#signin' && cur !== '#admin-login') ? cur : (isAdmin ? '#admin' : '#app-home');
+    }
+  }
+
+  try {
+    sessionStorage.setItem('lg_redirect_hash', destination);
+  } catch (e) {}
+
+  const btn = $('.btn-google');
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.style.opacity = '0.75';
+    btn.innerHTML = `<span class="auth-btn-spinner" aria-hidden="true"></span> <span>${t('opening_google')}</span>`;
+  }
+
+  const resetBtn = () => {
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.style.opacity = '1';
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg><span>${t('google_signin')}</span>`;
+    }
+  };
+
+  if (window.supabaseClient) {
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/');
+      const queryParams = {
+        prompt: 'select_account'
+      };
+      // Staff sign-in must NOT send hd hint (allowlisted staff may have external email domains)
+      // For student login in production environments, send hd=rvce.edu.in
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isAdmin && !isLocalhost) {
+        queryParams.hd = 'rvce.edu.in';
+      }
+
+      const { error } = await window.supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: queryParams
+        }
+      });
+      if (error) {
+        resetBtn();
+        showAuthError(error.message, isAdmin);
+      }
+    } catch (err) {
+      resetBtn();
+      showAuthError(err.message || 'Unable to connect to Google Auth.', isAdmin);
+    }
+  } else {
+    resetBtn();
+    const isDev = window.ENABLE_DEMO || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDev) {
+      showAuthError(t('dev_note_text'), isAdmin, true);
+    } else {
+      showAuthError(t('auth_unavailable'), isAdmin);
+    }
+  }
+};
+
+// 3. Complete Profile (First Sign-In Phone Number Verification)
+window.completeProfile = async () => {
+  const nameInput = $('#prof_name'),
+    phoneInput = $('#prof_phone'),
+    err = $('#prof_err');
+
+  if (!nameInput || !phoneInput || !err) return;
+
+  const fullName = nameInput.value.trim();
+  const rawPhone = phoneInput.value.trim().replace(/[\s-]/g, '');
+
+  if (!fullName) {
+    err.textContent = 'Please enter your name.';
+    return;
+  }
+
+  // Validate Indian phone number: +91 followed by 10 digits, or 10 digits
+  let formattedPhone = rawPhone;
+  if (/^\d{10}$/.test(rawPhone)) {
+    formattedPhone = '+91' + rawPhone;
+  }
+
+  if (!/^\+91[6-9]\d{9}$/.test(formattedPhone)) {
+    err.textContent = 'Please enter a valid 10-digit Indian mobile number (+91XXXXXXXXXX).';
+    return;
+  }
+
+  err.textContent = '';
+
+  try {
+    const api = window.getApi();
+    await api.updateProfile(fullName, formattedPhone);
+
+    if (S.u) {
+      S.u.name = fullName;
+      S.u.phone = formattedPhone;
+      S.needsProfile = false;
+      sv('lg_user', JSON.stringify(S.u));
+    }
+
+    toast('Profile updated');
+    const dest = sessionStorage.getItem('lg_redirect_hash') || '#app-home';
+    sessionStorage.removeItem('lg_redirect_hash');
+    location.hash = dest.replace('#', '');
+    go(1);
+  } catch (e) {
+    err.textContent = e.message || 'Error saving profile.';
+  }
+};
+
+// 4. Sign Out
+window.signOut = async () => {
+  if (window.supabaseClient) {
+    try {
+      await window.supabaseClient.auth.signOut();
+    } catch (e) {}
+  }
+  S.u = null;
+  S.isDemo = false;
+  S.needsProfile = false;
+  sv('lg_user', '');
+  try {
+    sessionStorage.removeItem('lg_redirect_hash');
+  } catch (e) {}
+
+  toast('Signed out');
+  location.hash = 'home';
+  go(1);
+};
+
+// 5. Guest Browse Mode
+window.continueAsGuest = () => {
+  S.u = { role: 'guest', name: 'Guest' };
+  S.isDemo = false;
+  S.needsProfile = false;
+  sv('lg_user', JSON.stringify(S.u));
+  toast('Browsing as guest');
+  location.hash = 'app-home';
+  go();
+};
+
+// 6. Safe Demo Student & Staff Simulation (Isolated in-memory simulation, never gets a real JWT)
+window.loginDemoStudent = () => {
+  if (!window.ENABLE_DEMO) return;
+
+  S.u = {
+    id: 'demo-student-sim',
+    role: 'student',
+    name: 'Demo Student',
+    email: 'student@rvce.edu.in',
+    phone: '+919876543210'
+  };
+  S.isDemo = true;
+  S.needsProfile = false;
+  sv('lg_user', JSON.stringify(S.u));
+  toast('Entered demo student mode');
+  location.hash = 'app-home';
+  go(1);
+};
+
+window.loginDemoStaff = (role) => {
+  if (!window.ENABLE_DEMO) return;
+  const isSuper = role === 'super_admin';
+  S.u = {
+    id: isSuper ? 'demo-super-sim' : 'demo-tech-sim',
+    role: isSuper ? 'super_admin' : 'technician',
+    name: isSuper ? 'Demo Super Admin' : 'Demo Field Technician',
+    email: isSuper ? 'admin@rvce.edu.in' : 'tech@service.in',
+    phone: '+919876543210'
+  };
+  S.isDemo = true;
+  S.needsProfile = false;
+  sv('lg_user', JSON.stringify(S.u));
+  toast(`Entered demo ${isSuper ? 'super admin' : 'technician'} mode`);
+  location.hash = 'admin';
+  go(1);
+};
+
+window.exitDemo = () => {
+  window.signOut();
+};
+
+window.escapeHtml = str => (str == null ? '' : String(str)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;'));
+
+// 7. Surface friendly auth error messages from fixed whitelist
+function showAuthError(msg, isAdmin, isDevNote) {
+  const safeMsg = escapeHtml(msg);
+  if (isAdmin || (location.hash && location.hash.includes('admin'))) {
+    S.adminError = safeMsg;
+    S.adminIsDevNote = !!isDevNote;
+  } else {
+    S.authError = safeMsg;
+    S.authIsDevNote = !!isDevNote;
+  }
+  if (typeof go === 'function') go(1);
+}
+
+// 8. Process PKCE Return, Code Exchange, and OAuth Rejections
+(async function handleOAuthReturn() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const errorParam = urlParams.get('error');
+  const errorDesc = urlParams.get('error_description');
+  const codeParam = urlParams.get('code');
+
+  const savedHash = sessionStorage.getItem('lg_redirect_hash') || '';
+  const isAdminTarget = savedHash.startsWith('#admin') || (location.hash && location.hash.includes('admin'));
+
+  // Check for server-side rejection or OAuth error
+  if (errorParam || errorDesc) {
+    let friendlyMessage = 'Please use your @rvce.edu.in Google account.';
+    if (isAdminTarget) {
+      friendlyMessage = errorParam === 'access_denied'
+        ? 'Sign in was cancelled. Please choose an authorized staff account.'
+        : 'Access Denied: Staff authorization required.';
+      S.adminError = friendlyMessage;
+      S.adminIsDevNote = false;
+      location.hash = 'admin-login';
+    } else {
+      if (errorParam === 'access_denied') {
+        friendlyMessage = 'Sign in was cancelled. Please choose your @rvce.edu.in Google account.';
+      } else if (errorDesc && errorDesc.toLowerCase().includes('database error')) {
+        friendlyMessage = 'Please use your @rvce.edu.in Google account.';
+      }
+      S.authError = friendlyMessage;
+      S.authIsDevNote = false;
+      location.hash = 'signin';
+    }
+
+    // Clean query parameters from URL without losing current hash
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/') + location.hash;
+    window.history.replaceState(null, '', cleanUrl);
+
+    if (typeof go === 'function') go(1);
+    return;
+  }
+
+  // Handle PKCE Authorization Code Exchange
+  if (codeParam && window.supabaseClient) {
+    try {
+      const { data, error } = await window.supabaseClient.auth.exchangeCodeForSession(codeParam);
+      if (error) {
+        if (isAdminTarget) {
+          S.adminError = 'Staff sign-in error: ' + error.message;
+        } else {
+          S.authError = 'Please use your @rvce.edu.in Google account.';
+        }
+      } else if (data && data.user) {
+        await loadProfile(data.user.id);
+      }
+    } catch (e) {
+      if (isAdminTarget) {
+        S.adminError = 'Authentication error. Please try again.';
+      } else {
+        S.authError = 'Authentication error. Please try again.';
+      }
+    }
+
+    // Determine target hash
+    let target = savedHash || '#app-home';
+    if (target === '#signin' || target === '#admin-login') {
+      target = isAdminTarget ? '#admin' : '#app-home';
+    }
+
+    if (isAdminTarget) {
+      sessionStorage.removeItem('lg_redirect_hash');
+      if (!S.u || (S.u.role !== 'super_admin' && S.u.role !== 'technician')) {
+        S.adminError = `Access Denied: ${S.u?.email || 'This account'} does not possess staff privileges.`;
+        target = '#admin-login';
+      } else {
+        target = '#admin';
+      }
+    } else {
+      // If student needs profile completion (phone number), navigate to #signin
+      if (S.needsProfile) {
+        target = '#signin';
+      } else {
+        sessionStorage.removeItem('lg_redirect_hash');
+      }
+    }
+
+    // Clean query string from address bar
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/Index\.html$/i, '/') + target;
+    window.history.replaceState(null, '', cleanUrl);
+    location.hash = target.replace('#', '');
+    if (typeof go === 'function') go(1);
+    return;
+  }
+
+  // Check existing session on boot
+  if (window.supabaseClient) {
+    try {
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      if (session && session.user) {
+        await loadProfile(session.user.id);
+        // If already signed in with a valid profile and currently on #signin, redirect to #app-home
+        if (location.hash === '#signin' && S.u && !S.needsProfile) {
+          location.hash = 'app-home';
+        }
+      }
+      window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (session && session.user) {
+          await loadProfile(session.user.id);
+        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
+          S.u = null;
+          S.isDemo = false;
+          sv('lg_user', '');
+          if (event === 'TOKEN_REFRESH_FAILED') {
+            S.authError = 'Your session has expired. Please sign in again.';
+          }
+        }
+        if (typeof go === 'function') go(1);
+      });
+    } catch (e) {
+      console.warn('Session restoration error:', e);
+    }
+  }
+})();
