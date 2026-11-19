@@ -24,8 +24,13 @@ window.durIn = v => {
     s.textContent = mx ? 'Longest rental · charges apply per hour' : DS(S.dur);
     s.classList.toggle('mx', mx);
   }
+  const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+    ? Number(window.PR.rate) 
+    : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
   const de = $('#d-est');
-  if (de) de.textContent = '₹ ' + (S.dur * (PR.rate || 10)).toFixed(0);
+  if (de) de.textContent = '₹ ' + (S.dur * currentRate).toFixed(0);
+  const cp = $('#checkout-est-cost');
+  if (cp) cp.textContent = '₹ ' + (S.dur * currentRate).toFixed(0);
 };
 
 addEventListener('pointerdown', e => {
@@ -95,11 +100,15 @@ const payView = () => {
     r = S.rent;
   if (p.paid && r)
     return `<div class="card"><span class="k">Payment received</span><h2>Your PIN</h2><div class="num" style="font-size:3.4rem;letter-spacing:.3em">${r.pin}</div><p>${c.n} at ${r.st.n}. Enter this PIN at the station kiosk to unlock your slot.</p><a class="btn" href="#app-rentals">View current rental</a> <button class="btn g" onclick="S.pay=null;rr()">Done</button></div>`;
+  const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+    ? Number(window.PR.rate) 
+    : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+  const payTotal = ((S.dur || 1) * currentRate).toFixed(0);
   return `<div class="card pay"><div style="color:#000;width:200px;background:#fff;padding:10px;border-radius:6px">${qr(
     p.b.id + S.dur
   )}</div><div><span class="k">Step 2 of 3 · Pay</span><h2>Scan to pay</h2><p>${c.n} · ${S.dur} h · ${
     p.b.n
-  }</p><p>Amount: <b>₹ —</b> (rate set by admin). The UPI QR is a demo.</p><p class="badge">Auto-confirming in <b id="pcd">6</b> s</p><p><button class="btn" onclick="paid()">I’ve paid</button> <button class="btn g" onclick="S.pay=null;rr()">Cancel</button></p></div></div>`;
+  }</p><p>Amount: <b>₹ ${payTotal}</b> (₹ ${currentRate}/hr rate set by admin). The UPI QR is a demo.</p><p class="badge">Auto-confirming in <b id="pcd">6</b> s</p><p><button class="btn" onclick="paid()">I’ve paid</button> <button class="btn g" onclick="S.pay=null;rr()">Cancel</button></p></div></div>`;
 };
 
 const rb2 = () => stp() + (S.pay ? payView() : rentBody());

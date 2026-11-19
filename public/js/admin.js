@@ -8,6 +8,63 @@ window.bill = () => {
   if (bl) bl.textContent = `₹ ${rate * 2}`;
 };
 
+// Immediate DOM Synchronizer for Public Portal & Student Bento Hub
+window.updatePricingDom = () => {
+  const rate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+    ? Number(window.PR.rate) 
+    : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+  const grace = (window.PR && window.PR.grace !== undefined && window.PR.grace !== '') 
+    ? Number(window.PR.grace) 
+    : ((typeof PR !== 'undefined' && PR.grace) ? Number(PR.grace) : 15);
+  const dur = (window.S && window.S.dur) ? Number(window.S.dur) : 1;
+  const est = (dur * rate).toFixed(0);
+
+  // 1. Update Rate Badge on #app-home
+  const rb = document.getElementById('rate-badge');
+  if (rb) rb.textContent = `₹ ${rate} / hr`;
+
+  // 2. Update Estimated Cost on #app-home duration card
+  const de = document.getElementById('d-est');
+  if (de) de.textContent = `₹ ${est}`;
+
+  // 3. Update Rate & Grace info text on #app-home duration card
+  const ri = document.getElementById('rate-info-text');
+  if (ri) ri.textContent = `Rate: ₹ ${rate} per hour · Grace period ${grace} min`;
+
+  // 4. Update Checkout Preview card on #app-home if present
+  const cp = document.getElementById('checkout-est-cost');
+  if (cp) cp.textContent = `₹ ${est}`;
+
+  // 5. Update Admin billing preview if present
+  if (typeof window.bill === 'function') window.bill();
+};
+
+// Listen for cross-tab storage updates from admin
+window.addEventListener('storage', e => {
+  if (e.key === 'lg_pricing_override' && e.newValue) {
+    try {
+      const p = JSON.parse(e.newValue);
+      if (p.rate !== undefined) {
+        if (typeof PR !== 'undefined') PR.rate = Number(p.rate);
+        if (window.PR) window.PR.rate = Number(p.rate);
+      }
+      if (p.grace !== undefined) {
+        if (typeof PR !== 'undefined') PR.grace = Number(p.grace);
+        if (window.PR) window.PR.grace = Number(p.grace);
+      }
+      if (p.late !== undefined) {
+        if (typeof PR !== 'undefined') PR.late = Number(p.late);
+        if (window.PR) window.PR.late = Number(p.late);
+      }
+      if (p.dep !== undefined) {
+        if (typeof PR !== 'undefined') PR.dep = Number(p.dep);
+        if (window.PR) window.PR.dep = Number(p.dep);
+      }
+      window.updatePricingDom();
+    } catch (err) {}
+  }
+});
+
 window.exportLogsCsv = () => {
   const headers = ['Timestamp', 'Station', 'Event_Type', 'Severity', 'Details'];
   const rows = [
@@ -30,14 +87,20 @@ window.exportLogsCsv = () => {
 
 // Two-way Supabase Synchronizers
 window.commitPricingToSupabase = async () => {
-  if (!window.PR) return;
-  const rate = Number(window.PR.rate) || 10;
-  const grace = Number(window.PR.grace) || 15;
-  const late = Number(window.PR.late) || 20;
-  const dep = Number(window.PR.dep) || 0;
+  const rate = Number(window.PR ? window.PR.rate : 10) || 10;
+  const grace = Number(window.PR ? window.PR.grace : 15) || 15;
+  const late = Number(window.PR ? window.PR.late : 20) || 20;
+  const dep = Number(window.PR ? window.PR.dep : 0) || 0;
+  const now = Date.now();
+
+  const policy = { rate, grace, late, dep, timestamp: now };
+
+  // Ensure both window.PR and lexical PR are synchronized
+  if (window.PR) Object.assign(window.PR, policy);
+  if (typeof PR !== 'undefined') Object.assign(PR, policy);
 
   // Persist locally for immediate reactive update across entire app
-  localStorage.setItem('lg_pricing_override', JSON.stringify({ rate, grace, late, dep }));
+  localStorage.setItem('lg_pricing_override', JSON.stringify(policy));
 
   // Write live policy to Supabase pricing_rules table
   if (window.supabaseClient) {
@@ -49,7 +112,9 @@ window.commitPricingToSupabase = async () => {
         deposit_paise: Math.round(dep * 100),
         is_active: true
       }).select();
-      if (!error) {
+      if (!error && data && data[0]) {
+        policy.timestamp = new Date(data[0].created_at).getTime();
+        localStorage.setItem('lg_pricing_override', JSON.stringify(policy));
         console.log('LumenGrove: Pricing policy successfully written to Supabase:', data);
       }
     } catch (e) {
@@ -57,16 +122,19 @@ window.commitPricingToSupabase = async () => {
     }
   }
 
-  // Recalculate billing preview and toast
-  window.bill();
+  // Immediately propagate to student bento hub (#app-home) and toast
+  window.updatePricingDom();
   toast(`⚡ Pricing Policy Committed: ₹${rate}/hr · Synced to Supabase & Live Fleet!`);
 };
 
 window.adjustPricing = (key, delta) => {
-  if (!window.PR) window.PR = { rate: 10, grace: 15, late: 20, dep: 0 };
+  if (!window.PR) window.PR = (typeof PR !== 'undefined') ? PR : { rate: 10, grace: 15, late: 20, dep: 0 };
   let cur = Number(window.PR[key]) || 0;
   cur = Math.max(0, cur + delta);
   window.PR[key] = cur;
+  if (typeof PR !== 'undefined') PR[key] = cur;
+  window.PR.timestamp = Date.now();
+  if (typeof PR !== 'undefined') PR.timestamp = window.PR.timestamp;
 
   // Update digital displays
   const dispMap = {
@@ -78,7 +146,8 @@ window.adjustPricing = (key, delta) => {
   const el = document.getElementById(`disp-${key}`);
   if (el) el.textContent = dispMap[key];
 
-  window.bill();
+  // Immediately propagate to student bento hub (#app-home)
+  window.updatePricingDom();
 };
 
 window.tg = id => {

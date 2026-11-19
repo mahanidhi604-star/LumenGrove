@@ -775,7 +775,9 @@ function renderBentoHub(activeView) {
   }
 
   const isStu = (typeof stu === 'function' ? stu() : (typeof window.stu === 'function' ? window.stu() : false));
-  const estCost = ((S.dur || 1) * (PR.rate || 10)).toFixed(0);
+  const effectiveRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') ? Number(window.PR.rate) : (PR.rate || 10);
+  const effectiveGrace = (window.PR && window.PR.grace !== undefined && window.PR.grace !== '') ? Number(window.PR.grace) : (PR.grace || 15);
+  const estCost = ((S.dur || 1) * effectiveRate).toFixed(0);
 
   const lockonOverlay = !isStu ? `
     <div class="lockon-overlay" role="region" aria-label="Student Sign-in Required">
@@ -825,7 +827,7 @@ function renderBentoHub(activeView) {
             <div>
               <span class="k">INSTANT SOLAR CHECKOUT</span>
               <h3 style="margin:4px 0">Ready to charge? Station: <b style="color:var(--ac)">${cur.n}</b> · Bank: <b style="color:var(--ac)">${CATS[S.cat].n}</b></h3>
-              <p style="font-size:0.85rem;color:var(--mut);margin:0">Estimated for ${DL(S.dur)}: <b style="color:var(--fg)">₹ ${estCost}</b> · 100% solar powered</p>
+              <p style="font-size:0.85rem;color:var(--mut);margin:0">Estimated for ${DL(S.dur)}: <b id="checkout-est-cost" style="color:var(--fg)">₹ ${estCost}</b> · 100% solar powered</p>
             </div>
             <button class="btn" onclick="startR('${cur.id}')" style="min-height:46px;padding:8px 22px">
               ⚡ Generate UPI / QR Pass
@@ -838,7 +840,7 @@ function renderBentoHub(activeView) {
     ${lockonOverlay}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h3 style="margin:0">Rate Per Hour & Duration</h3>
-      <span class="badge" id="rate-badge">₹ ${PR.rate || 10} / hr</span>
+      <span class="badge" id="rate-badge">₹ ${effectiveRate} / hr</span>
     </div>
     <p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Adjust duration to lock your charging slot:</p>
     <div class="dur" id="dc">
@@ -853,7 +855,7 @@ function renderBentoHub(activeView) {
       <div class="dd" aria-hidden="true">${'<i></i>'.repeat(12)}</div>
     </div>
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <p style="font-size:0.82rem;color:var(--mut);margin:0">Rate: ₹ ${PR.rate || '—'} per hour · Grace period ${PR.grace} min</p>
+      <p id="rate-info-text" style="font-size:0.82rem;color:var(--mut);margin:0">Rate: ₹ ${effectiveRate} per hour · Grace period ${effectiveGrace} min</p>
       <span class="badge" style="background:var(--card);border:1px solid var(--ln);font-weight:700">Estimated: <b id="d-est" style="color:var(--ac)">₹ ${estCost}</b></span>
     </div>
   </div>`;

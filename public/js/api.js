@@ -14,11 +14,23 @@ window.demoApi = {
   },
 
   async getPricingRules() {
+    const r = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+      ? Number(window.PR.rate) 
+      : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+    const g = (window.PR && window.PR.grace !== undefined && window.PR.grace !== '') 
+      ? Number(window.PR.grace) 
+      : ((typeof PR !== 'undefined' && PR.grace) ? Number(PR.grace) : 15);
+    const l = (window.PR && window.PR.late !== undefined && window.PR.late !== '') 
+      ? Number(window.PR.late) 
+      : ((typeof PR !== 'undefined' && PR.late) ? Number(PR.late) : 20);
+    const d = (window.PR && window.PR.dep !== undefined && window.PR.dep !== '') 
+      ? Number(window.PR.dep) 
+      : ((typeof PR !== 'undefined' && PR.dep) ? Number(PR.dep) : 0);
     return {
-      rate: window.PR ? window.PR.rate : 20,
-      grace: window.PR ? window.PR.grace : 10,
-      late: window.PR ? window.PR.late : 30,
-      deposit: window.PR ? window.PR.dep : 0
+      rate: r,
+      grace: g,
+      late: l,
+      deposit: d
     };
   },
 
@@ -27,7 +39,10 @@ window.demoApi = {
     const rentalId = 'LG-' + (1000 + Math.floor(Math.random() * 9000));
     const pin = String(Math.floor(100000 + Math.random() * 900000));
     const st = (window.ST || []).find(s => s.id === stationId) || { n: 'Station' };
-    const amountPaise = Math.round((window.PR ? window.PR.rate : 20) * durationHours * 100);
+    const rate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+      ? Number(window.PR.rate) 
+      : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+    const amountPaise = Math.round(rate * durationHours * 100);
 
     const demoRental = {
       id: rentalId,
@@ -205,13 +220,30 @@ window.syncSupabaseState = async () => {
   // 0. Load Local Pricing Overrides if previously committed by Admin
   try {
     const savedOverride = localStorage.getItem('lg_pricing_override');
-    if (savedOverride && window.PR) {
+    if (savedOverride) {
       const parsed = JSON.parse(savedOverride);
-      if (parsed.rate) window.PR.rate = Number(parsed.rate);
-      if (parsed.grace) window.PR.grace = Number(parsed.grace);
-      if (parsed.late) window.PR.late = Number(parsed.late);
-      if (parsed.dep !== undefined) window.PR.dep = Number(parsed.dep);
+      if (parsed.rate !== undefined && parsed.rate !== '') {
+        const r = Number(parsed.rate);
+        if (typeof PR !== 'undefined') PR.rate = r;
+        if (window.PR) window.PR.rate = r;
+      }
+      if (parsed.grace !== undefined && parsed.grace !== '') {
+        const g = Number(parsed.grace);
+        if (typeof PR !== 'undefined') PR.grace = g;
+        if (window.PR) window.PR.grace = g;
+      }
+      if (parsed.late !== undefined && parsed.late !== '') {
+        const l = Number(parsed.late);
+        if (typeof PR !== 'undefined') PR.late = l;
+        if (window.PR) window.PR.late = l;
+      }
+      if (parsed.dep !== undefined && parsed.dep !== '') {
+        const d = Number(parsed.dep);
+        if (typeof PR !== 'undefined') PR.dep = d;
+        if (window.PR) window.PR.dep = d;
+      }
       console.log('LumenGrove: Loaded pricing override from local policy storage:', window.PR);
+      if (typeof window.updatePricingDom === 'function') window.updatePricingDom();
     }
   } catch (e) {}
 
@@ -227,12 +259,41 @@ window.syncSupabaseState = async () => {
       .limit(1)
       .maybeSingle();
 
-    if (pricingData && window.PR) {
-      window.PR.rate = Math.round(pricingData.hourly_rate_paise / 100);
-      window.PR.grace = pricingData.grace_period_mins;
-      window.PR.late = Math.round((pricingData.late_fee_per_hour_paise || 2000) / 100);
-      window.PR.dep = Math.round((pricingData.deposit_paise || 0) / 100);
-      console.log('LumenGrove: Live pricing loaded from Supabase:', window.PR);
+    if (pricingData) {
+      let savedOverride = null;
+      try {
+        const s = localStorage.getItem('lg_pricing_override');
+        if (s) savedOverride = JSON.parse(s);
+      } catch (e) {}
+
+      const remoteTime = new Date(pricingData.created_at).getTime();
+      const localTime = savedOverride ? Number(savedOverride.timestamp || 0) : 0;
+
+      // Only adopt remote row if it is newer than the locally committed admin override
+      if (!savedOverride || remoteTime >= localTime) {
+        const r = Math.round(pricingData.hourly_rate_paise / 100);
+        const g = pricingData.grace_period_mins;
+        const l = Math.round((pricingData.late_fee_per_hour_paise || 2000) / 100);
+        const d = Math.round((pricingData.deposit_paise || 0) / 100);
+        if (typeof PR !== 'undefined') {
+          PR.rate = r;
+          PR.grace = g;
+          PR.late = l;
+          PR.dep = d;
+          PR.timestamp = remoteTime;
+        }
+        if (window.PR) {
+          window.PR.rate = r;
+          window.PR.grace = g;
+          window.PR.late = l;
+          window.PR.dep = d;
+          window.PR.timestamp = remoteTime;
+        }
+        console.log('LumenGrove: Remote Supabase pricing adopted:', window.PR);
+        if (typeof window.updatePricingDom === 'function') window.updatePricingDom();
+      } else {
+        console.log('LumenGrove: Preserved newer local admin policy override:', window.PR);
+      }
     }
   } catch (e) {
     console.warn('Supabase pricing fetch notice:', e);

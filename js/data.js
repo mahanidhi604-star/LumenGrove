@@ -22,13 +22,24 @@ const ST = [
   h: [...Array(30)].map((_, j) => (200 + i * 40) + Math.sin(j / 3 + a[2]) * 25)
 }));
 
+// Synchronously load persisted admin pricing policy from localStorage if available
+const _savedPR = (() => {
+  try {
+    const s = localStorage.getItem('lg_pricing_override');
+    return s ? JSON.parse(s) : null;
+  } catch (e) {
+    return null;
+  }
+})();
+
 const PR = {
-  rate: '',
-  grace: 10,
-  cap: '',
-  late: '',
-  dep: ''
+  rate: (_savedPR && _savedPR.rate !== undefined && _savedPR.rate !== '') ? Number(_savedPR.rate) : 10,
+  grace: (_savedPR && _savedPR.grace !== undefined && _savedPR.grace !== '') ? Number(_savedPR.grace) : 15,
+  cap: (_savedPR && _savedPR.cap !== undefined && _savedPR.cap !== '') ? Number(_savedPR.cap) : 60,
+  late: (_savedPR && _savedPR.late !== undefined && _savedPR.late !== '') ? Number(_savedPR.late) : 20,
+  dep: (_savedPR && _savedPR.dep !== undefined && _savedPR.dep !== '') ? Number(_savedPR.dep) : 0
 };
+window.PR = PR;
 
 const CATS = {
   std: { n: 'Grove Phone', p: '5V / 10W', d: 'Mobile charging', dr: 0.05, i: 'M7 3h10v18H7z' },
