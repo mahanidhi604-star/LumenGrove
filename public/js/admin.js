@@ -8,7 +8,7 @@ window.bill = () => {
 const chart = () => {
   const W = 600,
     H = 160,
-    C = ['var(--ac)', 'var(--ac2)', 'var(--fg)', 'var(--mut)'],
+    C = ['#38bdf8', '#34d399', '#f08a24', '#8dc2eb'],
     D = ['', '6 4', '2 3', '10 3'];
   return `<h2 style="margin-top:32px">Solar output (W)</h2><div class="card"><svg viewBox="0 0 ${W} ${
     H + 10
@@ -28,7 +28,7 @@ const cards = () =>
     s =>
       `<div class="card"><div style="display:flex;justify-content:space-between"><h3>${
         s.n
-      }</h3><span class="badge">${s.ok ? 'online' : 'offline'}</span></div><p>Slots free <b>${s.free}/${
+      }</h3><span class="badge ${s.ok ? 'badge-ok' : ''}">${s.ok ? '● ONLINE' : '○ OFFLINE'}</span></div><p>Slots free <b>${s.free}/${
         s.slots
       }</b> · Solar <b>${s.solar | 0} W</b> · Panel temp <b>${s.temp.toFixed(
         1
@@ -55,11 +55,17 @@ function admin() {
   }
   const sup = S.u.role === 'super_admin',
     hrs = [2, 1, 1, 1, 2, 3, 5, 8, 9, 7, 6, 6, 7, 6, 5, 6, 8, 9, 7, 5, 4, 3, 2, 2];
-  return `<div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:14px 18px;background:var(--card);border:1.5px solid var(--fg);box-shadow:4px 4px 0 var(--ac);border-radius:6px">
+  return `<div class="wrap admin-blueprint-scope">
+    <div class="auth-station-ticker" style="margin-bottom:16px" aria-hidden="true">
+      <span><i class="auth-dot-pulse"></i> LIB: ONLINE · 8 SLOTS</span>
+      <span><i class="auth-dot-pulse"></i> MM: ONLINE · 8 SLOTS</span>
+      <span><i class="auth-dot-pulse"></i> MING: ONLINE · 8 SLOTS</span>
+      <span><i class="auth-dot-pulse"></i> CAUV: ONLINE · 8 SLOTS</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:16px 20px;background:var(--adm-card);border:1.5px solid var(--adm-border);box-shadow:4px 4px 0 #070d14;border-radius:6px">
       <div>
-        <span class="k" style="font-size:1.15rem">${sup ? 'Super admin' : 'Technician'}</span>
-        <div style="font-size:.9rem;color:var(--mut)">Signed in as <b>${S.u.name || S.u.email}</b> (${S.u.email})</div>
+        <span class="k" style="font-size:1.15rem">${sup ? 'Super admin · Full Clearance' : 'Field Technician · Read/Write'}</span>
+        <div style="font-size:.9rem;color:var(--adm-mut)">Signed in as <b>${S.u.name || S.u.email}</b> (${S.u.email})</div>
       </div>
       <button class="btn g" onclick="signOut()" style="min-height:38px;padding:6px 16px">Sign out</button>
     </div>

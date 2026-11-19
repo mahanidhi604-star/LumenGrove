@@ -884,4 +884,160 @@ html.rm .auth-gear-spin,html.rm .auth-sun-breathe,html.rm .auth-drift,html.rm .a
   }
 }
 
+/* --- Solarpunk Staff Blueprint Control Room (#admin) --- */
+.admin-blueprint-scope {
+  --adm-bg: #09121c;
+  --adm-card: #12202e;
+  --adm-border: #23425f;
+  --adm-cyan: #38bdf8;
+  --adm-cyan-light: #8dc2eb;
+  --adm-accent: #f08a24;
+  --adm-fg: #e2f1fd;
+  --adm-mut: #7ea3c2;
+  color: var(--adm-fg);
+}
+.admin-blueprint-scope .card {
+  background: var(--adm-card);
+  border: 1.5px solid var(--adm-border);
+  box-shadow: 4px 4px 0 #050a0f;
+  color: var(--adm-fg);
+}
+.admin-blueprint-scope .card:hover {
+  border-color: var(--adm-cyan);
+}
+.admin-blueprint-scope h1,
+.admin-blueprint-scope h2,
+.admin-blueprint-scope h3 {
+  color: var(--adm-fg);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.04em;
+}
+.admin-blueprint-scope .k {
+  color: var(--adm-cyan);
+  font-family: 'Barlow Condensed', monospace;
+  letter-spacing: 0.1em;
+}
+.admin-blueprint-scope .num {
+  color: var(--adm-cyan);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+.admin-blueprint-scope .badge {
+  background: #081119;
+  color: var(--adm-cyan-light);
+  border: 1px solid var(--adm-border);
+  font-family: 'Barlow Condensed', monospace;
+}
+.admin-blueprint-scope .badge.badge-ok,
+.admin-blueprint-scope .badge-ok {
+  color: #34d399;
+  border-color: #059669;
+  background: #06241a;
+}
+.admin-blueprint-scope .btn {
+  background: var(--adm-cyan);
+  color: #0b1520;
+  border-color: var(--adm-cyan);
+  box-shadow: 3px 3px 0 #070d14;
+}
+.admin-blueprint-scope .btn:hover {
+  background: #7dd3fc;
+}
+.admin-blueprint-scope .btn.g {
+  background: transparent;
+  color: var(--adm-cyan-light);
+  border-color: var(--adm-border);
+}
+.admin-blueprint-scope .btn.g:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--adm-cyan);
+}
+.admin-blueprint-scope table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: var(--adm-card);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.admin-blueprint-scope tr {
+  border-bottom: 1px solid var(--adm-border);
+}
+.admin-blueprint-scope td,
+.admin-blueprint-scope th {
+  padding: 10px 14px;
+  font-family: 'Barlow Condensed', monospace;
+  color: var(--adm-fg);
+}
+.admin-blueprint-scope .bar {
+  background: #081119;
+  border: 1px solid var(--adm-border);
+}
+.admin-blueprint-scope .bar i {
+  background: linear-gradient(90deg, #0284c7, var(--adm-cyan));
+}
+.admin-blueprint-scope input {
+  background: #09121c;
+  color: var(--adm-fg);
+  border-color: var(--adm-border);
+}
+.admin-blueprint-scope input:focus {
+  border-color: var(--adm-cyan);
+  outline: 2px solid var(--adm-cyan);
+}
+.admin-blueprint-scope .heat b {
+  background: var(--adm-card);
+  color: var(--adm-cyan);
+  border: 1px solid var(--adm-border);
+}
+.admin-blueprint-scope .auth-station-ticker {
+  background: #101b27;
+  border-color: var(--adm-border);
+  color: var(--adm-cyan);
+}
+
+/* Sun Responsive Precision on Mobile & Laptop */
+.hero2 svg.dc {
+  position: absolute;
+  pointer-events: none;
+  right: 40px;
+  top: -30px;
+  width: 220px;
+  height: 220px;
+  opacity: 0.85;
+}
+@media(max-width: 720px) {
+  .hero2 svg.dc {
+    right: -25px;
+    top: -25px;
+    width: 140px;
+    height: 140px;
+    opacity: 0.45;
+  }
+  .sun {
+    right: 10px;
+    top: 20px;
+    width: 170px;
+    height: 170px;
+    opacity: 0.22;
+  }
+  .hero {
+    overflow: hidden;
+  }
+}
+@media(max-width: 899px) {
+  .auth-collage {
+    height: 165px;
+    min-height: 165px;
+    max-height: 165px;
+    order: -1;
+    overflow: hidden;
+  }
+  .auth-collage-svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 

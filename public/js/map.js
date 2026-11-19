@@ -435,7 +435,7 @@ const mapSvg = () => {
 
     <!-- Redesigned Solarpunk Blueprint Radar Canvas -->
     <div class="msv-frame">
-      <svg viewBox="0 0 880 570" class="msv" onclick="mvp(event)" role="img" aria-label="RVCE campus blueprint radar map. Tap to set position or pick station.">
+      <svg viewBox="0 0 880 570" class="msv" role="img" aria-label="RVCE campus blueprint radar map.">
         ${mapIn()}
       </svg>
     </div>
@@ -493,33 +493,95 @@ window.vs = v => {
 };
 
 window.pickSt = (id, e) => {
-  if (e) e.stopPropagation();
-  S.pick = ST.find(x => x.id == id);
-  toast('Selected station: ' + S.pick.n);
-  rer();
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const found = ST.find(x => x.id == id);
+  if (!found) return;
+  S.pick = found;
+  toast('Selected station: ' + found.n);
+
+  // Update map SVG in-place with zero page reload
+  document.querySelectorAll('.msv').forEach(s => (s.innerHTML = mapIn()));
+
+  // Update map station pills in-place
+  document.querySelectorAll('.map-station-pill').forEach(btn => {
+    const isThis = btn.getAttribute('onclick')?.includes(`'${id}'`);
+    btn.classList.toggle('selected', isThis);
+    const badge = btn.querySelector('.badge');
+    if (badge) badge.classList.toggle('badge-on', isThis);
+  });
+
+  // Update active route card in-place
+  const routeCard = document.querySelector('.map-route-card');
+  if (routeCard) {
+    const dReal = dist(found);
+    const m = Math.max(1, Math.round(dReal / 80));
+    const targetName = routeCard.querySelector('.route-target-name b');
+    if (targetName) targetName.textContent = found.n;
+    const metrics = routeCard.querySelector('.route-target-metrics');
+    if (metrics) {
+      metrics.innerHTML = `<span><b>${window.fmtDist(dReal)}</b> from your current position${
+        S.gpsActive && S.gpsCoords?.city ? ' in ' + S.gpsCoords.city : ''
+      }</span><span>· About <b>${m} min</b> walk</span><span>· <b>${found.free}</b> slots ready</span>`;
+    }
+    const rentBtn = routeCard.querySelector('.route-actions .btn:not(.g)');
+    if (rentBtn) {
+      rentBtn.textContent = `⚡ Rent from ${found.n}`;
+      rentBtn.setAttribute('onclick', `startR('${found.id}')`);
+    }
+    const dirBtn = routeCard.querySelector('.route-actions .btn.g');
+    if (dirBtn) {
+      dirBtn.setAttribute('onclick', `nav(ST.find(x=>x.id=='${found.id}'))`);
+    }
+  }
+
+  // Update sticky HUD station pill
+  const hudPill = document.querySelector('.hud-stn-pill');
+  if (hudPill) {
+    const bEl = hudPill.querySelector('b');
+    if (bEl) bEl.textContent = found.n;
+    const subEl = hudPill.querySelector('.hud-stn-sub');
+    if (subEl) subEl.textContent = `${window.fmtDist(dist(found))} · ${found.free} free`;
+  }
+
+  // Update bento stations card selection highlight in-place
+  document.querySelectorAll('.bento-stations-card .pick').forEach(card => {
+    const isThis = card.getAttribute('onclick')?.includes(`'${id}'`);
+    card.classList.toggle('sel', isThis);
+    card.style.borderColor = isThis ? 'var(--ac)' : 'var(--ln)';
+    const badge = card.querySelector('div:first-child .badge');
+    if (isThis && !badge) {
+      const titleDiv = card.querySelector('div:first-child > div');
+      if (titleDiv) titleDiv.insertAdjacentHTML('beforeend', '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>');
+    } else if (!isThis && badge) {
+      badge.remove();
+    }
+  });
+
+  // Update primary hero station card if present
+  const heroStnTitle = document.querySelector('.bento-poster-card h2');
+  if (heroStnTitle && heroStnTitle.textContent !== 'Sign in to rent') {
+    heroStnTitle.textContent = found.n;
+  }
 };
 
 window.pickVenue = (id, e) => {
-  if (e) e.stopPropagation();
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
   const v = VN.find(x => x[0] == id);
-  S.pos = { x: (v[2] + v[4] / 2) | 0, y: (v[3] + v[5] / 2) | 0, isOffCampus: false };
-  S.gpsActive = false;
-  S.pick = null;
+  if (!v) return;
   const b = best();
-  toast('Position set to ' + v[1] + ' · Nearest: ' + b.n + ' (' + window.fmtDist(dist(b)) + ')');
-  rer();
+  toast('Venue: ' + v[1] + ' · Nearest station: ' + b.n + ' (' + window.fmtDist(dist(b)) + ')');
 };
 
 window.mvp = e => {
-  const rect = e.currentTarget.getBoundingClientRect();
-  S.pos = {
-    x: Math.max(20, Math.min(860, ((e.clientX - rect.left) / rect.width) * 880)) | 0,
-    y: Math.max(20, Math.min(550, ((e.clientY - rect.top) / rect.height) * 570)) | 0,
-    isOffCampus: false
-  };
-  S.gpsActive = false;
-  S.pick = null;
-  const nearest = best();
-  toast('Custom position set on map · Nearest: ' + nearest.n + ' (' + window.fmtDist(dist(nearest)) + ')');
-  rer();
+  // Disabled: tapping on empty map canvas does not move user location or redirect
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
 };

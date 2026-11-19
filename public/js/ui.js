@@ -149,7 +149,7 @@ function renderAuthBanner(errorMsg, isDevNote) {
 }
 
 function renderStudentCollage() {
-  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solarpunk poster artwork">
+  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" preserveAspectRatio="xMidYMin slice" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solarpunk poster artwork">
     <defs>
       <radialGradient id="sunGlow" cx="65%" cy="30%" r="60%">
         <stop offset="0%" stop-color="var(--ac)" stop-opacity="1"/>
@@ -250,7 +250,7 @@ function renderStudentCollage() {
 }
 
 function renderStaffCollage() {
-  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff operations blueprint artwork">
+  return `<svg class="auth-collage-svg" viewBox="0 0 400 540" preserveAspectRatio="xMidYMin slice" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff operations blueprint artwork">
     <defs>
       <pattern id="admGrid" width="24" height="24" patternUnits="userSpaceOnUse">
         <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" stroke-width="0.7" opacity="0.14"/>
@@ -778,9 +778,25 @@ function renderBentoHub(activeView) {
     </div>`;
   }
 
-  const payCard = S.pay ? `<div class="card s4" style="--i:2">${payView()}</div>` : '';
-
   const estCost = ((S.dur || 1) * (PR.rate || 10)).toFixed(0);
+
+  const payCard = `<div class="bento-pay-card-wrapper s4" style="grid-column: 1 / -1">${
+    S.pay
+      ? `<div class="card s4 bento-pay-card" style="--i:6">${payView()}</div>`
+      : `<div class="card s4 bento-checkout-preview-card" style="--i:6">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <span class="k">INSTANT SOLAR CHECKOUT</span>
+              <h3 style="margin:4px 0">Ready to charge? Station: <b style="color:var(--ac)">${cur.n}</b> · Bank: <b style="color:var(--ac)">${CATS[S.cat].n}</b></h3>
+              <p style="font-size:0.85rem;color:var(--mut);margin:0">Estimated for ${DL(S.dur)}: <b style="color:var(--fg)">₹ ${estCost}</b> · 100% solar powered</p>
+            </div>
+            <button class="btn" onclick="startR('${cur.id}')" style="min-height:46px;padding:8px 22px">
+              ⚡ Generate UPI / QR Pass
+            </button>
+          </div>
+        </div>`
+  }</div>`;
+
   const rateCard = `<div class="card s2 bento-rate-card" style="--i:2">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h3 style="margin:0">Rate Per Hour & Duration</h3>
@@ -813,7 +829,7 @@ function renderBentoHub(activeView) {
       </div>
     </div>
     ${mapSvg()}
-    <p style="margin-top:8px;font-size:.85rem;color:var(--mut)">Tap anywhere on the map to set your position, or tap a station to select it.</p>
+    <p style="margin-top:8px;font-size:.85rem;color:var(--mut)">Select any station pin on the radar map or quick picker below to lock directions & stock.</p>
   </div>`;
 
   const stationsCard = `<div class="card s2 bento-stations-card" style="--i:4">
@@ -903,14 +919,8 @@ function renderBentoHub(activeView) {
     </div>
   </div>` : '';
 
-  let orderedCards;
-  if (activeView === 'stations') {
-    orderedCards = `${hero}${prim}${stationsCard}${mapCard}${banksCard}${rateCard}`;
-  } else if (activeView === 'rent') {
-    orderedCards = `${hero}${prim}${rateCard}${payCard}${banksCard}${stationsCard}${mapCard}`;
-  } else {
-    orderedCards = `${hero}${prim}${rateCard}${payCard}${mapCard}${stationsCard}${banksCard}`;
-  }
+  // Fully integrated Rental Hub: radar map, stations, power banks, duration & instant checkout in one view
+  const orderedCards = `${hero}${prim}${mapCard}${stationsCard}${banksCard}${rateCard}${payCard}`;
 
   return `${stickyHud}<div class="wrap"><div class="bento">${orderedCards}</div></div>`;
 }
@@ -1112,7 +1122,7 @@ const PG = {
       </div>
     </div>`,
 
-  'app-stations': () => renderBentoHub('stations'),
+  'app-stations': () => renderBentoHub('home'),
 
   'app-impact': () => PG.impact(),
 
@@ -1476,7 +1486,7 @@ const PG = {
       .join('')}</table></div></div>`;
   },
 
-  'app-rent': () => renderBentoHub('rent'),
+  'app-rent': () => renderBentoHub('home'),
 
   'app-home': () => renderBentoHub('home'),
 
@@ -1509,8 +1519,6 @@ function hdr(h) {
     ex = ['how', 'tech', 'impact', 'about'],
     ap = [
       ['app-home', t('rental_hub')],
-      ['app-stations', t('find')],
-      ['app-rent', t('rent')],
       ['app-rentals', t('rental_history')],
       ['app-settings', t('me')],
       ['app-help', 'Help']
@@ -1571,9 +1579,13 @@ function hdr(h) {
 
 function go(same) {
   let h = location.hash.slice(1) || 'home';
-  if (h == 'plug') {
+  if (h == 'plug' || h == 'app-stations' || h == 'app-rent') {
+    const targetSelector = h == 'app-stations' ? '.bento-stations-card' : h == 'app-rent' ? '.bento-banks-card' : null;
     h = 'app-home';
     history.replaceState(null, '', '#app-home');
+    if (targetSelector) {
+      setTimeout(() => document.querySelector(targetSelector)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 140);
+    }
   }
   const v = $('#v'),
     draw = () => {

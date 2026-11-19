@@ -111,12 +111,26 @@ window.rr = () => {
   if (typeof xl === 'function') xl(location.hash.slice(1));
 };
 
-window.startR = () => {
+window.startR = (stnId) => {
+  if (stnId) {
+    const s = ST.find(x => x.id === stnId);
+    if (s) S.pick = s;
+  }
   if (S.rent) return toast('You already have an active rental.');
   const b = S.pick || best();
   if (b.stock[S.cat] < 1) return toast('No stock at this station for that category.');
   S.pay = { t: Date.now(), b, paid: false };
-  rr();
+  const payCardContainer = document.querySelector('.bento-pay-card-wrapper');
+  if (payCardContainer) {
+    payCardContainer.innerHTML = `<div class="card s4 bento-pay-card" style="--i:2">${payView()}</div>`;
+    payCardContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast(`Checkout initiated at ${b.n} · Scan QR code to unlock`);
+  } else {
+    rr();
+    setTimeout(() => {
+      document.querySelector('.bento-pay-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  }
 };
 
 window.paid = () => {
