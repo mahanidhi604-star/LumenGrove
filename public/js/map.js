@@ -89,6 +89,16 @@ window.locateDeviceGps = async function(userInitiated = true) {
     if (S.gpsActive && S.gpsCoords && S.gpsCoords.source === 'Satellite GPS' && source !== 'Satellite GPS') {
       return;
     }
+
+    // Mobile jitter dampening: if we already have coordinates, and movement is < 15 meters, ignore passive updates!
+    if (S.gpsCoords && S.gpsCoords.lat && S.gpsCoords.lng && !userInitiated) {
+      const d = window.geoDist ? window.geoDist(lat, lng, S.gpsCoords.lat, S.gpsCoords.lng) : 999;
+      if (d < 15) {
+        S.gpsCoords.acc = acc;
+        return;
+      }
+    }
+
     S.isSimulated = false;
     const finalCity = city || (S.gpsCoords && S.gpsCoords.city) || '';
     S.gpsCoords = { lat, lng, acc, source, city: finalCity };
@@ -102,7 +112,28 @@ window.locateDeviceGps = async function(userInitiated = true) {
     if (userInitiated) {
       toast(`Location locked (${finalCity ? finalCity + ' · ' : ''}${source}): ${dStr} to ${b.n}`);
     }
-    rer();
+
+    // CRITICAL: NEVER call go(1) on passive background GPS updates!
+    // Calling go(1) re-renders the whole page, triggers transition curtains, and interrupts forms/scroll!
+    const currentHash = (location.hash || '').replace('#', '') || 'app-home';
+    const isMapVisible = currentHash === 'app-home' || currentHash === 'app-stations' || currentHash === 'app-rent';
+
+    if (isMapVisible) {
+      const mapSvgElem = document.querySelector('#mv');
+      if (mapSvgElem) {
+        mapSvgElem.innerHTML = mapIn();
+        const hudDist = document.querySelector('.hud-stn-sub');
+        if (hudDist) hudDist.textContent = `${window.fmtDist(dist(b))} · ${b.free} free`;
+        const bestBadge = document.querySelector('#best-stn-dist');
+        if (bestBadge) bestBadge.textContent = `${window.fmtDist(dist(b))} away`;
+        return;
+      }
+    }
+
+    // Only invoke full re-render if user explicitly clicked the location button and map wasn't in DOM
+    if (userInitiated) {
+      rer();
+    }
   };
 
   // 1. Instant Network IP Fetch (Resolves in ~200ms with real city and coordinates!)
@@ -152,7 +183,7 @@ window.locateDeviceGps = async function(userInitiated = true) {
             toast('Browser location blocked. Click the lock 🔒 in URL bar to enable precise GPS.');
           }
         }
-        rer();
+        if (userInitiated) rer();
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
     );

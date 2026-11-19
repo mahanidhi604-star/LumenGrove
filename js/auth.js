@@ -1,6 +1,7 @@
 // js/auth.js - Supabase PKCE Google Authentication, Session Management, and Demo Simulation
 
-const stu = () => S.u && S.u.role === 'student' && !S.needsProfile;
+window.stu = () => S.u && S.u.role === 'student' && !S.needsProfile;
+const stu = window.stu;
 
 // Initialize Supabase Client with PKCE Flow
 window.supabaseClient = null;
@@ -33,24 +34,38 @@ async function loadProfile(userId) {
         .from('profiles')
         .select('id, email, full_name, phone, role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
-        // Enforce phone completion for student users before allowing rental access
-        const hasValidPhone = data.phone && /^\+?91\d{10}$/.test(data.phone.replace(/[\s-]/g, ''));
-        S.needsProfile = data.role === 'student' && !hasValidPhone;
+      let metaPhone = '';
+      let metaName = '';
+      let userEmail = '';
+      try {
+        const { data: authUserData } = await window.supabaseClient.auth.getUser();
+        if (authUserData && authUserData.user) {
+          metaPhone = authUserData.user.user_metadata?.phone || '';
+          metaName = authUserData.user.user_metadata?.full_name || authUserData.user.user_metadata?.name || '';
+          userEmail = authUserData.user.email || '';
+        }
+      } catch (authErr) {}
 
-        S.u = {
-          id: data.id,
-          role: data.role,
-          name: data.full_name || (data.email ? data.email.split('@')[0] : 'Student'),
-          email: data.email,
-          phone: data.phone || ''
-        };
-        S.isDemo = false;
-        sv('lg_user', JSON.stringify(S.u));
-        return S.u;
-      }
+      const finalPhone = (data && data.phone) ? data.phone : metaPhone;
+      const finalName = (data && data.full_name) ? data.full_name : (metaName || (userEmail ? userEmail.split('@')[0] : 'Student'));
+      const finalRole = (data && data.role) ? data.role : 'student';
+      const finalEmail = (data && data.email) ? data.email : userEmail;
+
+      const hasValidPhone = finalPhone && /^\+?91\d{10}$/.test(finalPhone.replace(/[\s-]/g, ''));
+      S.needsProfile = finalRole === 'student' && !hasValidPhone;
+
+      S.u = {
+        id: userId,
+        role: finalRole,
+        name: finalName,
+        email: finalEmail,
+        phone: finalPhone || ''
+      };
+      S.isDemo = false;
+      sv('lg_user', JSON.stringify(S.u));
+      return S.u;
     } catch (e) {
       console.warn('Profile fetch error:', e);
     }

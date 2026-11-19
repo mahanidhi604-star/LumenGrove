@@ -778,11 +778,52 @@ function renderBentoHub(activeView) {
     </div>`;
   }
 
+  const isStu = (typeof stu === 'function' ? stu() : (typeof window.stu === 'function' ? window.stu() : false));
   const estCost = ((S.dur || 1) * (PR.rate || 10)).toFixed(0);
+
+  const lockonOverlay = !isStu ? `
+    <div class="lockon-overlay" role="region" aria-label="Student Sign-in Required">
+      <div class="lockon-grid-bg" aria-hidden="true"></div>
+      <div class="lockon-reticle" aria-hidden="true">
+        <div class="lockon-corner tl"></div>
+        <div class="lockon-corner tr"></div>
+        <div class="lockon-corner bl"></div>
+        <div class="lockon-corner br"></div>
+        <div class="lockon-crosshair-h"></div>
+        <div class="lockon-crosshair-v"></div>
+      </div>
+      <div class="lockon-hud-body">
+        <div class="lockon-badge">
+          <span class="lockon-pulse-dot"></span>
+          <span>RESTRICTED // VERIFICATION REQUIRED</span>
+        </div>
+        <h4 class="lockon-heading">🔒 Student Sign-In Required</h4>
+        <p class="lockon-info">Duration selection and rental passes are restricted to verified students. Sign in to unlock charging hours.</p>
+        <button type="button" class="btn btn-sm lockon-cta-btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';">
+          ⚡ Sign In to Unlock Duration & Rent
+        </button>
+      </div>
+    </div>` : '';
 
   const payCard = `<div class="bento-pay-card-wrapper s4" style="grid-column: 1 / -1">${
     S.pay
       ? `<div class="card s4 bento-pay-card" style="--i:6">${payView()}</div>`
+      : !isStu
+      ? `<div class="card s4 bento-checkout-preview-card bento-checkout-locked" style="--i:6;position:relative">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span class="badge" style="background:rgba(240,138,36,0.15);border:1px solid #f08a24;color:#f08a24;font-family:'Barlow Condensed',monospace">🔒 PASS LOCKED</span>
+                <span class="k" style="margin:0">CAMPUS CHARGING AUTHORIZATION</span>
+              </div>
+              <h3 style="margin:4px 0">Ready to charge at <b style="color:var(--ac)">${cur.n}</b>?</h3>
+              <p style="font-size:0.85rem;color:var(--mut);margin:0">Sign in with your RVCE Student ID to authorize this terminal & generate your UPI / PIN pass.</p>
+            </div>
+            <button class="btn" onclick="sessionStorage.setItem('lg_redirect_hash', '#app-home'); location.hash = 'signin';" style="min-height:46px;padding:8px 22px">
+              ⚡ Sign In to Rent Power Bank
+            </button>
+          </div>
+        </div>`
       : `<div class="card s4 bento-checkout-preview-card" style="--i:6">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
             <div>
@@ -797,7 +838,8 @@ function renderBentoHub(activeView) {
         </div>`
   }</div>`;
 
-  const rateCard = `<div class="card s2 bento-rate-card" style="--i:2">
+  const rateCard = `<div class="card s2 bento-rate-card ${!isStu ? 'is-locked' : ''}" style="--i:2;position:relative;overflow:hidden">
+    ${lockonOverlay}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h3 style="margin:0">Rate Per Hour & Duration</h3>
       <span class="badge" id="rate-badge">₹ ${PR.rate || 10} / hr</span>
@@ -810,7 +852,7 @@ function renderBentoHub(activeView) {
       </div>
       <div class="dt" style="--f:${(S.dur - 0.5) / 5.5}">
         <div class="dtr"><div class="dfl"></div><canvas id="pc" aria-hidden="true"></canvas></div>
-        <input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" aria-label="Rental duration in hours" oninput="durIn(this.value)">
+        <input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" aria-label="Rental duration in hours" oninput="durIn(this.value)" ${!isStu ? 'disabled aria-disabled="true"' : ''}>
       </div>
       <div class="dd" aria-hidden="true">${'<i></i>'.repeat(12)}</div>
     </div>
@@ -889,7 +931,6 @@ function renderBentoHub(activeView) {
 
   const prof = S.profile || { archetype: 'helios', callsign: '', dept: 'CSE', year: '3rd Year', accent: '#f08a24' };
   const u = S.u;
-  const isStu = stu();
   const callsign = (prof && prof.callsign) || (u && u.name ? u.name.split(' ')[0] : 'Explorer');
 
   const stickyHud = activeView === 'home' ? `<div id="bento-sticky-hud" class="bento-sticky-hud" role="region" aria-label="Quick Hub Headbar">
@@ -907,7 +948,7 @@ function renderBentoHub(activeView) {
         <span class="badge hud-solar-badge sol">Solar now · 38 W</span>
       </div>
       <div class="hud-right">
-        <button class="btn btn-sm hud-rent-btn" onclick="startR()">⚡ Rent</button>
+        <button class="btn btn-sm hud-rent-btn" onclick="startR()">${isStu ? '⚡ Rent' : '🔒 Sign In to Rent'}</button>
         <button type="button" class="hud-profile-pill" onclick="openProfilePopup()" aria-label="Open profile customization modal">
           <span class="hud-avatar-circle" style="background:${prof.accent || 'var(--ac)'}">
             ${getArchetypeIcon(prof.archetype, 16)}

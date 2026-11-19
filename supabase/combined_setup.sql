@@ -421,6 +421,7 @@ ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
 ---------------------------------------------------------
 -- Students read only their own profile; Super Admins read all; Technicians cannot read profiles
 GRANT SELECT ON public.profiles TO authenticated;
+GRANT INSERT ON public.profiles TO authenticated;
 -- Students can only update full_name and phone; role and email are protected
 GRANT UPDATE (full_name, phone, updated_at) ON public.profiles TO authenticated;
 

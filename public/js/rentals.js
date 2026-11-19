@@ -116,6 +116,12 @@ window.startR = (stnId) => {
     const s = ST.find(x => x.id === stnId);
     if (s) S.pick = s;
   }
+  if (typeof stu === 'function' && !stu()) {
+    toast('Student sign-in required to rent a power bank.');
+    sessionStorage.setItem('lg_redirect_hash', '#app-home');
+    location.hash = 'signin';
+    return;
+  }
   if (S.rent) return toast('You already have an active rental.');
   const b = S.pick || best();
   if (b.stock[S.cat] < 1) return toast('No stock at this station for that category.');
@@ -136,6 +142,11 @@ window.startR = (stnId) => {
 window.paid = () => {
   const p = S.pay;
   if (!p || p.paid) return;
+  if (typeof stu === 'function' && !stu()) {
+    toast('Authentication required to complete rental.');
+    location.hash = 'signin';
+    return;
+  }
   p.paid = true;
   S.rent = {
     id: 'LG-' + (1042 + S.hist.length),

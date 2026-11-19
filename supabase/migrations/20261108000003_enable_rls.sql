@@ -35,6 +35,8 @@ ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
 ---------------------------------------------------------
 -- Students read only their own profile; Super Admins read all; Technicians cannot read profiles
 GRANT SELECT ON public.profiles TO authenticated;
+-- Students can insert their own profile on first sign-up if trigger did not populate
+GRANT INSERT ON public.profiles TO authenticated;
 -- Students can only update full_name and phone; role and email are protected
 GRANT UPDATE (full_name, phone, updated_at) ON public.profiles TO authenticated;
 
@@ -44,6 +46,13 @@ CREATE POLICY "profiles_select_own_or_admin" ON public.profiles
   USING (
     id = (SELECT auth.uid())
     OR public.get_current_role() = 'super_admin'
+  );
+
+CREATE POLICY "profiles_insert_own" ON public.profiles
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    id = (SELECT auth.uid())
   );
 
 CREATE POLICY "profiles_update_own_or_admin" ON public.profiles

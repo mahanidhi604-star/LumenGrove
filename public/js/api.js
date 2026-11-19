@@ -137,18 +137,52 @@ window.supabaseApi = {
 
   async updateProfile(fullName, phone) {
     if (!window.supabaseClient) return window.demoApi.updateProfile(fullName, phone);
-    const user = (await window.supabaseClient.auth.getUser()).data.user;
+    const userRes = await window.supabaseClient.auth.getUser();
+    const user = userRes?.data?.user;
     if (!user) throw new Error('Unauthenticated');
-    const { data, error } = await window.supabaseClient
+
+    // 1. Persist phone & full_name to Supabase Auth user_metadata
+    try {
+      await window.supabaseClient.auth.updateUser({
+        data: {
+          full_name: fullName,
+          phone: phone
+        }
+      });
+    } catch (metaErr) {
+      console.warn('Auth user metadata update notice:', metaErr);
+    }
+
+    // 2. Persist to public.profiles table (try update first; if no row updated, try upsert)
+    const { data: updateData, error: updateErr } = await window.supabaseClient
       .from('profiles')
       .update({
         full_name: fullName,
         phone: phone,
         updated_at: new Date().toISOString()
       })
-      .eq('id', user.id);
-    if (error) throw error;
-    return data;
+      .eq('id', user.id)
+      .select();
+
+    if (updateErr || !updateData || updateData.length === 0) {
+      // If row did not exist yet, upsert it
+      const { data: upsertData, error: upsertErr } = await window.supabaseClient
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          full_name: fullName,
+          phone: phone,
+          role: (window.S && window.S.u && window.S.u.role) || 'student',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' })
+        .select();
+
+      if (upsertErr && updateErr) throw (updateErr || upsertErr);
+      return upsertData;
+    }
+
+    return updateData;
   }
 };
 
