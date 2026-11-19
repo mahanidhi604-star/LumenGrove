@@ -295,5 +295,68 @@ html.rm .auth-gear-spin,html.rm .auth-sun-breathe,html.rm .auth-drift,html.rm .a
   .poster-collage-card{order:10}
 }
 
+/* --- Solarpunk Bento Hub Styling --- */
+.solarpunk-bento-hero {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid var(--fg);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 60%, var(--bg));
+  box-shadow: 4px 4px 0 var(--fg);
+}
+[data-t=amber] .solarpunk-bento-hero {
+  background: color-mix(in srgb, #fdf8ee 85%, #f4ebd6);
+  border-color: #17140d;
+  box-shadow: 4px 4px 0 #17140d;
+}
 
+.bento-poster-card {
+  position: relative;
+  border: 1.5px solid var(--fg);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 var(--fg);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.bento-poster-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 5px 5px 0 var(--fg);
+}
+[data-t=amber] .bento-poster-card {
+  border-color: #17140d;
+  box-shadow: 4px 4px 0 #17140d;
+}
+
+.bento-rate-card, .bento-stations-card, .bento-banks-card, .bento-map-card {
+  border: 1.5px solid var(--fg);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 var(--fg);
+}
+[data-t=amber] .bento-rate-card,
+[data-t=amber] .bento-stations-card,
+[data-t=amber] .bento-banks-card,
+[data-t=amber] .bento-map-card {
+  border-color: #17140d;
+  box-shadow: 4px 4px 0 #17140d;
+}
+
+.bento-stations-card .pick, .bento-banks-card .pick {
+  transition: all .2s cubic-bezier(.2,.8,.2,1);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
+}
+.bento-stations-card .pick:hover, .bento-banks-card .pick:hover {
+  border-color: var(--fg);
+  transform: translateX(3px);
+}
+.bento-stations-card .pick.sel, .bento-banks-card .pick.sel {
+  border-color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 14%, var(--card));
+  box-shadow: 3px 3px 0 var(--ac);
+}
+[data-t=amber] .bento-stations-card .pick.sel,
+[data-t=amber] .bento-banks-card .pick.sel {
+  border-color: #17140d;
+  background: #fdf3de;
+  box-shadow: 3px 3px 0 #f08a24;
+}
 

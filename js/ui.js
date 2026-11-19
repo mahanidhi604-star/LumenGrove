@@ -411,6 +411,237 @@ window.toggleLiveTelemetry = function(enable) {
   toast(enable ? 'Live solar telemetry active' : 'Live telemetry paused');
 };
 
+function renderBentoHub(activeView) {
+  const r = S.rent,
+    b = best(),
+    cur = S.pick || b,
+    H = new Date().getHours(),
+    g = H < 12 ? 'Good morning' : H < 17 ? 'Good afternoon' : 'Good evening',
+    n = stu() ? ', ' + S.u.name.split(' ')[0] : '',
+    bc = [...Array(26)]
+      .map((_, i) => `<rect x="${i * 7}" y="0" width="${1 + ((i * 5) % 4)}" height="26" fill="var(--fg)"/>`)
+      .join('');
+
+  const heroSubtitle = activeView === 'stations'
+    ? 'Campus Stations & Live Map'
+    : activeView === 'rent'
+    ? 'Solar Power Bank Rental'
+    : 'Rental Hub';
+
+  const heroHeading = activeView === 'stations'
+    ? 'Campus Stations'
+    : activeView === 'rent' && !stu()
+    ? 'Sign in to rent'
+    : activeView === 'rent'
+    ? 'Rent'
+    : `${g}${n}`;
+
+  const hero = `<div class="card s4 hero2 solarpunk-bento-hero" style="--i:0">
+    <svg class="dc" viewBox="0 0 200 200" style="right:60px;top:-40px;width:260px" aria-hidden="true">
+      <circle cx="100" cy="100" r="62" fill="var(--ac)" opacity=".9"/>
+      <circle class="auth-gear-spin" cx="100" cy="100" r="84" fill="none" stroke="var(--fg)" stroke-width="12" stroke-dasharray="9 7"/>
+      <g fill="none" stroke="var(--fg)" stroke-width="1.2">
+        <circle cx="100" cy="100" r="40"/>
+        <ellipse cx="100" cy="100" rx="16" ry="40"/>
+        <ellipse cx="100" cy="100" rx="32" ry="40"/>
+        <path d="M60 100h80"/>
+      </g>
+    </svg>
+    <span class="vt" aria-hidden="true">SOLARPUNK</span>
+    <span class="k">LumenGrove · ${heroSubtitle}</span>
+    <h1 tabindex="-1">${heroHeading}</h1>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="tag">Future is solar-charged.</span>
+      ${sol()}
+      <span class="badge" style="background:#17140d;color:#c9d86a;font-family:'Barlow Condensed',monospace;border:1px solid #3b4730">
+        <i class="auth-dot-pulse"></i> 12.9237° N · 77.4987° E
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap">
+      <svg viewBox="0 0 182 26" width="182" height="26" style="display:block" aria-hidden="true">${bc}</svg>
+      <span style="font:800 .75rem 'Barlow Condensed',monospace;color:var(--mut);letter-spacing:.12em">PARAM // SYNC-READY</span>
+    </div>
+  </div>`;
+
+  let prim;
+  if (activeView === 'rent' && !stu()) {
+    prim = `<div class="card s2 bento-poster-card" style="--i:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="k">RVCE Campus Portal · Student Access</span>
+        <span class="badge" style="background:#e05248;color:#fff;font-weight:800">Auth Required</span>
+      </div>
+      <h2>Sign in to rent</h2>
+      <p>Browse campus stations and available solar power banks as a guest, or sign in with your official RVCE student Google account (@rvce.edu.in) to reserve and rent.</p>
+      <div style="margin:20px 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-google" onclick="signInWithGoogle('#app-rent')" aria-label="Sign in with Google">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+          <span>Sign in with Google</span>
+        </button>
+        <a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-rent')">${t('si')}</a>
+      </div>
+      <p class="auth-trust" style="margin:4px 0 14px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>We only accept @rvce.edu.in accounts. We never see your Google password.</span>
+      </p>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px">
+        <a class="btn g" href="#app-home" onclick="continueAsGuest()">Explore as guest</a>
+        <span style="font-size:.85rem;color:var(--mut)">Best station: <b>${b.n}</b> (${dist(b)} m away)</span>
+      </div>
+    </div>`;
+  } else if (!stu()) {
+    prim = `<div class="card s2" style="--i:1">
+      <span class="k">Account & Access</span>
+      <h2>Sign in to charge up</h2>
+      <p>Browse campus stations and available solar power banks as a guest, or sign in with your official RVCE student Google account (@rvce.edu.in) to reserve and rent.</p>
+      <p style="margin-top:16px">
+        <a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-home')">${t('si')}</a>
+      </p>
+      <p style="margin-top:14px;font-size:.9rem;color:var(--mut)">Best station right now: <b>${b.n}</b> (${dist(b)} m away)</p>
+    </div>`;
+  } else if (r && r.started) {
+    prim = `<div class="card s2" style="--i:1">
+      <span class="k">Active Rental In Progress</span>
+      <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        <div class="ring2" style="--p:${Math.max(0, r.batt) | 0}"><b id="bt">${Math.max(0, r.batt) | 0}%</b></div>
+        <div>
+          <div class="num" id="tm">${fmt(r.dur - el())}</div>
+          <p>${CATS[r.cat].n} · Slot ${r.slot} at ${r.st.n}</p>
+        </div>
+      </div>
+      <div class="bar"><i id="bb" style="width:${Math.max(0, r.batt)}%"></i></div>
+      <p style="margin-top:14px"><a class="btn" href="#app-rentals">View Rental History & Return</a></p>
+    </div>`;
+  } else if (r) {
+    prim = `<div class="card s2" style="--i:1">
+      <span class="k">Payment Received</span>
+      <h2>Your PIN: <span style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.15em">${r.pin}</span></h2>
+      <p>Go to <b>${r.st.n}</b> and enter your 6-digit PIN at the station kiosk simulator to release your power bank.</p>
+      <p style="margin-top:14px"><a class="btn" href="#app-rentals">Go to Kiosk</a></p>
+    </div>`;
+  } else {
+    prim = `<div class="card s2 bento-poster-card" style="--i:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="k">Solar Station Ready</span>
+        <span class="badge" style="background:var(--ac);color:var(--on)">Online</span>
+      </div>
+      <h2>${cur.n}</h2>
+      <p>${dist(cur)} m away · <b>${cur.free}</b> slots free · ${cur.stock[S.cat]} ${CATS[S.cat].n} in stock</p>
+      <div style="display:flex;gap:10px;margin:12px 0;flex-wrap:wrap">
+        <span class="badge" style="background:#17140d;color:#c9d86a;font-family:'Barlow Condensed',monospace;border:1px solid #3b4730"><i class="auth-dot-pulse"></i> ${cur.solar}W SOLAR NOW</span>
+        <span class="badge" style="background:#17140d;color:#c9d86a;font-family:'Barlow Condensed',monospace;border:1px solid #3b4730">BATTERY ${cur.batt}%</span>
+      </div>
+      <p style="margin-top:14px">
+        <button class="btn" onclick="startR()">Rent from ${cur.n} ⚡</button>
+        <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button>
+      </p>
+    </div>`;
+  }
+
+  const payCard = S.pay ? `<div class="card s4" style="--i:2">${payView()}</div>` : '';
+
+  const estCost = ((S.dur || 1) * (PR.rate || 10)).toFixed(0);
+  const rateCard = `<div class="card s2 bento-rate-card" style="--i:2">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">Rate Per Hour & Duration</h3>
+      <span class="badge" id="rate-badge">₹ ${PR.rate || 10} / hr</span>
+    </div>
+    <p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Adjust duration to lock your charging slot:</p>
+    <div class="dur" id="dc">
+      <div class="dh">
+        <b id="dl">${DL(S.dur)}</b>
+        <small id="ds" class="${S.dur >= 6 ? 'mx' : ''}">${S.dur >= 6 ? 'Longest rental · charges apply per hour' : DS(S.dur)}</small>
+      </div>
+      <div class="dt" style="--f:${(S.dur - 0.5) / 5.5}">
+        <div class="dtr"><div class="dfl"></div><canvas id="pc" aria-hidden="true"></canvas></div>
+        <input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" aria-label="Rental duration in hours" oninput="durIn(this.value)">
+      </div>
+      <div class="dd" aria-hidden="true">${'<i></i>'.repeat(12)}</div>
+    </div>
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <p style="font-size:0.82rem;color:var(--mut);margin:0">Rate: ₹ ${PR.rate || '—'} per hour · Grace period ${PR.grace} min</p>
+      <span class="badge" style="background:var(--card);border:1px solid var(--ln);font-weight:700">Estimated: <b id="d-est" style="color:var(--ac)">₹ ${estCost}</b></span>
+    </div>
+  </div>`;
+
+  const mapCard = `<div class="card s4 bento-map-card" style="--i:3">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <h3 style="margin:0">Campus Map Navigator</h3>
+      <div style="display:flex;gap:8px">
+        <span class="badge" style="background:#17140d;color:#c9d86a;font-family:'Barlow Condensed',monospace;border:1px solid #3b4730">AZIMUTH 000°–270°</span>
+        <span class="badge">Live Campus Map</span>
+      </div>
+    </div>
+    ${mapSvg()}
+    <p style="margin-top:8px;font-size:.85rem;color:var(--mut)">Tap anywhere on the map to set your position, or tap a station to select it.</p>
+  </div>`;
+
+  const stationsCard = `<div class="card s2 bento-stations-card" style="--i:4">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">Campus Stations</h3>
+      <span class="badge">${ST.length} Locations</span>
+    </div>
+    <p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Select a station to set your rental destination:</p>
+    <div style="display:flex;flex-direction:column;gap:8px">${ST.map(
+      s => {
+        const isSel = cur.id === s.id;
+        return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rer()">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <b style="font-size:1rem">${s.n}</b>
+              ${isSel ? '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>' : ''}
+            </div>
+            <small style="color:var(--mut)">${dist(s)} m away · ${s.stock[S.cat]} ${CATS[S.cat].n} ready</small>
+          </div>
+          <div style="text-align:right">
+            <span class="badge" style="${isSel ? 'background:var(--ac);color:var(--on)' : ''}">${s.ok ? s.free + ' free' : 'offline'}</span>
+          </div>
+        </div>`;
+      }
+    ).join('')}</div>
+  </div>`;
+
+  const banksCard = `<div class="card s2 bento-banks-card" style="--i:5">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">Grove Banks</h3>
+      <span class="badge">${CATS[S.cat].n} selected</span>
+    </div>
+    <p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Choose a bank type suited for your device:</p>
+    <div style="display:flex;flex-direction:column;gap:8px">${Object.entries(CATS)
+      .map(
+        ([k, x]) => {
+          const isSel = S.cat === k;
+          return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.cat='${k}';rer()">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--ln);flex-shrink:0">${ic(x.i)}</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <b style="font-size:1rem">${x.n}</b>
+                  ${isSel ? '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>' : ''}
+                </div>
+                <small style="color:var(--mut)">${x.p}</small>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <span class="badge" style="${isSel ? 'background:var(--ac);color:var(--on)' : ''}">${best().stock[k]} nearby</span>
+            </div>
+          </div>`;
+        }
+      )
+      .join('')}</div>
+  </div>`;
+
+  let orderedCards;
+  if (activeView === 'stations') {
+    orderedCards = `${hero}${prim}${stationsCard}${mapCard}${banksCard}${rateCard}`;
+  } else if (activeView === 'rent') {
+    orderedCards = `${hero}${prim}${rateCard}${payCard}${banksCard}${stationsCard}${mapCard}`;
+  } else {
+    orderedCards = `${hero}${prim}${rateCard}${payCard}${mapCard}${stationsCard}${banksCard}`;
+  }
+
+  return `<div class="wrap"><div class="bento">${orderedCards}</div></div>`;
+}
+
 const PG = {
   home: () =>
     `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
@@ -608,7 +839,7 @@ const PG = {
       </div>
     </div>`,
 
-  'app-stations': () => PG['app-home'](),
+  'app-stations': () => renderBentoHub('stations'),
 
   'app-impact': () => PG.impact(),
 
@@ -968,66 +1199,9 @@ const PG = {
       .join('')}</table></div></div>`;
   },
 
-  'app-rent': () => PG['app-home'](),
+  'app-rent': () => renderBentoHub('rent'),
 
-  'app-home': () => {
-    const r = S.rent,
-      b = best(),
-      cur = S.pick || b,
-      H = new Date().getHours(),
-      g = H < 12 ? 'Good morning' : H < 17 ? 'Good afternoon' : 'Good evening',
-      n = stu() ? ', ' + S.u.name.split(' ')[0] : '',
-      c = (x, i, k) => `<div class="card ${x}" style="--i:${i}">${k}</div>`,
-      bc = [...Array(26)]
-        .map((_, i) => `<rect x="${i * 7}" y="0" width="${1 + ((i * 5) % 4)}" height="26" fill="var(--fg)"/>`)
-        .join('');
-
-    const hero = `<div class="card s4 hero2" style="--i:0"><svg class="dc" viewBox="0 0 200 200" style="right:60px;top:-40px;width:260px" aria-hidden="true"><circle cx="100" cy="100" r="62" fill="var(--ac)" opacity=".9"/><circle class="spin" cx="100" cy="100" r="84" fill="none" stroke="var(--fg)" stroke-width="12" stroke-dasharray="9 7"/><g fill="none" stroke="var(--fg)" stroke-width="1.2"><circle cx="100" cy="100" r="40"/><ellipse cx="100" cy="100" rx="16" ry="40"/><ellipse cx="100" cy="100" rx="32" ry="40"/><path d="M60 100h80"/></g></svg><span class="vt" aria-hidden="true">SOLARPUNK</span><span class="k">LumenGrove · Rental Hub</span><h1 tabindex="-1">${g}${n}</h1><span class="tag">Future is solar-charged.</span> ${sol()}<svg viewBox="0 0 182 26" width="182" height="26" style="display:block;margin-top:18px" aria-hidden="true">${bc}</svg></div>`;
-
-    const prim = !stu()
-      ? `<span class="k">Account & Access</span><h2>Sign in to charge up</h2><p>Browse campus stations and available solar power banks as a guest, or sign in with your official RVCE student Google account (@rvce.edu.in) to reserve and rent.</p><p style="margin-top:16px"><a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-home')">${t(
-          'si'
-        )}</a></p><p style="margin-top:14px;font-size:.9rem;color:var(--mut)">Best station right now: <b>${b.n}</b> (${dist(b)} m away)</p>`
-      : r && r.started
-      ? `<span class="k">Active Rental In Progress</span><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><div class="ring2" style="--p:${
-          Math.max(0, r.batt) | 0
-        }"><b id="bt">${Math.max(0, r.batt) | 0}%</b></div><div><div class="num" id="tm">${fmt(
-          r.dur - el()
-        )}</div><p>${CATS[r.cat].n} · Slot ${r.slot} at ${r.st.n}</p></div></div><div class="bar"><i id="bb" style="width:${Math.max(
-          0,
-          r.batt
-        )}%"></i></div><p style="margin-top:14px"><a class="btn" href="#app-rentals">View Rental History & Return</a></p>`
-      : r
-      ? `<span class="k">Payment Received</span><h2>Your PIN: <span style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.15em">${r.pin}</span></h2><p>Go to <b>${r.st.n}</b> and enter your 6-digit PIN at the station kiosk simulator to release your power bank.</p><p style="margin-top:14px"><a class="btn" href="#app-rentals">Go to Kiosk</a></p>`
-      : `<span class="k">Solar Station Ready</span><h2>${cur.n}</h2><p>${dist(cur)} m away · <b>${cur.free}</b> slots free · ${
-          cur.stock[S.cat]
-        } ${CATS[S.cat].n} in stock</p><p style="margin-top:14px"><button class="btn" onclick="startR()">Rent from ${cur.n} ⚡</button> <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button></p>`;
-
-    const payCard = S.pay ? `<div class="card s4" style="--i:2">${payView()}</div>` : '';
-
-    const estCost = ((S.dur || 1) * (PR.rate || 10)).toFixed(0);
-    const rateCard = `<div class="card s2" style="--i:2"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Rate Per Hour & Duration</h3><span class="badge" id="rate-badge">₹ ${PR.rate || 10} / hr</span></div><p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Adjust duration to lock your charging slot:</p><div class="dur" id="dc"><div class="dh"><b id="dl">${DL(S.dur)}</b><small id="ds" class="${S.dur >= 6 ? 'mx' : ''}">${S.dur >= 6 ? 'Longest rental · charges apply per hour' : DS(S.dur)}</small></div><div class="dt" style="--f:${(S.dur - 0.5) / 5.5}"><div class="dtr"><div class="dfl"></div><canvas id="pc" aria-hidden="true"></canvas></div><input id="du" type="range" min="0.5" max="6" step="0.5" value="${S.dur}" aria-label="Rental duration in hours" oninput="durIn(this.value)"></div><div class="dd" aria-hidden="true">${'<i></i>'.repeat(12)}</div></div><div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><p style="font-size:0.82rem;color:var(--mut);margin:0">Rate: ₹ ${PR.rate || '—'} per hour (set by admin) · Grace period ${PR.grace} min</p><span class="badge" style="background:var(--card);border:1px solid var(--ln);font-weight:700">Estimated: <b id="d-est" style="color:var(--ac)">₹ ${estCost}</b></span></div></div>`;
-
-    const mapCard = `<div class="card s4" style="--i:3"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"><h3 style="margin:0">Campus Map Navigator</h3><span class="badge">Live Campus Map</span></div>${mapSvg()}<p style="margin-top:8px;font-size:.85rem;color:var(--mut)">Tap anywhere on the map to set your position, or tap a station to select it.</p></div>`;
-
-    const stationsCard = `<div class="card s2" style="--i:4"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Campus Stations</h3><span class="badge">${ST.length} Locations</span></div><p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Select a station to set your rental destination:</p><div style="display:flex;flex-direction:column;gap:8px">${ST.map(
-      s => {
-        const isSel = cur.id === s.id;
-        return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rer()"><div><div style="display:flex;align-items:center;gap:6px"><b style="font-size:1rem">${s.n}</b>${isSel ? '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>' : ''}</div><small style="color:var(--mut)">${dist(s)} m away · ${s.stock[S.cat]} ${CATS[S.cat].n} ready</small></div><div style="text-align:right"><span class="badge" style="${isSel ? 'background:var(--ac);color:var(--on)' : ''}">${s.ok ? s.free + ' free' : 'offline'}</span></div></div>`;
-      }
-    ).join('')}</div></div>`;
-
-    const banksCard = `<div class="card s2" style="--i:5"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Grove Banks</h3><span class="badge">${CATS[S.cat].n} selected</span></div><p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px">Choose a bank type suited for your device:</p><div style="display:flex;flex-direction:column;gap:8px">${Object.entries(CATS)
-      .map(
-        ([k, x]) => {
-          const isSel = S.cat === k;
-          return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.cat='${k}';rer()"><div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--ln);flex-shrink:0">${ic(x.i)}</div><div><div style="display:flex;align-items:center;gap:6px"><b style="font-size:1rem">${x.n}</b>${isSel ? '<span class="badge" style="background:var(--ac);color:var(--on)">Selected</span>' : ''}</div><small style="color:var(--mut)">${x.p}</small></div></div><div style="text-align:right"><span class="badge" style="${isSel ? 'background:var(--ac);color:var(--on)' : ''}">${best().stock[k]} nearby</span></div></div>`;
-        }
-      )
-      .join('')}</div></div>`;
-
-    return `<div class="wrap"><div class="bento">${hero}${c('s2', 1, prim)}${rateCard}${payCard}${mapCard}${stationsCard}${banksCard}</div></div>`;
-  },
+  'app-home': () => renderBentoHub('home'),
 
   'app-help': () =>
     `<div class="wrap" id="hp"><span class="k">Support</span><h1 tabindex="-1">Help</h1><div class="grid"><div class="card" style="grid-column:1/-1"><h3>Ask Lumi</h3><div id="hm" class="hm"><div class="m">Hi, I am Lumi. Ask me about payment, PINs, bank types or returns.</div></div><div>${[
@@ -1051,12 +1225,15 @@ function syncHeaderHeight() {
 addEventListener('resize', syncHeaderHeight);
 
 function hdr(h) {
-  const app = /^(app|plug|signin)/.test(h),
-    ad = h.startsWith('admin'),
-    inPlug = app || ad,
+  const isAuth = h === 'signin' || h === 'admin-login';
+  const app = /^(app|plug)/.test(h) && !isAuth,
+    ad = h.startsWith('admin') && !isAuth,
+    inPlug = (app || ad) && !isAuth,
     ex = ['how', 'tech', 'impact', 'about'],
     ap = [
       ['app-home', t('rental_hub')],
+      ['app-stations', t('find')],
+      ['app-rent', t('rent')],
       ['app-rentals', t('rental_history')],
       ['app-settings', t('me')],
       ['app-help', 'Help']
@@ -1114,7 +1291,7 @@ function hdr(h) {
 
 function go(same) {
   let h = location.hash.slice(1) || 'home';
-  if (h == 'plug' || h == 'app-stations' || h == 'app-rent') {
+  if (h == 'plug') {
     h = 'app-home';
     history.replaceState(null, '', '#app-home');
   }
