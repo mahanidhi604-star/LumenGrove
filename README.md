@@ -7,6 +7,7 @@
 [![Supabase Backend](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Three.js Engine](https://img.shields.io/badge/Three.js-3D%20Telemetry%20Globe-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla%20JS-High%20Performance-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org)
+[![Demo Guide](https://img.shields.io/badge/Presentation-Demo%20Cheat%20Sheet-orange?style=for-the-badge&logo=googleslides&logoColor=white)](DEMO_CHEAT_SHEET.md)
 
 ---
 
@@ -17,6 +18,32 @@
 The platform integrates:
 1. **Public Student Bento Portal**: Seamless kiosk discovery, real-time device geolocation (Haversine formula), solar power bank rental with guest lockout security, and custom student profile cards.
 2. **10k Cyber Aerospace Mission Control (`DataV`)**: An isolated, full-bleed telemetry HUD featuring an interactive 3D spherical microgrid globe, real-time solar harvest calculations, hardware bay diagnostics, and an integrated **Customer Complaints Hub**.
+
+> 💡 **For Evaluators & Viva Presentations:** Check out the complete [DEMO_CHEAT_SHEET.md](DEMO_CHEAT_SHEET.md) for the timed 3-minute presentation script and technical defense answers.
+
+---
+
+## 📸 Visual Showcase & UI Gallery
+
+### 1. Cyber Aerospace Telemetry Command Center (`#admin`)
+*Isolated 10k Mission Control with interactive 3D spherical microgrid globe, station focus reticle, and 8-bay hardware diagnostics.*
+
+![DataV Aerospace Telemetry Command Center](docs/screenshots/01_admin_datav_telemetry.png)
+
+### 2. Real-Time Customer Complaints Hub (Sub-Page)
+*Staff ticketing hub with live KPI counters, keyword search, verified student `+91` contact details, and one-click dispatch/resolution.*
+
+![Customer Complaints Hub](docs/screenshots/02_admin_complaints_hub.png)
+
+### 3. Student Bento Rental Hub & Guest Lockout Overlay
+| Unlocked Student Portal | Guest Lockout Protection Overlay |
+|:---:|:---:|
+| ![Student Rental Hub Unlocked](docs/screenshots/03_student_rental_hub.png) | ![Guest Lockout Overlay](docs/screenshots/04_guest_lock_overlay.png) |
+
+### 4. Interactive Campus GPS Navigation & Mobile Telemetry
+| RVCE Campus Radar & Device Geolocation | Mobile Telemetry Viewport |
+|:---:|:---:|
+| ![Campus Map GPS Location](docs/screenshots/05_campus_map_gps.png) | ![Mobile Telemetry Viewport](docs/screenshots/06_mobile_telemetry.png) |
 
 ---
 
@@ -88,6 +115,18 @@ flowchart TD
 - **Backend / DB**: Supabase (PostgreSQL 15, Row-Level Security, Realtime).
 - **Geolocation**: HTML5 Geolocation API, Haversine Great-Circle Navigation, IP fallback.
 - **Production Host**: Vercel SPA (`outputDirectory: "public"`).
+
+---
+
+## 📊 Academic Evaluation Rubric Alignment
+
+| Evaluation Criteria | Implementation in LumenGrove |
+|---|---|
+| **System Architecture & Design** | Decoupled client-side architecture with single-page curtain router, isolated aerospace telemetry module, and PostgreSQL relational schema with RLS. |
+| **IoT & Telemetry Engineering** | Simulation of off-grid solar microgrid harmonics (50Hz), real-time MPPT power throughput, 8-bay solenoid latch telemetry, and Three.js 3D spatial visualization. |
+| **Data Security & Integrity** | Strict domain verification (`@rvce.edu.in`), verified `+91` Indian mobile validation, guest lockout constraints, and PostgreSQL Row-Level Security policies. |
+| **UI/UX & Mobile Responsiveness** | Solar-punk bento grid layout, bilingual accessibility (English, Kannada, Hindi), reduced motion preferences, and responsive breakpoint stacking for mobile viewports. |
+| **Sustainability & Impact** | Zero-grid energy consumption model leveraging bifacial solar arrays and lithium iron phosphate ($\text{LiFePO}_4$) buffer storage to decarbonize campus charging. |
 
 ---
 
