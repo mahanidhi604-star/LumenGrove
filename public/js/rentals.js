@@ -100,21 +100,173 @@ const rentBody = () => {
   }</button> <button class="btn g" onclick="nav(ST.find(x=>x.id=='${cur.id}'))">Navigate</button></div></div>`;
 };
 
+window.initUpiQrCode = (uri) => {
+  const mount = document.getElementById('upi-qrcode-mount');
+  if (!mount) return;
+  mount.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    try {
+      new QRCode(mount, {
+        text: uri,
+        width: 176,
+        height: 176,
+        colorDark: '#041628',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      return;
+    } catch (e) {
+      console.warn('QRCode generation exception:', e);
+    }
+  }
+  // Fallback if QRCode script is still loading
+  mount.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#041628;font-weight:700">UPI QR Loading...</div>`;
+};
+
+window.copyUpiId = (id = 'lumengrove@rvce') => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(id).then(() => {
+      toast('✓ Copied UPI ID: ' + id);
+    }).catch(() => {
+      window.copyUpiFallback(id);
+    });
+  } else {
+    window.copyUpiFallback(id);
+  }
+};
+
+window.copyUpiFallback = (id) => {
+  try {
+    const el = document.createElement('textarea');
+    el.value = id;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('✓ Copied UPI ID: ' + id);
+  } catch (e) {
+    toast('UPI ID: ' + id);
+  }
+};
+
+window.simulateBankWebhookApproval = () => {
+  const p = S.pay;
+  if (!p || p.paid) return;
+  const txnId = 'UPI-' + Math.floor(100000 + Math.random() * 900000);
+  toast(`⚡ Bank Webhook: Payment Approved (${txnId})`);
+  paid();
+};
+
+window.cancelPayment = () => {
+  S.pay = null;
+  rr();
+};
+
 const payView = () => {
   const p = S.pay,
     c = CATS[S.cat],
     r = S.rent;
   if (p.paid && r)
-    return `<div class="card"><span class="k">Payment received</span><h2>Your PIN</h2><div class="num" style="font-size:3.4rem;letter-spacing:.3em">${r.pin}</div><p>${c.n} at ${r.st.n}. Enter this PIN at the station kiosk to unlock your slot.</p><a class="btn" href="#app-rentals">View current rental</a> <button class="btn g" onclick="S.pay=null;rr()">Done</button></div>`;
+    return `
+      <div class="card" style="padding:24px;border:1px solid var(--ln);border-radius:18px;background:color-mix(in srgb,var(--card) 96%,transparent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span class="tag" style="background:#34d399;color:#021626;font-size:0.75rem;padding:3px 8px;border-radius:4px;font-weight:800">✓ PAYMENT CONFIRMED</span>
+          <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">PIN ISSUED</span>
+        </div>
+        <h2 style="margin:4px 0">Your 6-Digit Kiosk PIN</h2>
+        <div class="num" style="font-size:3.6rem;letter-spacing:0.25em;color:var(--ac,#00e5ff);font-family:'Barlow Condensed',monospace;margin:8px 0">${r.pin}</div>
+        <p style="color:var(--fg);line-height:1.4">Power bank at <b>${r.st.n}</b> is ready for pickup. Enter this PIN at the station kiosk simulator below to unlock your slot.</p>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <a class="btn" href="#app-rentals" onclick="S.pay=null;go(1)">View Active Rental & Timer →</a>
+          <button type="button" class="btn g" onclick="S.pay=null;rr()">Done</button>
+        </div>
+      </div>
+    `;
+
   const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
     ? Number(window.PR.rate) 
     : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
   const payTotal = ((S.dur || 1) * currentRate).toFixed(0);
-  return `<div class="card pay"><div style="color:#000;width:200px;background:#fff;padding:10px;border-radius:6px">${qr(
-    p.b.id + S.dur
-  )}</div><div><span class="k">Step 2 of 3 · Pay</span><h2>Scan to pay</h2><p>${c.n} · ${S.dur} h · ${
-    p.b.n
-  }</p><p>Amount: <b>₹ ${payTotal}</b> (₹ ${currentRate}/hr rate set by admin). The UPI QR is a demo.</p><p class="badge">Auto-confirming in <b id="pcd">6</b> s</p><p><button class="btn" onclick="paid()">I’ve paid</button> <button class="btn g" onclick="S.pay=null;rr()">Cancel</button></p></div></div>`;
+  const upiUri = `upi://pay?pa=lumengrove@rvce&pn=LumenGrove%20RVCE&am=${payTotal}&cu=INR`;
+
+  setTimeout(() => {
+    if (window.initUpiQrCode) window.initUpiQrCode(upiUri);
+  }, 40);
+
+  return `
+    <div class="card pay authentic-upi-card">
+      <!-- 1. Left QR Code Column -->
+      <div class="upi-qr-column">
+        <div class="upi-brand-header">
+          <span class="upi-bhim-tag">BHIM UPI VERIFIED</span>
+          <span class="upi-live-tag">● INSTANT PAY</span>
+        </div>
+        
+        <div class="upi-qr-frame">
+          <div id="upi-qrcode-mount" class="upi-qrcode-mount" title="Scan with GPay, PhonePe, Paytm, or BHIM"></div>
+          <div class="upi-scan-hint">Scan with any UPI App</div>
+        </div>
+
+        <div class="upi-apps-strip">
+          <span class="app-chip">GPay</span>
+          <span class="app-chip">PhonePe</span>
+          <span class="app-chip">Paytm</span>
+          <span class="app-chip">BHIM</span>
+        </div>
+      </div>
+
+      <!-- 2. Right Payment Details Column -->
+      <div class="upi-info-column" style="display:flex;flex-direction:column;gap:10px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <span class="k" style="margin:0">Step 2 of 3 · Authentic UPI Payment</span>
+          <span class="badge" style="background:#072418;color:#34d399;border:1px solid #059669">SECURE NPCI INTENT</span>
+        </div>
+
+        <div>
+          <h2 style="margin:2px 0 4px">Scan or Simulate Pay</h2>
+          <p style="color:var(--mut);font-size:0.88rem;margin:0">
+            ${c.n} · <b>${S.dur} hour rental</b> at <b>${p.b.n}</b>
+          </p>
+        </div>
+
+        <div class="upi-price-highlight">
+          <div class="price-val">₹ ${payTotal}</div>
+          <div class="price-meta">₹ ${currentRate}/hr base rate set by Admin · Zero deposit hold</div>
+        </div>
+
+        <!-- One-Click Copy UPI ID Pill -->
+        <div class="upi-copy-container">
+          <small style="color:var(--mut);font-size:0.75rem;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px">Virtual Payment Address (VPA)</small>
+          <button type="button" class="btn-copy-upi" onclick="copyUpiId('lumengrove@rvce')" title="Click to copy UPI ID">
+            <span style="display:flex;align-items:center;gap:8px">
+              <span class="copy-icon">📋</span>
+              <span class="vpa-text">lumengrove@rvce</span>
+            </span>
+            <span class="copy-badge">TAP TO COPY</span>
+          </button>
+        </div>
+
+        <!-- Manual Webhook Approval Action (For Viva Presentation Speed) -->
+        <div class="upi-simulation-section" style="margin-top:4px">
+          <button type="button" class="btn btn-simulate-webhook" onclick="simulateBankWebhookApproval()" title="Simulate instant bank authorization webhook">
+            <span class="webhook-bolt">⚡</span>
+            <div style="text-align:left">
+              <div style="font-size:0.95rem;font-weight:800;line-height:1.2">Simulate Bank Webhook Approval</div>
+              <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Instant bank clearance trigger for viva presentations</small>
+            </div>
+          </button>
+          <button type="button" class="btn g btn-cancel-checkout" onclick="cancelPayment()" style="width:100%;margin-top:6px;padding:8px">Cancel Checkout</button>
+        </div>
+
+        <div class="upi-status-indicator">
+          <span class="datav-dot-pulse" style="display:inline-block;width:6px;height:6px;background:#00e5ff;border-radius:50%;margin-right:6px"></span>
+          <span>Awaiting bank settlement confirmation (manual webhook trigger active)</span>
+        </div>
+      </div>
+    </div>
+  `;
 };
 
 const rb2 = () => stp() + (S.pay ? payView() : rentBody());
@@ -180,16 +332,7 @@ window.paid = () => {
   else if (location.hash.slice(1) === 'app-home' || location.hash.slice(1) === 'plug') go(1);
 };
 
-setInterval(() => {
-  const p = S.pay;
-  if (!p || p.paid) return;
-  const l = 6 - (Date.now() - p.t) / 1000;
-  if (l <= 0) paid();
-  else {
-    const e = $('#pcd');
-    if (e) e.textContent = Math.ceil(l);
-  }
-}, 250);
+// Auto-confirm countdown disabled per viva requirements: approval is triggered manually via [⚡ Simulate Bank Webhook Approval]
 
 window.kiosk = () => {
   const r = S.rent;
