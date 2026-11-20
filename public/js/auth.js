@@ -72,6 +72,9 @@ async function loadProfile(userId) {
       };
       S.isDemo = false;
       sv('lg_user', JSON.stringify(S.u));
+      if (typeof window.loadUserRentalHistory === 'function') {
+        window.loadUserRentalHistory();
+      }
       return S.u;
     } catch (e) {
       console.warn('Profile fetch error:', e);
@@ -223,6 +226,7 @@ window.signOut = async () => {
   S.u = null;
   S.isDemo = false;
   S.needsProfile = false;
+  S.hist = [];
   sv('lg_user', '');
   try {
     sessionStorage.removeItem('lg_redirect_hash');
@@ -278,6 +282,9 @@ window.loginDemoStudent = () => {
   S.isDemo = true;
   S.needsProfile = false;
   sv('lg_user', JSON.stringify(S.u));
+  if (typeof window.loadUserRentalHistory === 'function') {
+    window.loadUserRentalHistory();
+  }
   toast('Entered demo student mode');
   location.hash = 'app-home';
   go(1);

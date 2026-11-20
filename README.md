@@ -1,10 +1,10 @@
 # ☀️ LumenGrove · Solar-Powered Campus Power Bank Network
 
-> **Autonomous Solar-Charged Power Bank Rental System & Aerospace Telemetry Command Center**  
+> **Autonomous Solar-Charged Power Bank Rental System & Aerospace Telemetry Command Center (v2.2)**  
 > Designed and optimized for the R.V. College of Engineering (RVCE) Campus.
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
-[![Supabase Backend](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![Supabase Backend](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Three.js Engine](https://img.shields.io/badge/Three.js-3D%20Telemetry%20Globe-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla%20JS-High%20Performance-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org)
 [![Demo Guide](https://img.shields.io/badge/Presentation-Demo%20Cheat%20Sheet-orange?style=for-the-badge&logo=googleslides&logoColor=white)](DEMO_CHEAT_SHEET.md)
@@ -16,8 +16,10 @@
 **LumenGrove** is a sustainable IoT microgrid and smart hardware rental platform that provides RVCE students and faculty with 100% solar-charged portable power banks. 
 
 The platform integrates:
-1. **Public Student Bento Portal**: Seamless kiosk discovery, real-time device geolocation (Haversine formula), solar power bank rental with guest lockout security, and custom student profile cards.
-2. **10k Cyber Aerospace Mission Control (`DataV`)**: An isolated, full-bleed telemetry HUD featuring an interactive 3D spherical microgrid globe, real-time solar harvest calculations, hardware bay diagnostics, and an integrated **Customer Complaints Hub**.
+1. **Public Student Bento Portal**: Seamless kiosk discovery, real-time device geolocation (Haversine formula), solar power bank rental with guest lockout security, account-scoped rental history, and custom student profile cards.
+2. **Two-Way Cross-Device Mobile Payment Gateway (`#pay-sim`)**: Dynamic QR code checkout that mirrors laptop configuration to mobile phones and unlocks kiosks in real time via **Supabase Realtime WebSockets**.
+3. **Continuous Time-Dilation Kiosk Simulator**: Interactive hardware simulator with Bay solenoid ejection, live battery SoC/voltage telemetry, and continuous elapsed time accumulation across $1\times$, $60\times$, and $300\times$ speeds.
+4. **10k Cyber Aerospace Mission Control (`DataV`)**: An isolated, full-bleed telemetry HUD featuring an interactive 3D spherical microgrid globe, real-time solar harvest calculations, hardware bay diagnostics, and an integrated **Customer Complaints Hub**.
 
 > 💡 **For Evaluators & Viva Presentations:** Check out the complete [DEMO_CHEAT_SHEET.md](DEMO_CHEAT_SHEET.md) for the timed 3-minute presentation script and technical defense answers.
 
@@ -71,7 +73,24 @@ The platform integrates:
   - High-tech digital stepper controls (`[-]` / `[+]`) for hourly rates, grace periods, and late fees.
   - Direct two-way Supabase database synchronization (`[⚡ COMMIT POLICY TO SUPABASE]`).
 
-### 3. 📋 Customer Complaints Hub (Sub-Page)
+### 3. 💳 Cross-Device Mobile QR Simulation Gateway (`#pay-sim`)
+- **Seamless Laptop-to-Phone Sync**: Generating a pass locks the selected station, battery category, duration hours, and dynamic hourly cost into the QR payload.
+- **Dual Query String Parsing**: Supports both hash-fragment (`#pay-sim?...`) and query-parameter (`?...#pay-sim`) URL structures across all iOS and Android camera apps.
+- **Supabase Realtime WebSockets**: Authorizing payment on a physical smartphone transmits instant WebSocket broadcasts (`lg_pay_${sessionId}`) across the internet to the laptop kiosk without requiring database table writes or RLS permissions.
+- **Viva Speed Simulation**: Manual `[⚡ Simulate Bank Webhook Approval]` button available directly on the kiosk card for rapid academic demonstration.
+
+### 4. ⏱️ Continuous Time-Dilation Kiosk Simulator
+- **Station Kiosk Hardware Simulator**: Enter the 6-digit issued PIN to trigger simulated physical solenoid ejection on bays 1 through 8.
+- **Continuous Elapsed Time Accumulator**: Time-dilation architecture mathematically re-anchors session timestamps whenever switching between $1\times$ (Realtime), $60\times$ (1s = 1m), and $300\times$ (Fast Test) multipliers, completely preventing timer jumps or resets.
+- **Dynamic Cost Engine**: Real-time calculation of active duration, grace window ($15\text{ min}$), overdue penalties, and final billing.
+- **Internal Battery Telemetry**: Live discharge rate simulation, state-of-charge ($\text{SoC}$), cell voltage ($3.60\text{V} - 4.18\text{V}$), core temperature, and dynamic closest return hub routing.
+
+### 5. 📊 Account-Scoped Relational Rental History
+- **Database-Driven Records**: Dynamically queries Supabase `public.rentals` (`user_id = auth.uid()`) to display genuine historical charging transactions rather than static mock data.
+- **Account Isolation**: Rental records are strictly isolated per student account; logging out or switching profiles displays strictly that student's own verified history.
+- **Live Lifecycle Completion**: Returning a power bank (`window.retn()`) calculates the final solar charge fee, restocks the station bay, and syncs the completed terminal state to the database.
+
+### 6. 📋 Customer Complaints Hub (Sub-Page)
 - Real-time ticket feed with live KPI metrics (Open, In Progress, Resolved, and Resolution Rate).
 - Instant multi-parameter search (by student name, ticket ID, phone number) and status filter pills.
 - Verified student contact details with registered `+91` numbers.
@@ -94,33 +113,43 @@ The platform integrates:
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (Desktop & Mobile)"]
-        UI["Bento Rental Hub (HTML5 / Modern CSS3)"]
+    subgraph Kiosk ["Kiosk Terminal (Desktop / Laptop)"]
+        UI["Bento Rental Hub (#app-home)"]
         Three["Three.js 3D Microgrid Globe"]
-        Router["Curtain Hash Router (#app-home, #admin)"]
+        Sim["Continuous Kiosk Simulator (1x, 60x, 300x)"]
+        Hist["Account-Scoped Rental History (#app-rentals)"]
     end
 
-    subgraph Backend ["Backend & Database (Supabase)"]
-        Auth["Supabase GoTrue (Google OAuth & Email OTP)"]
-        DB[("PostgreSQL Database")]
+    subgraph Mobile ["Mobile Device (Camera / Browser)"]
+        PaySim["Mobile Payment Simulation (#pay-sim)"]
+        AuthBtn["⚡ Authorize Payment Gateway"]
+    end
+
+    subgraph Backend ["Cloud Infrastructure (Supabase)"]
+        WS["Supabase Realtime WebSockets (Broadcast)"]
+        Auth["Supabase PKCE Auth (Google & Domain Check)"]
+        DB[("PostgreSQL Database (public.rentals)")]
         RLS["Row-Level Security Policies"]
-        Storage["Live Hardware Telemetry State"]
     end
 
-    subgraph Hosting ["Deployment & CDN"]
+    subgraph Hosting ["Edge CDN (Vercel)"]
         Vercel["Vercel Edge Network (public/ build)"]
     end
 
-    UI --> Router
-    Router --> Three
-    UI <--> Auth
-    UI <--> DB
+    UI -->|QR Code with Session State| PaySim
+    AuthBtn -->|WebSocket Broadcast| WS
+    WS -->|Live Unlock Event| UI
+    UI --> Sim
+    Sim -->|Return Power Bank| Hist
+    Hist <-->|Scoped Queries| DB
     DB --- RLS
-    Vercel --> Client
+    UI <--> Auth
+    Vercel --> Kiosk
+    Vercel --> Mobile
 ```
 
-- **Frontend**: Vanilla ES6+, CSS Grid/Flexbox Bento Design, Three.js (r128).
-- **Backend / DB**: Supabase (PostgreSQL 15, Row-Level Security, Realtime).
+- **Frontend**: Vanilla ES6+, CSS Grid/Flexbox Bento Design, Three.js (r128), QRCode.js.
+- **Backend / DB**: Supabase (PostgreSQL 15, Row-Level Security, Realtime WebSocket Broadcast).
 - **Geolocation**: HTML5 Geolocation API, Haversine Great-Circle Navigation, IP fallback.
 - **Production Host**: Vercel SPA (`outputDirectory: "public"`).
 

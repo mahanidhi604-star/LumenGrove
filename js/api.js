@@ -64,6 +64,9 @@ window.demoApi = {
   },
 
   async getMyRentals() {
+    if (typeof window.loadUserRentalHistory === 'function') {
+      return await window.loadUserRentalHistory();
+    }
     return window.S && window.S.rent ? [window.S.rent] : [];
   },
 
@@ -129,6 +132,9 @@ window.supabaseApi = {
   },
 
   async getMyRentals() {
+    if (typeof window.loadUserRentalHistory === 'function') {
+      return await window.loadUserRentalHistory();
+    }
     if (!window.supabaseClient) return window.demoApi.getMyRentals();
     const { data, error } = await window.supabaseClient
       .from('rentals')

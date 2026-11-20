@@ -35,10 +35,7 @@ const S = {
   pick: null,
   rent: null,
   speed: 1,
-  hist: [
-    { id: 'LG-1041', d: '03 Nov', st: 'Library', cat: 'std', h: '1 h 05 m', s: 'Completed' },
-    { id: 'LG-1038', d: '01 Nov', st: 'Big Mingoes', cat: 'lap', h: '0 h 40 m', s: 'Completed' }
-  ],
+  hist: [],
   pay: null,
   vf: 'all',
   vq: '',
@@ -67,6 +64,24 @@ const S = {
 };
 
 window.S = S;
+
+// Continuous speed time-dilation accumulator
+let _rentalSpeed = 1;
+Object.defineProperty(S, 'speed', {
+  get: () => _rentalSpeed,
+  set: (val) => {
+    const newSpeed = Number(val) || 1;
+    if (newSpeed !== _rentalSpeed && S.rent && S.rent.started) {
+      const curElapsed = typeof el === 'function' ? el() : 0;
+      if (curElapsed > 0) {
+        S.rent.started = Date.now() - ((curElapsed * 1000) / newSpeed);
+      }
+    }
+    _rentalSpeed = newSpeed;
+  },
+  configurable: true,
+  enumerable: true
+});
 
 try {
   const u = q('lg_user', '');

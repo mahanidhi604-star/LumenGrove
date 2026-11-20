@@ -1757,9 +1757,14 @@ const PG = {
 
   'app-rentals': () => {
     if (!stu()) return need;
+    if ((!S.hist || S.hist.length === 0) && typeof window.loadUserRentalHistory === 'function') {
+      window.loadUserRentalHistory().then(() => {
+        if (location.hash.slice(1).split('?')[0] === 'app-rentals') go(1);
+      });
+    }
     const r = S.rent,
-      rows = (r ? [{ id: r.id, d: 'Today', st: r.st.n, cat: r.cat, h: r.dur / 3600 + ' h', cost: r.started && window.computeRentalCost ? `₹ ${window.computeRentalCost(r).totalCost}` : '₹ —', s: r.started ? 'Active' : 'Paid' }] : []).concat(
-        S.hist
+      rows = (r ? [{ id: r.id, d: 'Today', st: r.st.n, cat: r.cat, h: (r.dur / 3600).toFixed(1) + ' h', cost: r.started && window.computeRentalCost ? `₹ ${window.computeRentalCost(r).totalCost}` : '₹ —', s: r.started ? 'Active' : 'Paid' }] : []).concat(
+        Array.isArray(S.hist) ? S.hist : []
       );
 
     const costInfo = r && window.computeRentalCost ? window.computeRentalCost(r) : { totalCost: 10, rate: 10, baseCost: 10, lateFee: 0, graceMins: 15, isGrace: false, isOverdue: false, remainingGraceSec: 0, elapsedSec: 0 };
@@ -1851,7 +1856,7 @@ const PG = {
                      <b style="font-size:0.85rem;color:var(--fg);display:block">⚡ Timer Speed Multiplier</b>
                      <small style="color:var(--mut);font-size:0.74rem">Accelerate time to demonstrate grace window & cost accumulation</small>
                    </div>
-                   <select id="sp" onchange="S.speed=+this.value;if(window.updateRentalTimerDom)window.updateRentalTimerDom();" style="padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--ln);color:var(--fg);font-family:inherit;font-size:0.85rem;font-weight:700">
+                   <select id="sp" onchange="window.setRentalSpeed ? window.setRentalSpeed(this.value) : (S.speed=+this.value)" style="padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--ln);color:var(--fg);font-family:inherit;font-size:0.85rem;font-weight:700">
                      <option value="1"${S.speed == 1 ? ' selected' : ''}>1× Realtime</option>
                      <option value="60"${S.speed == 60 ? ' selected' : ''}>60× (1s = 1m)</option>
                      <option value="300"${S.speed == 300 ? ' selected' : ''}>300× (Fast Test)</option>
@@ -1917,21 +1922,23 @@ const PG = {
             </tr>
           </thead>
           <tbody>
-            ${rows
-              .map(
-                x =>
-                  `<tr>
-                    <td><b>${x.id}</b></td>
-                    <td>${x.d}</td>
-                    <td>${x.st}</td>
-                    <td>${CATS[x.cat]?.n || x.cat}</td>
-                    <td>${x.h}</td>
-                    <td><b style="color:#00e5ff">${x.cost || (x.s === 'Active' ? 'Active' : '₹ 20')}</b></td>
-                    <td><span class="badge" style="background:${x.s === 'Active' ? '#34d399' : 'var(--ln)'};color:${x.s === 'Active' ? '#021626' : 'var(--fg)'}">${x.s}</span></td>
-                    <td><button class="btn btn-sm g" onclick="cmp('${x.id}')">Report</button></td>
-                  </tr>`
-              )
-              .join('')}
+            ${rows.length === 0
+              ? `<tr><td colspan="8" style="text-align:center;padding:32px 16px;color:var(--mut)"><div style="font-size:1.6rem;margin-bottom:6px">📋</div>No past transactions found for this student account. Complete a rental to view your live billing record.</td></tr>`
+              : rows
+                  .map(
+                    x =>
+                      `<tr>
+                        <td><b>${x.id}</b></td>
+                        <td>${x.d}</td>
+                        <td>${x.st}</td>
+                        <td>${CATS[x.cat]?.n || x.cat}</td>
+                        <td>${x.h}</td>
+                        <td><b style="color:#00e5ff">${x.cost || (x.s === 'Active' ? 'Active' : '₹ 20')}</b></td>
+                        <td><span class="badge" style="background:${x.s === 'Active' ? '#34d399' : 'var(--ln)'};color:${x.s === 'Active' ? '#021626' : 'var(--fg)'}">${x.s}</span></td>
+                        <td><button class="btn btn-sm g" onclick="cmp('${x.id}')">Report</button></td>
+                      </tr>`
+                  )
+                  .join('')}
           </tbody>
         </table>
       </div>
