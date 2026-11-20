@@ -1,7 +1,7 @@
 # ☀️ LumenGrove · Solar-Powered Campus Power Bank Network
 
 > **Autonomous Solar-Charged Power Bank Rental System & Aerospace Telemetry Command Center (v2.2)**  
-> Designed and optimized for the R.V. College of Engineering (RVCE) Campus.
+> Engineered and optimized for the R.V. College of Engineering (RVCE) Campus.
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
 [![Supabase Backend](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
@@ -13,15 +13,16 @@
 
 ## 📌 Executive Overview
 
-**LumenGrove** is a sustainable IoT microgrid and smart hardware rental platform that provides RVCE students and faculty with 100% solar-charged portable power banks. 
+**LumenGrove** is a sustainable IoT microgrid and smart hardware rental platform providing RVCE students and faculty with 100% solar-charged portable power banks. The platform seamlessly bridges consumer-facing hardware checkout with industrial-grade aerospace telemetry and microgrid management.
 
-The platform integrates:
-1. **Public Student Bento Portal**: Seamless kiosk discovery, real-time device geolocation (Haversine formula), solar power bank rental with guest lockout security, account-scoped rental history, and custom student profile cards.
-2. **Two-Way Cross-Device Mobile Payment Gateway (`#pay-sim`)**: Dynamic QR code checkout that mirrors laptop configuration to mobile phones and unlocks kiosks in real time via **Supabase Realtime WebSockets**.
-3. **Continuous Time-Dilation Kiosk Simulator**: Interactive hardware simulator with Bay solenoid ejection, live battery SoC/voltage telemetry, and continuous elapsed time accumulation across $1\times$, $60\times$, and $300\times$ speeds.
-4. **10k Cyber Aerospace Mission Control (`DataV`)**: An isolated, full-bleed telemetry HUD featuring an interactive 3D spherical microgrid globe, real-time solar harvest calculations, hardware bay diagnostics, and an integrated **Customer Complaints Hub**.
+### System Highlights:
+1. **Public Student Bento Portal (`#app-home`)**: Seamless kiosk discovery, real-time GPS geolocation (Haversine formula), solar power bank rental with guest lockout protection, and custom solarpunk profile cards.
+2. **Cross-Device Mobile Payment Simulation Gateway (`#pay-sim`)**: Dynamic QR code checkout that synchronizes station configurations across laptop and mobile phones, unlocking kiosk slots in real time via **Supabase Realtime WebSockets**.
+3. **Continuous Time-Dilation Kiosk Simulator**: Interactive hardware simulator with 8-bay solenoid ejection, live battery SoC/voltage telemetry, and continuous elapsed time accumulation across $1\times$, $60\times$, and $300\times$ speeds.
+4. **Account-Scoped Relational Rental History (`#app-rentals`)**: Full database lifecycle management in `public.rentals` (Paid $\rightarrow$ Active $\rightarrow$ Completed), persistent across sign-outs with strict student account isolation.
+5. **10k Cyber Aerospace Mission Control (`#admin`)**: An isolated, full-bleed telemetry HUD featuring stationary RVCE vector radar, click-to-select station targeting, 8-bay hardware diagnostics, and an integrated **Customer Complaints Hub**.
 
-> 💡 **For Evaluators & Viva Presentations:** Check out the complete [DEMO_CHEAT_SHEET.md](DEMO_CHEAT_SHEET.md) for the timed 3-minute presentation script and technical defense answers.
+> 💡 **For Viva Evaluators:** Refer to [DEMO_CHEAT_SHEET.md](DEMO_CHEAT_SHEET.md) for a timed 3-minute presentation script and technical defense answers.
 
 ---
 
@@ -48,7 +49,6 @@ The platform integrates:
 | RVCE Campus Radar & Device Geolocation | Mobile Telemetry Viewport |
 |:---:|:---:|
 | ![Campus Map GPS Location](docs/screenshots/05_campus_map_gps.png) | ![Mobile Telemetry Viewport](docs/screenshots/06_mobile_telemetry.png) |
-| ![Campus Map GPS Location](docs/screenshots/05_campus_map_gps.png) | ![Mobile Telemetry Viewport](docs/screenshots/06_mobile_telemetry.png) |
 
 ---
 
@@ -56,43 +56,41 @@ The platform integrates:
 
 ### 1. 🎓 Student Experience & Bento Rental Hub
 - **Real-Time Geolocation**: High-accuracy GPS tracking with automatic IP geolocation fallback and dynamic Haversine distance computation to nearest campus kiosks.
-- **Guest Lock-On Protection**: Unauthenticated guests can freely explore campus stations and rates; duration slider and rental checkout are locked behind an interactive modal redirecting to verified sign-in.
+- **Guest Lockout Protection**: Unauthenticated visitors can freely browse campus station inventory and pricing; rental duration controls and checkout are secured behind an interactive sign-in modal.
 - **Verified Student Profiles**: Authentication supporting verified student email domains (`@rvce.edu.in`) and persistent verified Indian phone numbers (`+91`).
 - **Solarpunk Customization**: In-app avatar personalization (Helios, Sol, Nova, Terra) and bilingual accessibility (English, Kannada, Hindi).
 
-### 2. 🛰️ Mission Control Telemetry Dashboard (`#admin`)
-- **Complete Theme Isolation**: High-tech cyber aerospace design (`.admin-telemetry-mode`) that completely hides public navigation and offers a one-click `[🌐 Public Portal]` return button.
+### 2. 💳 Cross-Device Mobile QR Simulation Gateway (`#pay-sim`)
+- **Seamless Laptop-to-Phone Sync**: Generating a pass embeds the chosen station, battery type, duration, and calculated rate into the QR payload.
+- **Dual Query String Parsing**: Supports both hash-fragment (`#pay-sim?...`) and standard query parameters (`?...#pay-sim`) across all iOS and Android camera apps.
+- **Realtime Broadcast Synchronization**: Authorizing payment on a smartphone transmits WebSocket broadcasts (`lg_pay_${sessionId}`) across the internet to the laptop kiosk without requiring database table writes or RLS permissions.
+- **Viva Speed Simulation**: Manual `[⚡ Simulate Bank Webhook Approval]` button available directly on the kiosk card for rapid academic demonstration.
+
+### 3. ⏱️ Continuous Time-Dilation Kiosk Simulator
+- **Station Hardware Simulator**: Enter the issued 6-digit PIN on the digitizer to trigger simulated physical solenoid ejection on bays 1 through 8.
+- **Continuous Time-Dilation Architecture**: Mathematically re-anchors session timestamps whenever toggling between $1\times$ (Realtime), $60\times$ (1s = 1m), and $300\times$ (Fast Test) multipliers, completely preventing timer jumps or resets.
+- **Dynamic Cost Engine**: Real-time calculation of active duration, grace window ($15\text{ min}$), overdue penalties, and final billing.
+- **Live Battery Telemetry**: Real-time discharge rate simulation, state-of-charge ($\text{SoC}$), cell voltage ($3.60\text{V} - 4.18\text{V}$), core temperature, and closest return hub routing.
+
+### 4. 📊 Account-Scoped Relational Rental History (`public.rentals`)
+- **Database-Driven Records**: Dynamically queries Supabase `public.rentals` (`user_id = auth.uid()`) to display authentic historical charging transactions.
+- **Full Rental DB Lifecycle**: Automatically configures and inserts rental records into `public.rentals` upon payment authorization (`status: 'paid'`), transitions to `'active'` upon kiosk PIN unlock, and finalizes to `'completed'` with exact duration and paise amount upon hardware return.
+- **Sign-Out History Persistence**: Signing out preserves previous transactions on-screen and in local cache, allowing users to inspect past receipts while showing a clean prompt to sign in for new rentals.
+- **Strict Account Isolation**: Rental records are strictly isolated per student account; logging out or switching profiles displays strictly that student's own verified history without cross-account data leaks.
+
+### 5. 🛰️ Mission Control Telemetry Dashboard (`#admin`)
+- **Complete Theme Isolation**: High-tech cyber aerospace design (`.admin-telemetry-mode`) that isolates staff operations and provides a one-click `[🌐 Public Portal]` return button.
 - **Campus Energy Flow Topology Radar**: Real-time vector radar monitoring solar inverter inputs, microgrid harmonic balance ($50.02\text{ Hz}$), and active fleet throughput.
-- **Stationary RVCE Campus Microgrid Radar Map**:
-  - 2D tactical vector radar locked directly onto the 4 campus solar stations.
-  - Interactive click-to-select targeting: click any station on the map to lock target reticles, display live **Station Inspection HUDs**, and synchronize the **8-Bay Hardware Diagnostics Matrix**.
+- **Stationary RVCE Vector Radar Map**:
+  - 2D tactical vector radar locked onto the 4 campus solar stations.
+  - Interactive click-to-select targeting: click any station to lock target reticles, display live **Station Inspection HUDs**, and synchronize the **8-Bay Hardware Diagnostics Matrix**.
   - Concentric polar range rings ($50\text{m}, 100\text{m}, 150\text{m}, 200\text{m}$) and cardinal azimuth headings ($000^\circ\text{ N}, 090^\circ\text{ E}, 180^\circ\text{ S}, 270^\circ\text{ W}$).
-  - Microgrid conduits with traveling solar photon animations connecting to central inverter substation.
 - **Cyber Fleet Status & Stepper Pricing Terminal**:
   - Segmented LED fuel/battery matrix gauges replacing generic bars.
   - High-tech digital stepper controls (`[-]` / `[+]`) for hourly rates, grace periods, and late fees.
-  - Direct two-way Supabase database synchronization (`[⚡ COMMIT POLICY TO SUPABASE]`).
+  - Two-way Supabase database synchronization (`[⚡ COMMIT POLICY TO SUPABASE]`).
 
-### 3. 💳 Cross-Device Mobile QR Simulation Gateway (`#pay-sim`)
-- **Seamless Laptop-to-Phone Sync**: Generating a pass locks the selected station, battery category, duration hours, and dynamic hourly cost into the QR payload.
-- **Dual Query String Parsing**: Supports both hash-fragment (`#pay-sim?...`) and query-parameter (`?...#pay-sim`) URL structures across all iOS and Android camera apps.
-- **Supabase Realtime WebSockets**: Authorizing payment on a physical smartphone transmits instant WebSocket broadcasts (`lg_pay_${sessionId}`) across the internet to the laptop kiosk without requiring database table writes or RLS permissions.
-- **Viva Speed Simulation**: Manual `[⚡ Simulate Bank Webhook Approval]` button available directly on the kiosk card for rapid academic demonstration.
-
-### 4. ⏱️ Continuous Time-Dilation Kiosk Simulator
-- **Station Kiosk Hardware Simulator**: Enter the 6-digit issued PIN to trigger simulated physical solenoid ejection on bays 1 through 8.
-- **Continuous Elapsed Time Accumulator**: Time-dilation architecture mathematically re-anchors session timestamps whenever switching between $1\times$ (Realtime), $60\times$ (1s = 1m), and $300\times$ (Fast Test) multipliers, completely preventing timer jumps or resets.
-- **Dynamic Cost Engine**: Real-time calculation of active duration, grace window ($15\text{ min}$), overdue penalties, and final billing.
-- **Internal Battery Telemetry**: Live discharge rate simulation, state-of-charge ($\text{SoC}$), cell voltage ($3.60\text{V} - 4.18\text{V}$), core temperature, and dynamic closest return hub routing.
-
-### 5. 📊 Account-Scoped Relational Rental History (`rentals` Table)
-- **Database-Driven Records**: Dynamically queries Supabase `public.rentals` (`user_id = auth.uid()`) to display genuine historical charging transactions rather than static mock data.
-- **Full Rental DB Lifecycle**: Automatically configures and inserts rental records into `public.rentals` upon payment authorization (`status: 'paid'`), transitions to `'active'` upon kiosk PIN slot ejection, and updates to `'completed'` with exact duration and final paise amount upon hardware return.
-- **Sign-Out History Persistence**: Signing out does not clear the rental history view; previous transactions remain rendered on-screen and stored in local cache/database across sessions.
-- **Strict Account Isolation**: Rental records are strictly isolated per student account; logging out or switching profiles displays strictly that student's own verified history without cross-account data leaks.
-- **Live Lifecycle Completion**: Returning a power bank (`window.retn()`) calculates the final solar charge fee, restocks the station bay, and syncs the completed terminal state to the database.
-
-### 6. 📋 Customer Complaints Hub (Sub-Page)
+### 6. 📋 Customer Complaints Hub
 - Real-time ticket feed with live KPI metrics (Open, In Progress, Resolved, and Resolution Rate).
 - Instant multi-parameter search (by student name, ticket ID, phone number) and status filter pills.
 - Verified student contact details with registered `+91` numbers.
@@ -151,8 +149,8 @@ flowchart TD
 ```
 
 - **Frontend**: Vanilla ES6+, CSS Grid/Flexbox Bento Design, Three.js (r128), QRCode.js.
-- **Backend / DB**: Supabase (PostgreSQL 15, Row-Level Security, Realtime WebSocket Broadcast).
-- **Geolocation**: HTML5 Geolocation API, Haversine Great-Circle Navigation, IP fallback.
+- **Backend / Database**: Supabase (PostgreSQL 15, Row-Level Security, Realtime WebSocket Broadcast).
+- **Geolocation Engine**: HTML5 Geolocation API, Haversine Great-Circle Navigation, IP fallback.
 - **Production Host**: Vercel SPA (`outputDirectory: "public"`).
 
 ---
@@ -190,17 +188,17 @@ npm run build
 # Start local development server
 npm start
 ```
-The server will boot at `http://localhost:3000`.
+The application will boot at `http://localhost:3000`.
 
 ---
 
 ## 🔑 Demo & Evaluator Testing Credentials
 
-For evaluators and examiners testing the application during vivas/presentations, convenient one-click demo login profiles are provided on the login screens:
+For viva examiners testing the live system, convenient one-click demo login profiles are provided on the login screens:
 
 | Role | Access URL | Permissions & Features |
 |---|---|---|
-| **Student** | `#signin` or click "Demo Student" | Rent power banks, view campus map, customize solarpunk profile, verify `+91` phone. |
+| **Student** | `#signin` $\rightarrow$ "Demo Student" | Rent power banks, view campus map, customize solarpunk profile, verify `+91` phone. |
 | **Technician** | `#admin-login` $\rightarrow$ "Demo Technician" | 8-Bay Hardware Diagnostics Matrix, solenoid lock controls, view & resolve station complaints. |
 | **Super Admin** | `#admin-login` $\rightarrow$ "Demo Super Admin" | Full DataV mission control, 3D Globe telemetry, Pricing Policy configuration, and Complaints Hub. |
 
@@ -208,12 +206,13 @@ For evaluators and examiners testing the application during vivas/presentations,
 
 ## 👥 Project Team
 
-- **Student Name 1**: Mahanidhi C · RVCE26BCS040 · CSE
-- **Student Name 2**: Pragathi Medi · RVCE26BAI104 · AI/ML
-- **Student Name 3**: B Jishnu  · RVCE26BEC009 · ECE
-- **Student Name 4**: Rohan Narendra · RVCE26BAS045 · ASE
-- **Institution**: R.V. College of Engineering (RVCE), Bengaluru, Karnataka, India
-- **Academic Year**: 2026 – 2027
+- **Mahanidhi C** · RVCE26BCS040 · Computer Science & Engineering
+- **Pragathi Medi** · RVCE26BAI104 · Artificial Intelligence & Machine Learning
+- **B Jishnu** · RVCE26BEC009 · Electronics & Communication Engineering
+- **Rohan Narendra** · RVCE26BAS045 · Aerospace Engineering
+
+**Institution**: R.V. College of Engineering (RVCE), Bengaluru, Karnataka, India  
+**Academic Year**: 2026 – 2027
 
 ---
 
