@@ -61,14 +61,192 @@ window.cu = on => {
   if (c) c.classList.toggle('on', on);
 };
 
-window.cmp = id => {
+window.submitStudentTicket = async (source = 'modal', txId = null) => {
+  const issueEl = document.getElementById(source === 'page' ? 'page-cmp-issue' : 'modal-cmp-issue');
+  const stnEl = document.getElementById(source === 'page' ? 'page-cmp-station' : 'modal-cmp-station');
+  const bayEl = document.getElementById(source === 'page' ? 'page-cmp-bay' : 'modal-cmp-bay');
+  const detailsEl = document.getElementById(source === 'page' ? 'page-cmp-details' : 'modal-cmp-details');
+
+  const selectedIssue = issueEl ? issueEl.value : 'Lock stuck after payment';
+  const selectedStnId = stnEl ? stnEl.value : 'library';
+  const selectedBay = bayEl ? Number(bayEl.value) : 2;
+  const details = detailsEl ? detailsEl.value.trim() : '';
+
+  const stnObj = (window.ST && window.ST.find(s => s.id === selectedStnId)) || { id: selectedStnId, n: 'Central Library' };
+  const studentName = (window.S.u && (window.S.u.name || window.S.u.fullName)) || (window.S.u && window.S.u.email ? window.S.u.email.split('@')[0] : 'Aarav Sharma');
+  const studentPhone = window.S.phone || (window.S.u && window.S.u.phone) || '+91 98765 43210';
+  const studentEmail = (window.S.u && window.S.u.email) || 'student@rvce.edu.in';
+
+  // Issue category mapping
+  let cat = 'Hardware';
+  if (selectedIssue.includes('Lock')) cat = 'Lock Stuck';
+  else if (selectedIssue.includes('charging') || selectedIssue.includes('Bank')) cat = 'Bank Fault';
+  else if (selectedIssue.includes('PIN')) cat = 'Payment/PIN';
+  else if (selectedIssue.includes('amount') || selectedIssue.includes('Charged')) cat = 'Wrong Amount';
+  else if (selectedIssue.includes('touchscreen') || selectedIssue.includes('offline')) cat = 'Kiosk Offline';
+
+  const ticketId = 'CMP-' + Math.floor(1000 + Math.random() * 9000);
+
+  const newTicket = {
+    id: ticketId,
+    student: studentName,
+    email: studentEmail,
+    phone: studentPhone,
+    station: stnObj.n,
+    stationId: stnObj.id,
+    slotNum: selectedBay,
+    bay: selectedBay ? `Bay #${selectedBay}` : 'General Kiosk',
+    issue: selectedIssue,
+    category: cat,
+    time: 'Just now',
+    status: 'OPEN',
+    details: details || `Reported by student at ${stnObj.n} (Bay #${selectedBay}). Ref: ${txId || 'None'}.`,
+    isNew: true,
+    timestamp: Date.now()
+  };
+
+  // 1. Add to in-memory complaints state
+  window.S.complaints = window.S.complaints || [];
+  window.S.complaints.unshift(newTicket);
+
+  // 2. Persist to localStorage cache for cross-page & reload durability
+  localStorage.setItem('lg_complaints_cache', JSON.stringify(window.S.complaints));
+
+  // 3. Write to Supabase complaints table if connected
+  if (window.supabaseClient) {
+    try {
+      const userRes = await window.supabaseClient.auth.getUser();
+      const uid = userRes?.data?.user?.id;
+      window.supabaseClient.from('complaints').insert({
+        user_id: uid || '00000000-0000-0000-0000-000000000000',
+        station_id: stnObj.id,
+        issue_type: cat,
+        details: `[Student: ${studentName} | Phone: ${studentPhone} | Bay #${selectedBay}] ${newTicket.details}`,
+        status: 'open'
+      }).then(() => {
+        console.log('LumenGrove: Student complaint pushed to Supabase:', ticketId);
+      }).catch(e => console.warn('Supabase complaint notice:', e));
+    } catch (e) {}
+  }
+
+  // 4. Update Admin view if open
+  if (location.hash === '#admin' && typeof window.rerAdmin === 'function') {
+    window.rerAdmin();
+  }
+
+  // 5. Render Solarpunk ticket dispatched confirmation screen
+  const confHtml = `
+    <div class="card student-ticket-modal" style="text-align:center;padding:28px 22px" role="dialog" aria-label="Support Ticket Dispatched">
+      <div style="font-size:2.8rem;margin-bottom:6px">⚡</div>
+      <span class="tag" style="background:#34d399;color:#021626;font-size:0.78rem;letter-spacing:0.08em;margin-bottom:12px;display:inline-block">TICKET LOGGED // FIELD TECH DISPATCHED</span>
+      <h3 style="margin:4px 0 10px;font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;letter-spacing:0.04em">TICKET REF: <span style="color:#00e5ff">${ticketId}</span></h3>
+      <p style="color:var(--mut);font-size:0.92rem;line-height:1.5;margin:0 0 16px">
+        Station: <b>${stnObj.n} · Bay #${selectedBay}</b><br>
+        Student Identity: <b>${studentName} (<span style="color:#00e5ff">${studentPhone}</span>)</b><br>
+        Priority ticket routed to <b>#admin Customer Complaints Hub</b>.
+      </p>
+      <div style="background:rgba(0,0,0,0.22);border:1px dashed var(--ln);border-radius:12px;padding:12px;margin-bottom:20px;font-size:0.86rem;text-align:left">
+        <div style="color:#34d399;font-weight:700;margin-bottom:4px">● Live Field Response ETA: 8–12 Mins</div>
+        <div style="color:var(--mut)">Our on-campus technician has received this telemetry alert for ${stnObj.n}. You will receive an SMS resolution notification once the bay lock is cleared.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button type="button" class="btn" onclick="const cm=$('#cm');if(cm)cm.remove();if(location.hash==='#app-report')location.hash='#app-home';">Return to Hub</button>
+        <button type="button" class="btn g" onclick="const cm=$('#cm');if(cm)cm.remove();location.hash='#admin';if(window.switchAdminTab)window.switchAdminTab('complaints');">View in Admin Hub →</button>
+      </div>
+    </div>
+  `;
+
+  if (source === 'page') {
+    const reportContainer = document.getElementById('app-report-container');
+    if (reportContainer) reportContainer.innerHTML = confHtml;
+  } else {
+    const cm = document.getElementById('cm');
+    if (cm) cm.innerHTML = confHtml;
+  }
+
+  toast(`⚡ Ticket ${ticketId} dispatched! Field tech alerted.`);
+};
+
+window.cmp = (id, prefillStn) => {
+  const u = window.S.u;
+  const studentName = (u && (u.name || u.fullName)) || (u && u.email ? u.email.split('@')[0] : 'Aarav Sharma');
+  const studentPhone = window.S.phone || (u && u.phone) || '+91 98765 43210';
+  const studentEmail = (u && u.email) || 'student@rvce.edu.in';
+  const defaultStnId = (window.S.rent && window.S.rent.st) || prefillStn || (window.S.inspectedStation) || (window.S.favStn) || 'library';
+  const defaultSlot = (window.S.rent && window.S.rent.slot) || (id && !isNaN(id) ? Number(id) : 2);
+  const txRef = id ? (typeof id === 'string' && id.startsWith('LG-') ? id : `LG-TX-${id}`) : (window.S.rent ? 'LG-RENT-ACTIVE' : '');
+
+  const oldCm = document.getElementById('cm');
+  if (oldCm) oldCm.remove();
+
   document.body.insertAdjacentHTML(
     'beforeend',
-    `<div id="cm" onclick="if(event.target==this)this.remove()"><div class="card" style="width:min(460px,92%);background:var(--card)" role="dialog" aria-label="File a complaint"><h3>File a complaint</h3><label for="ct">Issue</label><select id="ct" style="width:100%"><option>Paid but no PIN</option><option>Lock stuck</option><option>Bank not charging</option><option>Wrong amount</option><option>Other</option></select><label for="cn">Details ${
-      id ? '(transaction ' + id + ')' : ''
-    }</label><textarea id="cn" rows="4" style="width:100%"></textarea><p><button class="btn" onclick="$('#cm').remove();toast('Complaint filed (demo)')">Submit</button> <button class="btn g" onclick="$('#cm').remove()">Cancel</button></p></div></div>`
+    `<div id="cm" onclick="if(event.target==this)this.remove()">
+      <div class="card student-ticket-modal" role="dialog" aria-label="File a campus support ticket">
+        <div class="ticket-modal-header">
+          <div>
+            <span class="tag" style="background:#00e5ff;color:#021626;font-size:0.74rem;letter-spacing:0.06em;padding:3px 8px;border-radius:4px">CAMPUS SUPPORT & HARDWARE ASSISTANCE</span>
+            <h3>File a Support Incident Ticket</h3>
+          </div>
+          <button type="button" class="btn btn-sm g" onclick="$('#cm').remove()" style="padding:4px 8px" aria-label="Close">✕</button>
+        </div>
+
+        <div class="student-verified-strip">
+          <span style="font-size:1.2rem">👤</span>
+          <div>
+            <div><b>${studentName}</b> <span style="color:#00e5ff">(${studentPhone})</span></div>
+            <small style="color:var(--mut)">Verified RVCE Student · ${studentEmail}</small>
+          </div>
+        </div>
+
+        <div class="ticket-field-row">
+          <div class="ticket-field-group">
+            <label for="modal-cmp-station">Station Location</label>
+            <select id="modal-cmp-station">
+              <option value="library" ${defaultStnId === 'library' ? 'selected' : ''}>Central Library</option>
+              <option value="mm" ${defaultStnId === 'mm' ? 'selected' : ''}>M.M Foods</option>
+              <option value="mingoes" ${defaultStnId === 'mingoes' ? 'selected' : ''}>Big Mingoes</option>
+              <option value="cauvery" ${defaultStnId === 'cauvery' ? 'selected' : ''}>Cauvery Hostel</option>
+            </select>
+          </div>
+          <div class="ticket-field-group">
+            <label for="modal-cmp-bay">Affected Bay / Slot</label>
+            <select id="modal-cmp-bay">
+              ${[1, 2, 3, 4, 5, 6, 7, 8].map(sNum => `
+                <option value="${sNum}" ${sNum === defaultSlot ? 'selected' : ''}>Bay #${sNum}</option>
+              `).join('')}
+              <option value="0">General Kiosk / Touchscreen</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ticket-field-group">
+          <label for="modal-cmp-issue">Primary Issue Encountered</label>
+          <select id="modal-cmp-issue">
+            <option value="Lock stuck after payment">Lock stuck after payment (solenoid unreleased)</option>
+            <option value="Power bank not charging device">Power bank not charging device / loose cable</option>
+            <option value="Paid via UPI but no PIN received">Paid via UPI but no OTP / PIN received</option>
+            <option value="Wrong amount deducted on UPI">Wrong amount deducted on UPI</option>
+            <option value="Station touchscreen frozen / offline">Station touchscreen frozen / kiosk offline</option>
+            <option value="Damaged power bank casing or port">Damaged power bank casing or port</option>
+            <option value="Other campus support inquiry">Other campus hardware inquiry</option>
+          </select>
+        </div>
+
+        <div class="ticket-field-group">
+          <label for="modal-cmp-details">Issue Description ${txRef ? `(Ref: ${txRef})` : ''}</label>
+          <textarea id="modal-cmp-details" rows="3" placeholder="Provide extra context (e.g., LED color, UPI payment reference ID, device model)..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+          <button type="button" class="btn g" onclick="$('#cm').remove()">Cancel</button>
+          <button type="button" class="btn" onclick="submitStudentTicket('modal', '${txRef}')">⚡ Dispatch Support Ticket</button>
+        </div>
+      </div>
+    </div>`
   );
-  const e = $('#ct');
+
+  const e = document.getElementById('modal-cmp-issue');
   if (e) e.focus();
 };
 
@@ -1191,10 +1369,80 @@ const PG = {
 
   'app-impact': () => PG.impact(),
 
-  'app-report': () =>
-    S.u && S.u.role == 'student'
-      ? `<div class="wrap" style="max-width:520px"><h1 tabindex="-1">Report a problem</h1><label for="pb">What happened?</label><select id="pb" style="width:100%"><option>Bank not charging</option><option>Lock stuck</option><option>Station offline</option></select><label for="nt">Details</label><textarea id="nt" rows="4" style="width:100%"></textarea><p><button class="btn" onclick="toast('Report sent (demo)')">Send report</button></p></div>`
-      : need,
+  'app-report': () => {
+    const u = S.u;
+    const studentName = (u && (u.name || u.fullName)) || (u && u.email ? u.email.split('@')[0] : 'Aarav Sharma');
+    const studentPhone = window.S.phone || (u && u.phone) || '+91 98765 43210';
+    const studentEmail = (u && u.email) || 'student@rvce.edu.in';
+    const defaultStnId = (window.S.rent && window.S.rent.st) || (window.S.inspectedStation) || (window.S.favStn) || 'library';
+    const defaultSlot = (window.S.rent && window.S.rent.slot) || 2;
+    const txRef = window.S.rent ? 'LG-RENT-ACTIVE' : '';
+
+    return `
+      <div class="wrap" style="max-width:620px;margin-top:20px" id="app-report-container">
+        <div style="margin-bottom:20px">
+          <a class="btn btn-sm g" href="#app-home" style="margin-bottom:12px;display:inline-block">← Back to Hub</a>
+          <span class="tag" style="background:#00e5ff;color:#021626;font-size:0.75rem;letter-spacing:0.06em;display:block;width:max-content;margin-bottom:6px">RVCE CAMPUS MICROGRID SUPPORT</span>
+          <h1 tabindex="-1" style="margin:4px 0 8px">Report a Hardware Problem</h1>
+          <p style="color:var(--mut);margin:0;font-size:0.92rem">Encountered an issue with a bay solenoid, power bank, or billing? File an instant priority ticket with campus field technicians.</p>
+        </div>
+
+        <div class="card" style="padding:24px;border:1px solid var(--ln);border-radius:18px">
+          <div class="student-verified-strip">
+            <span style="font-size:1.3rem">👤</span>
+            <div>
+              <div><b>${studentName}</b> <span style="color:#00e5ff">(${studentPhone})</span></div>
+              <small style="color:var(--mut)">Verified RVCE Student · ${studentEmail}</small>
+            </div>
+          </div>
+
+          <div class="ticket-field-row">
+            <div class="ticket-field-group">
+              <label for="page-cmp-station">Station Location</label>
+              <select id="page-cmp-station">
+                <option value="library" ${defaultStnId === 'library' ? 'selected' : ''}>Central Library</option>
+                <option value="mm" ${defaultStnId === 'mm' ? 'selected' : ''}>M.M Foods</option>
+                <option value="mingoes" ${defaultStnId === 'mingoes' ? 'selected' : ''}>Big Mingoes</option>
+                <option value="cauvery" ${defaultStnId === 'cauvery' ? 'selected' : ''}>Cauvery Hostel</option>
+              </select>
+            </div>
+            <div class="ticket-field-group">
+              <label for="page-cmp-bay">Affected Bay / Slot</label>
+              <select id="page-cmp-bay">
+                ${[1, 2, 3, 4, 5, 6, 7, 8].map(sNum => `
+                  <option value="${sNum}" ${sNum === defaultSlot ? 'selected' : ''}>Bay #${sNum}</option>
+                `).join('')}
+                <option value="0">General Kiosk / Touchscreen</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ticket-field-group">
+            <label for="page-cmp-issue">Primary Issue Encountered</label>
+            <select id="page-cmp-issue">
+              <option value="Lock stuck after payment">Lock stuck after payment (solenoid unreleased)</option>
+              <option value="Power bank not charging device">Power bank not charging device / loose cable</option>
+              <option value="Paid via UPI but no PIN received">Paid via UPI but no OTP / PIN received</option>
+              <option value="Wrong amount deducted on UPI">Wrong amount deducted on UPI</option>
+              <option value="Station touchscreen frozen / offline">Station touchscreen frozen / kiosk offline</option>
+              <option value="Damaged power bank casing or port">Damaged power bank casing or port</option>
+              <option value="Other campus support inquiry">Other campus hardware inquiry</option>
+            </select>
+          </div>
+
+          <div class="ticket-field-group">
+            <label for="page-cmp-details">Issue Description ${txRef ? `(Active Rental: ${txRef})` : ''}</label>
+            <textarea id="page-cmp-details" rows="4" placeholder="Describe what happened (e.g., slot 2 LED blinked green but solenoid did not unlatch, UPI transaction ID 883920)..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px">
+            <a class="btn g" href="#app-home">Cancel</a>
+            <button type="button" class="btn" onclick="submitStudentTicket('page', '${txRef}')">⚡ Dispatch Support Ticket</button>
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
   'app-settings': () => {
     const u = S.u,

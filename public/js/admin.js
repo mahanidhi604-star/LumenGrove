@@ -178,40 +178,230 @@ window.tg = id => {
   }
 };
 
-window.techUnlockSlot = (stnId, slotNum) => {
-  const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`⚡ Solenoid unlocked: ${s.n} Bay #${slotNum}`);
+const getStn = id => (typeof ST !== 'undefined' ? ST : (window.ST || [])).find(x => x.id === id) || (typeof ST !== 'undefined' ? ST[0] : (window.ST?.[0] || { id, n: 'Central Library', batt: 82, temp: 28.4, slots: 8, free: 6 }));
 
-  // Sync to Supabase slots table
-  if (window.supabaseClient) {
-    window.supabaseClient.from('slots')
-      .update({ status: 'ready', updated_at: new Date().toISOString() })
-      .eq('station_id', stnId)
-      .eq('slot_number', slotNum)
-      .then(() => {}).catch(() => {});
+window.initStationBays = (stnId) => {
+  window.S.bayStates = window.S.bayStates || {};
+  if (!window.S.bayStates[stnId]) {
+    const s = getStn(stnId);
+    const defaultTypes = ['fast', 'wireless', 'standard', 'standard', 'empty', 'empty', 'fast', 'laptop'];
+    window.S.bayStates[stnId] = defaultTypes.map((type, idx) => {
+      const slotNum = idx + 1;
+      const isEmpty = type === 'empty';
+      const soc = isEmpty ? 0 : Math.min(100, Math.max(45, 100 - (idx * 9) + (((s.batt || 80) * 0.1) | 0)));
+      const volt = isEmpty ? '0.00' : (3.7 + (soc / 100) * 0.5).toFixed(2);
+      const temp = isEmpty ? '26.5' : (29 + (idx * 1.2) + (((s.temp || 28) * 0.1))).toFixed(1);
+      const status = isEmpty ? 'AVAILABLE' : (soc < 95 ? 'CHARGING' : 'READY');
+      return {
+        slotNum,
+        type,
+        isEmpty,
+        soc,
+        volt,
+        temp,
+        status,
+        isWarning: !isEmpty && Number(temp) > 35,
+        isUnlocking: false,
+        isRestocking: false,
+        isRecalibrating: false
+      };
+    });
   }
+  return window.S.bayStates[stnId];
+};
+
+window.techUnlockSlot = (stnId, slotNum) => {
+  const s = getStn(stnId);
+  const bays = window.initStationBays(stnId);
+  const bay = bays.find(b => b.slotNum === slotNum);
+  if (!bay) return;
+
+  const card = document.getElementById(`bay-card-${stnId}-${slotNum}`);
+  if (card) {
+    card.classList.add('slot-unlocking');
+    const pill = card.querySelector('.slot-status-pill');
+    if (pill) {
+      pill.textContent = '⚡ UNLOCKED';
+      pill.className = 'slot-status-pill rdy';
+      pill.style.background = '#34d399';
+      pill.style.color = '#021626';
+    }
+  }
+
+  toast(`⚡ Solenoid Bay #${slotNum} RELEASED at ${s.n}! Pin disengaged.`);
+
+  setTimeout(() => {
+    // Option A: Transitions to AVAILABLE (EMPTY) with Restock button
+    bay.type = 'empty';
+    bay.isEmpty = true;
+    bay.soc = 0;
+    bay.volt = '0.00';
+    bay.temp = '26.0';
+    bay.status = 'AVAILABLE';
+    bay.isWarning = false;
+    bay.isUnlocking = false;
+
+    // Increment station free count
+    s.free = Math.min(s.slots, (s.free || 0) + 1);
+
+    // Update inspection HUD & fleet table
+    const hud = document.getElementById('datav-station-inspection-hud');
+    if (hud && typeof renderStationInspectionCard === 'function') {
+      hud.innerHTML = renderStationInspectionCard(stnId);
+    }
+
+    const row = document.getElementById(`stn-row-${stnId}`);
+    if (row) {
+      const freeCell = row.querySelectorAll('td')[1];
+      if (freeCell) freeCell.innerHTML = `<b>${s.free}/${s.slots}</b>`;
+    }
+
+    // Refresh bays container
+    const techBayContainer = document.getElementById('datav-tech-bays-container');
+    if (techBayContainer) {
+      techBayContainer.innerHTML = renderTechnicianSlotMatrix(stnId);
+    }
+
+    // Sync to Supabase slots table if available
+    if (window.supabaseClient) {
+      window.supabaseClient.from('slots')
+        .update({ status: 'out', updated_at: new Date().toISOString() })
+        .eq('station_id', stnId)
+        .eq('slot_number', slotNum)
+        .then(() => {}).catch(() => {});
+    }
+  }, 1200);
+};
+
+window.techRestockSlot = (stnId, slotNum) => {
+  const s = getStn(stnId);
+  const bays = window.initStationBays(stnId);
+  const bay = bays.find(b => b.slotNum === slotNum);
+  if (!bay) return;
+
+  const card = document.getElementById(`bay-card-${stnId}-${slotNum}`);
+  if (card) {
+    card.classList.add('slot-restocking');
+    const pill = card.querySelector('.slot-status-pill');
+    if (pill) {
+      pill.textContent = '📥 LATCHING...';
+      pill.className = 'slot-status-pill chg';
+      pill.style.background = '#00e5ff';
+      pill.style.color = '#021626';
+    }
+  }
+
+  toast(`📥 Restock detected at Bay #${slotNum}: Solenoid auto-latched & RFID verified.`);
+
+  setTimeout(() => {
+    bay.isEmpty = false;
+    bay.type = slotNum === 8 ? 'laptop' : (slotNum === 2 ? 'wireless' : 'fast');
+    bay.soc = 98;
+    bay.volt = '4.18';
+    bay.temp = '28.2';
+    bay.status = 'READY';
+    bay.isWarning = false;
+    bay.isRestocking = false;
+
+    // Decrement station free count
+    s.free = Math.max(0, (s.free || 1) - 1);
+
+    // Update inspection HUD & fleet table
+    const hud = document.getElementById('datav-station-inspection-hud');
+    if (hud && typeof renderStationInspectionCard === 'function') {
+      hud.innerHTML = renderStationInspectionCard(stnId);
+    }
+
+    const row = document.getElementById(`stn-row-${stnId}`);
+    if (row) {
+      const freeCell = row.querySelectorAll('td')[1];
+      if (freeCell) freeCell.innerHTML = `<b>${s.free}/${s.slots}</b>`;
+    }
+
+    // Refresh bays container
+    const techBayContainer = document.getElementById('datav-tech-bays-container');
+    if (techBayContainer) {
+      techBayContainer.innerHTML = renderTechnicianSlotMatrix(stnId);
+    }
+
+    // Sync to Supabase slots table if available
+    if (window.supabaseClient) {
+      window.supabaseClient.from('slots')
+        .update({ status: 'ready', updated_at: new Date().toISOString() })
+        .eq('station_id', stnId)
+        .eq('slot_number', slotNum)
+        .then(() => {}).catch(() => {});
+    }
+  }, 1100);
 };
 
 window.techClearJam = (stnId, slotNum) => {
-  const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`🔄 Bay #${slotNum} at ${s.n} recalibrated. Return lock cleared.`);
+  const s = getStn(stnId);
+  const bays = window.initStationBays(stnId);
+  const bay = bays.find(b => b.slotNum === slotNum);
+  if (!bay) return;
 
-  // Sync to Supabase slots table
-  if (window.supabaseClient) {
-    window.supabaseClient.from('slots')
-      .update({ status: 'ready', updated_at: new Date().toISOString() })
-      .eq('station_id', stnId)
-      .eq('slot_number', slotNum)
-      .then(() => {}).catch(() => {});
+  const card = document.getElementById(`bay-card-${stnId}-${slotNum}`);
+  if (card) {
+    card.classList.add('slot-recalibrating');
+    const pill = card.querySelector('.slot-status-pill');
+    if (pill) {
+      pill.textContent = '🔄 RECALIBRATING...';
+      pill.className = 'slot-status-pill stby';
+      pill.style.background = '#f08a24';
+      pill.style.color = '#021626';
+    }
   }
+
+  toast(`🔄 Bay #${slotNum} at ${s.n} recalibrated. Return lock cleared & sensor normalized.`);
+
+  setTimeout(() => {
+    bay.isWarning = false;
+    bay.temp = '28.5';
+    bay.status = 'READY';
+    bay.isRecalibrating = false;
+
+    const techBayContainer = document.getElementById('datav-tech-bays-container');
+    if (techBayContainer) {
+      techBayContainer.innerHTML = renderTechnicianSlotMatrix(stnId);
+    }
+
+    if (window.supabaseClient) {
+      window.supabaseClient.from('slots')
+        .update({ status: 'ready', updated_at: new Date().toISOString() })
+        .eq('station_id', stnId)
+        .eq('slot_number', slotNum)
+        .then(() => {}).catch(() => {});
+    }
+  }, 900);
 };
 
 window.techCalibrate = (stnId) => {
-  const s = ST.find(x => x.id === stnId) || ST[0];
-  toast(`🩺 Station ${s.n} full health diagnostic OK (8/8 bays verified, MPPT active)`);
+  const s = getStn(stnId);
+  toast(`🩺 Initiating 8-bay sequential solenoid & ADC bus ping sweep at ${s.n}...`);
+
+  // Sequential ping sweep across 8 bays
+  for (let slotNum = 1; slotNum <= 8; slotNum++) {
+    setTimeout(() => {
+      const card = document.getElementById(`bay-card-${stnId}-${slotNum}`);
+      if (card) {
+        card.classList.add('slot-pinging');
+        setTimeout(() => card.classList.remove('slot-pinging'), 320);
+      }
+    }, (slotNum - 1) * 160);
+  }
+
+  setTimeout(() => {
+    toast(`🩺 Station ${s.n}: 8/8 bay solenoids & ADC sensors verified nominal. MPPT lock 100%.`);
+  }, 8 * 160 + 200);
 };
 
 // Customer Complaints Hub State & Actions
+let cachedComplaints = [];
+try {
+  cachedComplaints = JSON.parse(localStorage.getItem('lg_complaints_cache') || '[]');
+} catch (e) {}
+
 const defaultComplaints = [
   {
     id: 'CMP-1048',
@@ -271,8 +461,9 @@ const defaultComplaints = [
   }
 ];
 
-if (!window.S.complaints) {
-  window.S.complaints = defaultComplaints;
+if (!window.S.complaints || window.S.complaints.length === 0) {
+  const existingIds = new Set(cachedComplaints.map(c => c.id));
+  window.S.complaints = [...cachedComplaints, ...defaultComplaints.filter(c => !existingIds.has(c.id))];
 }
 window.S.complaintFilter = window.S.complaintFilter || 'ALL';
 window.S.complaintSearch = window.S.complaintSearch || '';
@@ -296,7 +487,15 @@ window.resolveComplaint = (id) => {
   const item = (window.S.complaints || []).find(c => c.id === id);
   if (item) {
     item.status = 'RESOLVED';
+    item.isNew = false;
+    localStorage.setItem('lg_complaints_cache', JSON.stringify(window.S.complaints));
     toast(`Ticket ${id} marked as RESOLVED`);
+    if (window.supabaseClient) {
+      window.supabaseClient.from('complaints')
+        .update({ status: 'resolved', updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .then(() => {}).catch(() => {});
+    }
     window.rerAdmin();
   }
 };
@@ -305,7 +504,15 @@ window.dispatchTech = (id) => {
   const item = (window.S.complaints || []).find(c => c.id === id);
   if (item) {
     item.status = 'INVESTIGATING';
+    item.isNew = false;
+    localStorage.setItem('lg_complaints_cache', JSON.stringify(window.S.complaints));
     toast(`Field Technician dispatched to ${item.station} for ${id}`);
+    if (window.supabaseClient) {
+      window.supabaseClient.from('complaints')
+        .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .then(() => {}).catch(() => {});
+    }
     window.rerAdmin();
   }
 };
@@ -924,8 +1131,8 @@ const renderStationTable = () => {
 
 // Field Technician Slot Diagnostics Generator (8 slots per station)
 const renderTechnicianSlotMatrix = (activeStationId = 'library') => {
-  const stn = ST.find(s => s.id === activeStationId) || ST[0];
-  const slotTypes = ['fast', 'wireless', 'standard', 'standard', 'empty', 'empty', 'fast', 'laptop'];
+  const stn = getStn(activeStationId);
+  const bays = window.initStationBays(activeStationId);
 
   return `
     <div class="datav-panel datav-tech-panel">
@@ -940,37 +1147,34 @@ const renderTechnicianSlotMatrix = (activeStationId = 'library') => {
             <small style="color:var(--adm-mut)">Physical Bay Status for <b>${stn.n}</b></small>
           </div>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-sm g" onclick="techCalibrate('${stn.id}')">🩺 Health Ping</button>
+            <button class="btn btn-sm g" onclick="techCalibrate('${stn.id}')">🩺 Health Ping Sweep</button>
           </div>
         </div>
       </div>
       <div class="datav-slots-grid">
-        ${slotTypes.map((type, idx) => {
-          const slotNum = idx + 1;
-          const isEmpty = type === 'empty';
-          const soc = isEmpty ? 0 : Math.min(100, Math.max(45, 100 - (idx * 9) + ((stn.batt * 0.1) | 0)));
-          const volt = isEmpty ? 0 : (3.7 + (soc / 100) * 0.5).toFixed(2);
-          const temp = isEmpty ? 26.5 : (29 + (idx * 1.2) + (stn.temp * 0.1)).toFixed(1);
-          const status = isEmpty ? 'AVAILABLE' : (soc < 95 ? 'CHARGING' : 'READY');
-          const isWarning = !isEmpty && temp > 35;
+        ${bays.map(bay => {
+          const slotNum = bay.slotNum;
+          const isEmpty = bay.isEmpty;
+          const isWarning = bay.isWarning;
+          const typeName = isEmpty ? 'Available Slot' : ((window.CATS && window.CATS[bay.type]?.n) || bay.type);
 
           return `
-            <div class="datav-slot-card ${isEmpty ? 'empty' : ''} ${isWarning ? 'warning' : ''}">
+            <div id="bay-card-${stn.id}-${slotNum}" class="datav-slot-card ${isEmpty ? 'empty' : ''} ${isWarning ? 'warning' : ''}">
               <div class="slot-head">
                 <span class="slot-badge">BAY #${slotNum}</span>
-                <span class="slot-status-pill ${isEmpty ? 'stby' : (soc < 95 ? 'chg' : 'rdy')}">${status}</span>
+                <span class="slot-status-pill ${isEmpty ? 'stby' : (bay.soc < 95 ? 'chg' : 'rdy')}">${isEmpty ? 'AVAILABLE (EMPTY)' : bay.status}</span>
               </div>
               <div class="slot-body">
-                <b>${isEmpty ? 'Empty Slot' : (CATS[type]?.n || type)}</b>
+                <b>${typeName}</b>
                 <div class="slot-metrics">
-                  <span>SoC: <b>${isEmpty ? '—' : soc + '%'}</b></span>
-                  <span>Volt: <b>${isEmpty ? '0.0V' : volt + 'V'}</b></span>
-                  <span>Temp: <b style="${isWarning ? 'color:#f08a24' : ''}">${temp}°C</b></span>
+                  <span>SoC: <b>${isEmpty ? '—' : bay.soc + '%'}</b></span>
+                  <span>Volt: <b>${isEmpty ? '0.00V' : bay.volt + 'V'}</b></span>
+                  <span>Temp: <b style="${isWarning ? 'color:#f08a24' : ''}">${bay.temp}°C</b></span>
                 </div>
               </div>
               <div class="slot-actions">
                 ${isEmpty 
-                  ? `<span style="font-size:0.75rem;color:var(--adm-mut)">Sensor Ready</span>`
+                  ? `<button class="btn btn-sm" onclick="techRestockSlot('${stn.id}', ${slotNum})" style="background:#00e5ff;color:#021626;font-weight:700;border:none;width:100%" title="Restock fully charged power bank into bay">📥 Restock Bank</button>`
                   : `<button class="btn btn-sm g" onclick="techUnlockSlot('${stn.id}', ${slotNum})" title="Force unlock solenoid">⚡ Unlock</button>
                      <button class="btn btn-sm g" onclick="techClearJam('${stn.id}', ${slotNum})" title="Recalibrate slot">🔄 Reset</button>`
                 }
@@ -994,11 +1198,11 @@ const renderComplaintsCards = () => {
     if (filter !== 'ALL' && c.status !== filter) return false;
     if (stn !== 'ALL' && c.stationId !== stn) return false;
     if (query) {
-      const match = c.student.toLowerCase().includes(query) ||
-                    c.email.toLowerCase().includes(query) ||
-                    c.phone.includes(query) ||
-                    c.issue.toLowerCase().includes(query) ||
-                    c.id.toLowerCase().includes(query);
+      const match = (c.student && c.student.toLowerCase().includes(query)) ||
+                    (c.email && c.email.toLowerCase().includes(query)) ||
+                    (c.phone && c.phone.includes(query)) ||
+                    (c.issue && c.issue.toLowerCase().includes(query)) ||
+                    (c.id && c.id.toLowerCase().includes(query));
       if (!match) return false;
     }
     return true;
@@ -1027,6 +1231,7 @@ const renderComplaintsCards = () => {
               <div style="display:flex;align-items:center;gap:8px">
                 <b class="ticket-code">${c.id}</b>
                 <span class="ticket-cat-badge">${c.category}</span>
+                ${c.isNew ? `<span class="ticket-status-pill urgent" style="background:rgba(240,138,36,0.25);border:1px solid #f08a24;color:#f08a24;animation:slotPulseAmber 0.8s infinite alternate">⚡ NEW ALERT</span>` : ''}
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <span class="ticket-status-pill ${c.status.toLowerCase()}">● ${c.status}</span>
@@ -1041,19 +1246,19 @@ const renderComplaintsCards = () => {
               <div class="ticket-meta-grid">
                 <div>
                   <small>STUDENT NAME</small>
-                  <b>${c.student}</b>
+                  <b>${c.student || 'RVCE Student'}</b>
                 </div>
                 <div>
                   <small>VERIFIED PHONE</small>
-                  <b style="color:#00e5ff">${c.phone}</b>
+                  <b style="color:#00e5ff">${c.phone || '+91 98765 43210'}</b>
                 </div>
                 <div>
                   <small>STUDENT EMAIL</small>
-                  <span>${c.email}</span>
+                  <span>${c.email || 'student@rvce.edu.in'}</span>
                 </div>
                 <div>
                   <small>STATION & BAY</small>
-                  <span>${c.station} · Bay #${c.slotNum}</span>
+                  <span>${c.station || 'Central Library'} · ${c.slotNum ? 'Bay #' + c.slotNum : (c.bay || 'General Kiosk')}</span>
                 </div>
               </div>
             </div>

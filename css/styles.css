@@ -1634,9 +1634,126 @@ body.admin-telemetry-mode #v {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: all 0.25s ease;
+}
+.datav-slot-card.slot-unlocking {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.7) !important;
+  animation: slotPulseGreen 0.5s infinite alternate;
+}
+.datav-slot-card.slot-recalibrating {
+  border-color: #f08a24 !important;
+  box-shadow: 0 0 16px rgba(240, 138, 36, 0.7) !important;
+  animation: slotPulseAmber 0.5s infinite alternate;
+}
+.datav-slot-card.slot-restocking {
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.7) !important;
+  animation: slotPulseCyan 0.5s infinite alternate;
+}
+.datav-slot-card.slot-pinging {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 22px #00e5ff !important;
+  transform: scale(1.03);
+}
+@keyframes slotPulseGreen {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.02); filter: brightness(1.2); }
+}
+@keyframes slotPulseAmber {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.02); filter: brightness(1.25); }
+}
+@keyframes slotPulseCyan {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.02); filter: brightness(1.25); }
+}
+
+/* --- Solarpunk Student Support Ticket Modal --- */
+.student-ticket-modal {
+  width: min(520px, 94%);
+  background: var(--card);
+  border: 1px solid var(--ln);
+  border-radius: 20px;
+  padding: 24px 22px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+  position: relative;
+  animation: pop2 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ticket-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--ln);
+  padding-bottom: 12px;
+}
+.ticket-modal-header h3 {
+  margin: 4px 0 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+}
+.student-verified-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--ac) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ac) 35%, transparent);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.84rem;
+}
+.student-verified-strip b {
+  color: var(--fg);
+}
+.ticket-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 480px) {
+  .ticket-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+.ticket-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ticket-field-group label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mut);
+}
+.ticket-field-group select,
+.ticket-field-group input,
+.ticket-field-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.ticket-field-group select:focus,
+.ticket-field-group input:focus,
+.ticket-field-group textarea:focus {
+  border-color: var(--ac);
 }
 .datav-slot-card.empty {
-  opacity: 0.6;
+  opacity: 0.65;
   border-style: dashed;
 }
 .datav-slot-card.warning {

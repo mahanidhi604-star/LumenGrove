@@ -353,15 +353,18 @@ window.syncSupabaseState = async () => {
     if (Array.isArray(complaintData) && complaintData.length > 0 && window.S) {
       window.S.complaints = complaintData.map(c => ({
         id: c.id,
-        user: c.user_name || 'RVCE Student',
-        phone: c.user_phone || '+919876543210',
-        email: c.user_email || 'student@rvce.edu.in',
-        station: c.station_name || 'Central Library',
+        student: c.user_name || c.student || 'RVCE Student',
+        user: c.user_name || c.student || 'RVCE Student',
+        phone: c.user_phone || c.phone || '+919876543210',
+        email: c.user_email || c.email || 'student@rvce.edu.in',
+        station: c.station_name || c.station || 'Central Library',
+        stationId: c.station_id || 'library',
+        slotNum: c.slot_number || 2,
         bay: c.slot_number ? `Bay #${c.slot_number}` : 'Kiosk',
-        issue: c.issue_type || 'Kiosk Alert',
+        issue: c.issue_type || c.issue || 'Kiosk Alert',
         category: c.category || 'Hardware',
         time: c.created_at ? new Date(c.created_at).toLocaleTimeString() : 'Recently',
-        status: c.status || 'OPEN',
+        status: (c.status || 'OPEN').toUpperCase(),
         details: c.details || 'Reported via campus kiosk'
       }));
       console.log('LumenGrove: Live customer complaints synced from Supabase.');

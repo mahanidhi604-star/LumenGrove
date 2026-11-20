@@ -87,3 +87,9 @@ const KB = [
   [/login|email|sign/, 'Sign in with your rvce.edu.in email.'],
   [/hour|duration|long/, 'Rentals run from 30 minutes to 6 hours.']
 ];
+
+// Expose data dictionaries globally for cross-module reliability
+window.ST = ST;
+window.CATS = CATS;
+window.PR = PR;
+window.KB = KB;
