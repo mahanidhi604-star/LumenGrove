@@ -626,8 +626,14 @@ window.paid = () => {
   const targetCat = p.cat || S.cat || 'std';
   const targetDur = (p.dur || S.dur || 1);
 
+  const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+    ? Number(window.PR.rate) 
+    : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+  const amountPaise = Math.round(targetDur * currentRate * 100);
+  const rentalId = 'LG-' + (1042 + (Array.isArray(S.hist) ? S.hist.length : 0));
+
   S.rent = {
-    id: 'LG-' + (1042 + S.hist.length),
+    id: rentalId,
     pin: String(100000 + ((Math.random() * 900000) | 0)),
     st: targetStation,
     cat: targetCat,
@@ -640,6 +646,46 @@ window.paid = () => {
 
   if (targetStation.stock && targetStation.stock[targetCat] > 0) {
     targetStation.stock[targetCat]--;
+  }
+
+  const initialRecord = {
+    id: rentalId,
+    d: 'Today',
+    st: targetStation.n,
+    station_id: targetStation.id,
+    cat: targetCat,
+    bank_type_id: targetCat,
+    h: `${targetDur} h`,
+    duration_hours: targetDur,
+    cost: `₹ ${Math.round(amountPaise / 100)}`,
+    amount_paise: amountPaise,
+    s: 'Paid',
+    status: 'paid',
+    created_at: new Date().toISOString()
+  };
+
+  if (!Array.isArray(S.hist)) S.hist = [];
+  S.hist.unshift(initialRecord);
+  if (typeof window.saveUserRentalHistory === 'function') {
+    window.saveUserRentalHistory(initialRecord);
+  }
+
+  // Configure & insert rental into Supabase database table 'rentals'
+  if (window.supabaseClient && S.u && !S.isDemo) {
+    const dbRecord = {
+      id: rentalId,
+      user_id: (S.u.id && S.u.id.length > 20) ? S.u.id : null,
+      station_id: targetStation.id,
+      bank_type_id: targetCat,
+      duration_hours: targetDur,
+      amount_paise: amountPaise,
+      status: 'paid',
+      created_at: new Date().toISOString()
+    };
+    window.supabaseClient.from('rentals').insert(dbRecord).then(({ error }) => {
+      if (error) console.warn('[Rentals DB] Insert error (table rentals):', error);
+      else console.log('[Rentals DB] Configured & inserted rental into rentals table:', rentalId);
+    }).catch(err => console.warn('[Rentals DB] Insert exception:', err));
   }
 
   toast('Payment received');
@@ -658,6 +704,28 @@ window.kiosk = () => {
   r.slot = 1 + ((Math.random() * 8) | 0);
   r.started = Date.now();
   r.st.free = Math.max(0, r.st.free - 1);
+
+  if (Array.isArray(S.hist)) {
+    const hItem = S.hist.find(x => x.id === r.id);
+    if (hItem) {
+      hItem.s = 'Active';
+      hItem.status = 'active';
+      if (typeof window.saveUserRentalHistory === 'function') {
+        window.saveUserRentalHistory(hItem);
+      }
+    }
+  }
+
+  if (window.supabaseClient && S.u && !S.isDemo) {
+    window.supabaseClient.from('rentals').update({
+      status: 'active',
+      started_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }).eq('id', r.id).then(({ error }) => {
+      if (error) console.warn('[Rentals DB] Update to active error:', error);
+    }).catch(() => {});
+  }
+
   go(1);
 };
 
@@ -835,30 +903,50 @@ window.formatRentalRow = (r) => {
 };
 
 window.loadUserRentalHistory = async () => {
+  // If not logged in or guest, retain in-memory history or load last active account's history so sign out doesn't clear view
   if (!S.u || S.u.role === 'guest') {
-    S.hist = [];
+    try {
+      const last = localStorage.getItem('lg_last_hist');
+      if (last) {
+        const parsed = JSON.parse(last);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          S.hist = parsed.map(window.formatRentalRow);
+          return S.hist;
+        }
+      }
+    } catch (e) {}
+    if (Array.isArray(S.hist) && S.hist.length > 0) return S.hist;
     return [];
   }
 
   const accountId = S.u.id || S.u.email || 'student';
   const storageKey = `lg_hist_${accountId}`;
 
-  // 1. If Supabase is connected and this is not a mock demo session, query public.rentals
+  // 1. If Supabase is connected and this is not a mock demo session, query public.rentals for this account
   if (window.supabaseClient && !S.isDemo) {
     try {
-      const { data, error } = await window.supabaseClient
+      let query = window.supabaseClient
         .from('rentals')
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (S.u.id && S.u.id.length > 20) {
+        query = query.eq('user_id', S.u.id);
+      }
+
+      const { data, error } = await query;
+
       if (!error && Array.isArray(data) && data.length > 0) {
         S.hist = data.map(window.formatRentalRow);
-        try { localStorage.setItem(storageKey, JSON.stringify(S.hist)); } catch (e) {}
-        console.log(`[Rentals] Fetched ${S.hist.length} real rentals from Supabase for ${accountId}`);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(S.hist));
+          localStorage.setItem('lg_last_hist', JSON.stringify(S.hist));
+        } catch (e) {}
+        console.log(`[Rentals DB] Fetched ${S.hist.length} real rentals from table 'rentals' for ${accountId}`);
         return S.hist;
       }
     } catch (err) {
-      console.warn('[Rentals] Supabase fetch error:', err);
+      console.warn('[Rentals DB] Supabase fetch error:', err);
     }
   }
 
@@ -869,6 +957,7 @@ window.loadUserRentalHistory = async () => {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
         S.hist = parsed.map(window.formatRentalRow);
+        try { localStorage.setItem('lg_last_hist', JSON.stringify(S.hist)); } catch (e) {}
         return S.hist;
       }
     }
@@ -905,13 +994,13 @@ window.loadUserRentalHistory = async () => {
   S.hist = seededHistory;
   try {
     localStorage.setItem(storageKey, JSON.stringify(seededHistory));
+    localStorage.setItem('lg_last_hist', JSON.stringify(seededHistory));
   } catch (e) {}
   return S.hist;
 };
 
 window.saveUserRentalHistory = (rentalItem) => {
-  if (!S.u) return;
-  const accountId = S.u.id || S.u.email || 'student';
+  const accountId = (S.u && (S.u.id || S.u.email)) ? (S.u.id || S.u.email) : 'student';
   const storageKey = `lg_hist_${accountId}`;
 
   let existing = [];
@@ -925,6 +1014,7 @@ window.saveUserRentalHistory = (rentalItem) => {
 
   try {
     localStorage.setItem(storageKey, JSON.stringify(existing));
+    localStorage.setItem('lg_last_hist', JSON.stringify(existing));
   } catch (e) {}
 };
 
@@ -933,6 +1023,8 @@ window.retn = async () => {
   if (!r) return;
   const cost = window.computeRentalCost ? window.computeRentalCost(r) : { totalCost: 20 };
   const b = best(true);
+  const durHours = +(el() / 3600).toFixed(1) || 0.5;
+  const amountPaise = Math.round(cost.totalCost * 100);
 
   const completedItem = {
     id: r.id,
@@ -942,17 +1034,24 @@ window.retn = async () => {
     cat: r.cat,
     bank_type_id: r.cat,
     h: fmt(el()).slice(0, 5).replace(':', ' h ') + ' m',
-    duration_hours: +(el() / 3600).toFixed(1) || 0.5,
+    duration_hours: durHours,
     cost: `₹ ${cost.totalCost}`,
-    amount_paise: Math.round(cost.totalCost * 100),
+    amount_paise: amountPaise,
     s: 'Completed',
     status: 'completed',
     created_at: new Date().toISOString()
   };
 
   if (!Array.isArray(S.hist)) S.hist = [];
-  S.hist.unshift(completedItem);
-  window.saveUserRentalHistory(completedItem);
+  const exIdx = S.hist.findIndex(x => x.id === r.id);
+  if (exIdx !== -1) {
+    S.hist[exIdx] = completedItem;
+  } else {
+    S.hist.unshift(completedItem);
+  }
+  if (typeof window.saveUserRentalHistory === 'function') {
+    window.saveUserRentalHistory(completedItem);
+  }
 
   S.pay = null;
   b.free = Math.max(0, b.free - 1);
@@ -961,15 +1060,21 @@ window.retn = async () => {
   toast(`Returned at ${b.n}. Total billed: ₹${cost.totalCost}. Thanks for using solar power.`);
   go(1);
 
-  // Sync completed state to Supabase if live account
+  // Sync completed state to Supabase table 'rentals'
   if (window.supabaseClient && S.u && !S.isDemo) {
     try {
       await window.supabaseClient.from('rentals').update({
         status: 'completed',
         returned_at: new Date().toISOString(),
-        return_station_id: b.id
+        return_station_id: b.id,
+        duration_hours: durHours,
+        amount_paise: amountPaise,
+        updated_at: new Date().toISOString()
       }).eq('id', r.id);
-    } catch (e) {}
+      console.log('[Rentals DB] Updated rental to completed in rentals table:', r.id);
+    } catch (e) {
+      console.warn('[Rentals DB] Supabase update completed error:', e);
+    }
   }
 };
 

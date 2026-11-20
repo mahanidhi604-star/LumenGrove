@@ -1756,7 +1756,6 @@ const PG = {
   },
 
   'app-rentals': () => {
-    if (!stu()) return need;
     if ((!S.hist || S.hist.length === 0) && typeof window.loadUserRentalHistory === 'function') {
       window.loadUserRentalHistory().then(() => {
         if (location.hash.slice(1).split('?')[0] === 'app-rentals') go(1);
@@ -1787,9 +1786,29 @@ const PG = {
         </div>
       </div>
 
+      ${!stu()
+        ? `<div class="card" style="padding:16px 20px;margin-bottom:20px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);border-radius:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+             <div style="display:flex;align-items:center;gap:10px">
+               <span style="font-size:1.6rem">👤</span>
+               <div>
+                 <b style="color:var(--fg);font-size:1rem;display:block">Signed Out / Guest Mode</b>
+                 <p style="margin:2px 0 0;font-size:0.85rem;color:var(--mut)">Sign in to rent a power bank. Your transaction and rental history is safely retained below.</p>
+               </div>
+             </div>
+             <a class="btn btn-sm" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-rentals')">Sign In</a>
+           </div>`
+        : ''}
+
       <h2>Current Active Session</h2>
       ${
-        !r
+        !stu()
+          ? `<div class="card" style="text-align:center;padding:36px 20px;border:1px dashed var(--ln);border-radius:18px">
+               <div style="font-size:2.2rem;margin-bottom:8px">⚡</div>
+               <h3 style="margin:0 0 6px;font-size:1.25rem">No Active Rental Session</h3>
+               <p style="color:var(--mut);max-width:440px;margin:0 auto 16px;font-size:0.9rem">Sign in with an RVCE student account to reserve and unlock a power bank at any campus solar kiosk.</p>
+               <a class="btn" href="#signin" onclick="sessionStorage.setItem('lg_redirect_hash','#app-home')" style="display:inline-flex;align-items:center;gap:6px">⚡ Sign In to Rent</a>
+             </div>`
+          : !r
           ? `<div class="card" style="text-align:center;padding:48px 24px;border:1px dashed var(--ln);border-radius:18px">
                <div style="font-size:2.8rem;margin-bottom:10px">⚡</div>
                <h3 style="margin:0 0 8px;font-size:1.4rem">No Active Power Bank Session</h3>

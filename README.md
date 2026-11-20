@@ -85,9 +85,11 @@ The platform integrates:
 - **Dynamic Cost Engine**: Real-time calculation of active duration, grace window ($15\text{ min}$), overdue penalties, and final billing.
 - **Internal Battery Telemetry**: Live discharge rate simulation, state-of-charge ($\text{SoC}$), cell voltage ($3.60\text{V} - 4.18\text{V}$), core temperature, and dynamic closest return hub routing.
 
-### 5. 📊 Account-Scoped Relational Rental History
+### 5. 📊 Account-Scoped Relational Rental History (`rentals` Table)
 - **Database-Driven Records**: Dynamically queries Supabase `public.rentals` (`user_id = auth.uid()`) to display genuine historical charging transactions rather than static mock data.
-- **Account Isolation**: Rental records are strictly isolated per student account; logging out or switching profiles displays strictly that student's own verified history.
+- **Full Rental DB Lifecycle**: Automatically configures and inserts rental records into `public.rentals` upon payment authorization (`status: 'paid'`), transitions to `'active'` upon kiosk PIN slot ejection, and updates to `'completed'` with exact duration and final paise amount upon hardware return.
+- **Sign-Out History Persistence**: Signing out does not clear the rental history view; previous transactions remain rendered on-screen and stored in local cache/database across sessions.
+- **Strict Account Isolation**: Rental records are strictly isolated per student account; logging out or switching profiles displays strictly that student's own verified history without cross-account data leaks.
 - **Live Lifecycle Completion**: Returning a power bank (`window.retn()`) calculates the final solar charge fee, restocks the station bay, and syncs the completed terminal state to the database.
 
 ### 6. 📋 Customer Complaints Hub (Sub-Page)

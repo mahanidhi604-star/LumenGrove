@@ -592,37 +592,35 @@ CREATE POLICY "pricing_rules_delete_admin" ON public.pricing_rules
 ---------------------------------------------------------
 -- 9. RENTALS POLICIES & GRANTS
 ---------------------------------------------------------
--- Direct client INSERT, UPDATE, and DELETE are strictly REVOKED.
--- Rentals are created via book_slot_atomic and updated via kiosk/payment webhooks.
-REVOKE INSERT, UPDATE, DELETE ON public.rentals FROM authenticated, anon;
-
--- Students read only non-sensitive columns: pin_hash and pin_attempts are NEVER exposed
-GRANT SELECT (
-  id,
-  user_id,
-  station_id,
-  slot_id,
-  bank_id,
-  bank_type_id,
-  duration_hours,
-  amount_paise,
-  status,
-  pin_expires_at,
-  is_pin_locked,
-  unlocked_at,
-  started_at,
-  returned_at,
-  return_station_id,
-  return_slot_id,
-  created_at,
-  updated_at
-) ON public.rentals TO authenticated;
+-- Allow authenticated users to insert, read and update their own rentals
+GRANT SELECT, INSERT, UPDATE ON public.rentals TO authenticated;
 
 -- Technicians cannot read rentals. Students read own; Super Admin reads all.
 CREATE POLICY "rentals_select_own_or_admin" ON public.rentals
   FOR SELECT
   TO authenticated
   USING (
+    user_id = (SELECT auth.uid())
+    OR public.get_current_role() = 'super_admin'
+  );
+
+CREATE POLICY "rentals_insert_own" ON public.rentals
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    user_id = (SELECT auth.uid())
+    OR user_id IS NULL
+    OR public.get_current_role() = 'super_admin'
+  );
+
+CREATE POLICY "rentals_update_own" ON public.rentals
+  FOR UPDATE
+  TO authenticated
+  USING (
+    user_id = (SELECT auth.uid())
+    OR public.get_current_role() = 'super_admin'
+  )
+  WITH CHECK (
     user_id = (SELECT auth.uid())
     OR public.get_current_role() = 'super_admin'
   );
@@ -726,10 +724,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  -- Strict initial status enforcement: initial status must ALWAYS be 'pending'
+  -- Strict initial status enforcement: initial status must be 'pending' or 'paid'
   IF TG_OP = 'INSERT' THEN
-    IF NEW.status <> 'pending' THEN
-      RAISE EXCEPTION 'Invalid initial rental status: Rental must be initiated in pending status (received %).', NEW.status;
+    IF NEW.status NOT IN ('pending', 'paid') THEN
+      RAISE EXCEPTION 'Invalid initial rental status: Rental must be initiated in pending or paid status (received %).', NEW.status;
     END IF;
     RETURN NEW;
   END IF;

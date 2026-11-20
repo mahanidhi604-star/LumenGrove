@@ -222,11 +222,10 @@ window.completeProfile = async () => {
 
 // 4. Instant & Bulletproof Sign Out
 window.signOut = async () => {
-  // 1. Clear in-memory session immediately
+  // 1. Clear in-memory session immediately (retain S.hist so signing out does not clear history view)
   S.u = null;
   S.isDemo = false;
   S.needsProfile = false;
-  S.hist = [];
   sv('lg_user', '');
   try {
     sessionStorage.removeItem('lg_redirect_hash');
