@@ -120,53 +120,227 @@ window.initUpiQrCode = (uri) => {
     }
   }
   // Fallback if QRCode script is still loading
-  mount.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#041628;font-weight:700">UPI QR Loading...</div>`;
+  mount.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#041628;font-weight:700">QR Loading...</div>`;
 };
 
-window.copyUpiId = (id = 'lumengrove@rvce') => {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(id).then(() => {
-      toast('✓ Copied UPI ID: ' + id);
-    }).catch(() => {
-      window.copyUpiFallback(id);
-    });
-  } else {
-    window.copyUpiFallback(id);
+// Two-way synchronization between Mobile Payment Simulation Page and Main Kiosk
+window.startPaymentSyncListener = (sessionId) => {
+  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+  if (window._paySyncBc) {
+    try { window._paySyncBc.close(); } catch (e) {}
   }
-};
 
-window.copyUpiFallback = (id) => {
+  // 1. BroadcastChannel API (Instant multi-tab communication)
   try {
-    const el = document.createElement('textarea');
-    el.value = id;
-    el.style.position = 'fixed';
-    el.style.opacity = '0';
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-    toast('✓ Copied UPI ID: ' + id);
-  } catch (e) {
-    toast('UPI ID: ' + id);
-  }
+    window._paySyncBc = new BroadcastChannel('lumengrove_pay_bus');
+    window._paySyncBc.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'PAYMENT_APPROVED' && ev.data.sessionId === sessionId) {
+        window.onLivePaymentReceived(sessionId);
+      }
+    };
+  } catch (e) {}
+
+  // 2. Storage event listener (across browser tabs)
+  const onStorage = (e) => {
+    if (e.key === 'lg_pay_status_' + sessionId) {
+      try {
+        const val = JSON.parse(e.newValue || '{}');
+        if (val.status === 'APPROVED') {
+          window.onLivePaymentReceived(sessionId);
+        }
+      } catch (err) {}
+    }
+  };
+  window.addEventListener('storage', onStorage);
+
+  // 3. Fallback Polling (Every 500ms checking localStorage and Supabase)
+  window._paySyncInterval = setInterval(async () => {
+    if (!S.pay || S.pay.paid) {
+      clearInterval(window._paySyncInterval);
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem('lg_pay_status_' + sessionId);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.status === 'APPROVED') {
+          window.onLivePaymentReceived(sessionId);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    if (window.supabaseClient) {
+      try {
+        const { data } = await window.supabaseClient
+          .from('payments')
+          .select('status')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+        if (data && data.status === 'APPROVED') {
+          window.onLivePaymentReceived(sessionId);
+        }
+      } catch (e) {}
+    }
+  }, 500);
+};
+
+window.onLivePaymentReceived = (sessionId) => {
+  if (!S.pay || S.pay.paid) return;
+  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+  toast(`✓ Live Mobile Payment Received (${sessionId}) · Kiosk Slot Unlocked`);
+  paid();
 };
 
 window.simulateBankWebhookApproval = () => {
   const p = S.pay;
   if (!p || p.paid) return;
-  const txnId = 'UPI-' + Math.floor(100000 + Math.random() * 900000);
-  toast(`⚡ Bank Webhook: Payment Approved (${txnId})`);
+  const txnId = p.id || ('UPI-' + Math.floor(100000 + Math.random() * 900000));
+  toast(`⚡ Bank Webhook: Instant Approval Received (${txnId})`);
   paid();
 };
 
 window.cancelPayment = () => {
+  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
   S.pay = null;
   rr();
 };
 
+// Minimal Clean Mobile Payment Simulation View (#pay-sim)
+window.renderPaySimView = () => {
+  const hash = location.hash || '';
+  const qIdx = hash.indexOf('?');
+  const params = new URLSearchParams(qIdx !== -1 ? hash.slice(qIdx + 1) : '');
+  const sessionId = params.get('id') || (S.pay ? S.pay.id : 'PAY-DEMO');
+  const amount = params.get('amount') || (S.pay ? S.pay.amount : '10');
+  const stnId = params.get('stn') || (S.pay && S.pay.b ? S.pay.b.id : 'library');
+  const dur = params.get('dur') || (S.pay ? S.dur : '1');
+  const cat = params.get('cat') || (S.pay ? S.cat : 'std');
+
+  const stn = (typeof getStn === 'function' ? getStn(stnId) : null) || (window.ST && window.ST.find(s => s.id === stnId)) || { n: 'Central Library' };
+  const catObj = (window.CATS && window.CATS[cat]) || { n: 'Standard Bank' };
+
+  return `
+    <div class="wrap" style="max-width:440px;margin:28px auto;padding:16px">
+      <div class="card pay-sim-card">
+        <div class="pay-sim-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${logo(28)}
+            <div>
+              <b style="display:block;font-size:1.15rem;line-height:1.2;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em">LumenGrove Mobile Pay</b>
+              <small style="color:var(--mut);font-size:0.75rem">RVCE Solar Microgrid Kiosk Gateway</small>
+            </div>
+          </div>
+          <span class="badge" style="background:#072418;color:#34d399;border:1px solid #059669;font-weight:700">● SECURE GATEWAY</span>
+        </div>
+
+        <div class="pay-sim-summary">
+          <small class="summary-tag">SESSION BILLING SUMMARY</small>
+          <div class="summary-amount">₹ ${amount}</div>
+          <div class="summary-details">
+            <div class="summary-row"><span>Campus Kiosk:</span> <b>${stn.n}</b></div>
+            <div class="summary-row"><span>Power Bank:</span> <b>${catObj.n}</b></div>
+            <div class="summary-row"><span>Duration:</span> <b>${dur} Hour(s)</b></div>
+            <div class="summary-row"><span>Session Ref:</span> <b style="font-family:monospace;color:#00e5ff">${sessionId}</b></div>
+          </div>
+        </div>
+
+        <!-- Minimal clean simulation action -->
+        <div id="pay-sim-actions">
+          <button type="button" class="btn btn-authorize-pay" onclick="authorizeSimulatedPayment('${sessionId}')">
+            <span>⚡ Authorize Payment · ₹ ${amount}</span>
+          </button>
+          <p style="text-align:center;font-size:0.8rem;color:var(--mut);margin:12px 0 0;line-height:1.4">
+            Clicking Authorize simulates instant payment authorization. Your station kiosk will automatically detect this approval in real time.
+          </p>
+        </div>
+
+        <!-- Success confirmation block -->
+        <div id="pay-sim-confirmed" style="display:none;margin-top:16px">
+          <div style="text-align:center;padding:22px 16px;background:rgba(52,211,153,0.12);border:1.5px solid #34d399;border-radius:14px">
+            <div style="font-size:2.8rem;color:#34d399;line-height:1;margin-bottom:6px">✓</div>
+            <h3 style="color:#34d399;margin:0 0 6px;font-size:1.3rem">Payment Authorized!</h3>
+            <p style="font-size:0.92rem;color:var(--fg);margin:0">Kiosk at <b>${stn.n}</b> has received confirmation.</p>
+            <div style="margin-top:12px;padding:8px 12px;background:rgba(0,0,0,0.25);border-radius:8px;font-size:0.82rem;color:#00e5ff">
+              Slot solenoid unlocked · You may collect your power bank at the kiosk
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.authorizeSimulatedPayment = async (sessionId) => {
+  const actionsEl = document.getElementById('pay-sim-actions');
+  const confirmedEl = document.getElementById('pay-sim-confirmed');
+
+  // 1. Instant UI update so user immediately sees approval confirmation
+  if (actionsEl) actionsEl.style.display = 'none';
+  if (confirmedEl) confirmedEl.style.display = 'block';
+
+  // 2. Write to localStorage (detected by storage event & kiosk poller)
+  try {
+    localStorage.setItem('lg_pay_status_' + sessionId, JSON.stringify({
+      status: 'APPROVED',
+      sessionId: sessionId,
+      time: Date.now()
+    }));
+  } catch (e) {}
+
+  // 3. BroadcastChannel (instant tab-to-tab messaging)
+  try {
+    const bc = new BroadcastChannel('lumengrove_pay_bus');
+    bc.postMessage({ type: 'PAYMENT_APPROVED', sessionId: sessionId });
+    setTimeout(() => { try { bc.close(); } catch(e){} }, 600);
+  } catch (e) {}
+
+  // 4. Update in-memory session if present in same window
+  if (window.S && window.S.pay && (window.S.pay.id === sessionId || sessionId.startsWith('PAY-'))) {
+    window.S.pay.paid = true;
+    if (typeof window.paid === 'function' && !window.S.rent) {
+      window.paid();
+    }
+  }
+
+  // 5. Supabase Write in background if connected
+  if (window.supabaseClient) {
+    try {
+      await window.supabaseClient.from('payments').insert({
+        session_id: sessionId,
+        status: 'APPROVED',
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {}
+  }
+
+  toast('✓ Payment Authorized! Kiosk confirmed.');
+};
+
 const payView = () => {
-  const p = S.pay,
-    c = CATS[S.cat],
+  const p = S.pay;
+  if (!p) return '';
+
+  // Check if session was approved via mobile storage
+  if (p.id) {
+    try {
+      const raw = localStorage.getItem('lg_pay_status_' + p.id);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.status === 'APPROVED') {
+          p.paid = true;
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (p.paid && !S.rent) {
+    paid();
+    return '';
+  }
+
+  const c = CATS[S.cat],
     r = S.rent;
   if (p.paid && r)
     return `
@@ -189,39 +363,49 @@ const payView = () => {
     ? Number(window.PR.rate) 
     : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
   const payTotal = ((S.dur || 1) * currentRate).toFixed(0);
-  const upiUri = `upi://pay?pa=lumengrove@rvce&pn=LumenGrove%20RVCE&am=${payTotal}&cu=INR`;
+
+  // Ensure unique session ID and amount
+  if (!p.id) {
+    p.id = 'PAY-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+  }
+  p.amount = payTotal;
+
+  // Build the mobile payment simulation URL encoded into the QR code
+  const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+  const pathname = window.location.pathname.replace(/\/Index\.html$/i, '/');
+  const paySimUrl = `${origin}${pathname}#pay-sim?id=${p.id}&amount=${payTotal}&stn=${encodeURIComponent(p.b.id)}&dur=${S.dur}&cat=${S.cat}`;
+
+  // Start two-way real-time listener for mobile approval
+  window.startPaymentSyncListener(p.id);
 
   setTimeout(() => {
-    if (window.initUpiQrCode) window.initUpiQrCode(upiUri);
+    if (window.initUpiQrCode) window.initUpiQrCode(paySimUrl);
   }, 40);
 
   return `
     <div class="card pay authentic-upi-card">
-      <!-- 1. Left QR Code Column -->
+      <!-- 1. Left QR Code Column (Scanned by Mobile Device) -->
       <div class="upi-qr-column">
         <div class="upi-brand-header">
-          <span class="upi-bhim-tag">BHIM UPI VERIFIED</span>
-          <span class="upi-live-tag">● INSTANT PAY</span>
+          <span class="upi-bhim-tag">MOBILE SIMULATION QR</span>
+          <span class="upi-live-tag">● TWO-WAY SYNC</span>
         </div>
         
         <div class="upi-qr-frame">
-          <div id="upi-qrcode-mount" class="upi-qrcode-mount" title="Scan with GPay, PhonePe, Paytm, or BHIM"></div>
-          <div class="upi-scan-hint">Scan with any UPI App</div>
+          <div id="upi-qrcode-mount" class="upi-qrcode-mount" title="Scan with mobile phone to open payment simulation"></div>
+          <div class="upi-scan-hint">Scan with Mobile Phone Camera</div>
         </div>
 
-        <div class="upi-apps-strip">
-          <span class="app-chip">GPay</span>
-          <span class="app-chip">PhonePe</span>
-          <span class="app-chip">Paytm</span>
-          <span class="app-chip">BHIM</span>
-        </div>
+        <a href="${paySimUrl}" target="_blank" class="btn btn-sm g btn-open-sim" style="width:100%;font-size:0.75rem;padding:6px;text-align:center;text-decoration:none">
+          📱 Open Mobile Page ↗
+        </a>
       </div>
 
       <!-- 2. Right Payment Details Column -->
       <div class="upi-info-column" style="display:flex;flex-direction:column;gap:10px;width:100%">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <span class="k" style="margin:0">Step 2 of 3 · Authentic UPI Payment</span>
-          <span class="badge" style="background:#072418;color:#34d399;border:1px solid #059669">SECURE NPCI INTENT</span>
+          <span class="k" style="margin:0">Step 2 of 3 · Mobile Payment Checkout</span>
+          <span class="badge" style="background:#072418;color:#34d399;border:1px solid #059669">REALTIME KIOSK SYNC</span>
         </div>
 
         <div>
@@ -233,28 +417,16 @@ const payView = () => {
 
         <div class="upi-price-highlight">
           <div class="price-val">₹ ${payTotal}</div>
-          <div class="price-meta">₹ ${currentRate}/hr base rate set by Admin · Zero deposit hold</div>
+          <div class="price-meta">₹ ${currentRate}/hr base rate set by Admin · Session Ref: <span style="font-family:monospace;color:#00e5ff">${p.id}</span></div>
         </div>
 
-        <!-- One-Click Copy UPI ID Pill -->
-        <div class="upi-copy-container">
-          <small style="color:var(--mut);font-size:0.75rem;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px">Virtual Payment Address (VPA)</small>
-          <button type="button" class="btn-copy-upi" onclick="copyUpiId('lumengrove@rvce')" title="Click to copy UPI ID">
-            <span style="display:flex;align-items:center;gap:8px">
-              <span class="copy-icon">📋</span>
-              <span class="vpa-text">lumengrove@rvce</span>
-            </span>
-            <span class="copy-badge">TAP TO COPY</span>
-          </button>
-        </div>
-
-        <!-- Manual Webhook Approval Action (For Viva Presentation Speed) -->
+        <!-- Manual Webhook Approval Action (For Kiosk Examiner / Viva Speed) -->
         <div class="upi-simulation-section" style="margin-top:4px">
           <button type="button" class="btn btn-simulate-webhook" onclick="simulateBankWebhookApproval()" title="Simulate instant bank authorization webhook">
             <span class="webhook-bolt">⚡</span>
             <div style="text-align:left">
               <div style="font-size:0.95rem;font-weight:800;line-height:1.2">Simulate Bank Webhook Approval</div>
-              <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Instant bank clearance trigger for viva presentations</small>
+              <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Instant clearance without scanning (for viva examiners)</small>
             </div>
           </button>
           <button type="button" class="btn g btn-cancel-checkout" onclick="cancelPayment()" style="width:100%;margin-top:6px;padding:8px">Cancel Checkout</button>
@@ -262,7 +434,7 @@ const payView = () => {
 
         <div class="upi-status-indicator">
           <span class="datav-dot-pulse" style="display:inline-block;width:6px;height:6px;background:#00e5ff;border-radius:50%;margin-right:6px"></span>
-          <span>Awaiting bank settlement confirmation (manual webhook trigger active)</span>
+          <span>Live sync active · Authorizing on mobile instantly unlocks this kiosk</span>
         </div>
       </div>
     </div>
@@ -292,7 +464,8 @@ window.startR = (stnId) => {
   if (S.rent) return toast('You already have an active rental.');
   const b = S.pick || best();
   if (b.stock[S.cat] < 1) return toast('No stock at this station for that category.');
-  S.pay = { t: Date.now(), b, paid: false };
+  const paySessionId = 'PAY-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+  S.pay = { id: paySessionId, t: Date.now(), b, paid: false };
   const payCardContainer = document.querySelector('.bento-pay-card-wrapper');
   if (payCardContainer) {
     payCardContainer.innerHTML = `<div class="card s4 bento-pay-card" style="--i:2">${payView()}</div>`;
@@ -308,7 +481,7 @@ window.startR = (stnId) => {
 
 window.paid = () => {
   const p = S.pay;
-  if (!p || p.paid) return;
+  if (!p || S.rent) return;
   if (typeof stu === 'function' && !stu()) {
     toast('Authentication required to complete rental.');
     location.hash = 'signin';

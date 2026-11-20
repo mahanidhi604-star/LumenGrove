@@ -1942,6 +1942,8 @@ const PG = {
 
   'app-home': () => renderBentoHub('home'),
 
+  'pay-sim': () => (window.renderPaySimView ? window.renderPaySimView() : '<div class="wrap" style="text-align:center;padding:40px">Loading payment simulation...</div>'),
+
   'app-help': () =>
     `<div class="wrap" id="hp"><span class="k">Support</span><h1 tabindex="-1">Help</h1><div class="grid"><div class="card" style="grid-column:1/-1"><h3>Ask Lumi</h3><div id="hm" class="hm"><div class="m">Hi, I am Lumi. Ask me about payment, PINs, bank types or returns.</div></div><div>${[
       'Why no PIN after paying?',
@@ -2098,6 +2100,19 @@ function hdr(h) {
   const isAuth = h === 'signin' || h === 'admin-login';
   const isAdmin = h === 'admin' || h === 'tech' || h === 'technician';
 
+  // Standalone distraction-free mobile payment gateway layout
+  const isPaySim = h === 'pay-sim';
+  if (isPaySim) {
+    document.body.className = 'pay-sim-mode';
+    const hd = $('#hd');
+    if (hd) {
+      hd.innerHTML = `<header style="justify-content:center;padding:12px 16px"><div class="brand" style="pointer-events:none">${logo(26)}LumenGrove Pay</div></header>`;
+    }
+    const sb = $('#sb'); if (sb) sb.innerHTML = '';
+    const tb = $('#tb'); if (tb) tb.innerHTML = '';
+    return;
+  }
+
   // Completely decouple and isolate #admin and #tech command center from student layout
   if (isAdmin) {
     document.body.className = 'admin-telemetry-mode';
@@ -2185,7 +2200,7 @@ function hdr(h) {
 }
 
 function go(same) {
-  let h = location.hash.slice(1) || 'home';
+  let h = (location.hash.slice(1) || 'home').split('?')[0];
   if (h == 'plug' || h == 'app-stations' || h == 'app-rent') {
     const targetSelector = h == 'app-stations' ? '.bento-stations-card' : h == 'app-rent' ? '.bento-banks-card' : null;
     h = 'app-home';

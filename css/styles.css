@@ -2803,6 +2803,117 @@ body.sidebar-drawer-active {
   }
 }
 
+/* ==========================================================================
+   MOBILE PAYMENT SIMULATION PORTAL (#pay-sim)
+   ========================================================================== */
+
+.pay-sim-card {
+  background: color-mix(in srgb, var(--card) 98%, #000);
+  border: 1px solid var(--ln);
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  position: relative;
+  overflow: hidden;
+}
+
+.pay-sim-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00e5ff, #34d399, #f08a24);
+}
+
+.pay-sim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--ln);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.pay-sim-summary {
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-tag {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--mut);
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.summary-amount {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--ac, #00e5ff);
+  font-family: 'Barlow Condensed', sans-serif;
+  line-height: 1.05;
+  margin-bottom: 12px;
+}
+
+.summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px dashed var(--ln);
+  padding-top: 12px;
+  font-size: 0.88rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row span {
+  color: var(--mut);
+}
+
+.btn-authorize-pay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #021626;
+  border: 1px solid #34d399;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-authorize-pay:hover {
+  background: linear-gradient(135deg, #6ee7b7, #34d399);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(52, 211, 153, 0.6);
+}
+
+body.pay-sim-mode {
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+
 
 
 
