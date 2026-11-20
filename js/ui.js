@@ -1059,7 +1059,7 @@ function renderBentoHub(activeView) {
     <div style="display:flex;flex-direction:column;gap:8px">${ST.map(
       s => {
         const isSel = cur.id === s.id;
-        return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.pick=ST.find(x=>x.id=='${s.id}');rer()">
+        return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.pick=ST.find(x=>x.id=='${s.id}');if(S.pay&&!S.pay.paid){S.pay=null;}rer()">
           <div>
             <div style="display:flex;align-items:center;gap:6px">
               <b style="font-size:1rem">${s.n}</b>
@@ -1085,7 +1085,7 @@ function renderBentoHub(activeView) {
       .map(
         ([k, x]) => {
           const isSel = S.cat === k;
-          return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.cat='${k}';rer()">
+          return `<div class="card pick${isSel ? ' sel' : ''}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border:1.5px solid ${isSel ? 'var(--ac)' : 'var(--ln)'}" onclick="S.cat='${k}';if(S.pay&&!S.pay.paid){S.pay=null;}rer()">
             <div style="display:flex;align-items:center;gap:12px">
               <div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--ln);flex-shrink:0">${ic(x.i)}</div>
               <div>

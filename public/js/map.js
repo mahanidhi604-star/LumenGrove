@@ -531,6 +531,17 @@ window.pickSt = (id, e) => {
   const found = ST.find(x => x.id == id);
   if (!found) return;
   S.pick = found;
+  if (S.pay && !S.pay.paid) {
+    if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+    if (window._activePayChannel && window.supabaseClient) {
+      try { window.supabaseClient.removeChannel(window._activePayChannel); } catch (e) {}
+    }
+    S.pay = null;
+    const payCardContainer = document.querySelector('.bento-pay-card-wrapper');
+    if (payCardContainer) {
+      go(1);
+    }
+  }
   toast('Selected station: ' + found.n);
 
   // Update map SVG in-place with zero page reload

@@ -25,6 +25,24 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.json());
+
+const _paySessions = new Map();
+
+app.post('/api/pay/approve', (req, res) => {
+  const { sessionId } = req.body || {};
+  if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+  _paySessions.set(sessionId, { status: 'APPROVED', time: Date.now() });
+  console.log(`[API] Payment approved for session ${sessionId}`);
+  return res.json({ success: true, sessionId, status: 'APPROVED' });
+});
+
+app.get('/api/pay/status/:id', (req, res) => {
+  const session = _paySessions.get(req.params.id);
+  if (session) return res.json(session);
+  return res.json({ status: 'PENDING' });
+});
+
 app.use(
   express.static(__dirname, {
     index: 'Index.html',

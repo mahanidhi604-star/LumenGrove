@@ -20,6 +20,18 @@ const DS = h => (h <= 1 ? 'Quick top-up' : h <= 2 ? 'Standard' : h <= 4 ? 'Long 
 
 window.durIn = v => {
   S.dur = +v;
+  // Invalidate unconfirmed pass when duration is changed, requiring user to click "⚡ Generate UPI / QR Pass"
+  if (S.pay && !S.pay.paid) {
+    if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+    if (window._activePayChannel && window.supabaseClient) {
+      try { window.supabaseClient.removeChannel(window._activePayChannel); } catch (e) {}
+    }
+    S.pay = null;
+    const payCardContainer = document.querySelector('.bento-pay-card-wrapper');
+    if (payCardContainer) {
+      go(1);
+    }
+  }
   const dt = $('.dt');
   if (dt) dt.style.setProperty('--f', (S.dur - 0.5) / 5.5);
   const dl = $('#dl');
@@ -125,27 +137,66 @@ window.initUpiQrCode = (uri) => {
 
 // Two-way synchronization between Mobile Payment Simulation Page and Main Kiosk
 window.startPaymentSyncListener = (sessionId) => {
-  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+  if (!sessionId) return;
+  console.log('[PaySync] Starting sync listener for session:', sessionId);
+
+  if (window._paySyncInterval) {
+    clearInterval(window._paySyncInterval);
+    window._paySyncInterval = null;
+  }
   if (window._paySyncBc) {
     try { window._paySyncBc.close(); } catch (e) {}
+    window._paySyncBc = null;
+  }
+  if (window._activePayChannel && window.supabaseClient) {
+    try { window.supabaseClient.removeChannel(window._activePayChannel); } catch (e) {}
+    window._activePayChannel = null;
   }
 
-  // 1. BroadcastChannel API (Instant multi-tab communication)
+  // 1. Supabase Realtime Broadcast (Internet / Vercel cross-device sync)
+  if (window.supabaseClient) {
+    try {
+      const channelName = 'lg_pay_' + sessionId;
+      const payChannel = window.supabaseClient.channel(channelName, {
+        config: { broadcast: { self: false } }
+      });
+
+      payChannel
+        .on('broadcast', { event: 'payment_approved' }, (data) => {
+          console.log('[PaySync] Supabase Realtime broadcast received:', data);
+          const payload = data && data.payload ? data.payload : data;
+          if (payload && (payload.sessionId === sessionId || !payload.sessionId)) {
+            window.onLivePaymentReceived(sessionId);
+          }
+        })
+        .subscribe((status, err) => {
+          console.log(`[PaySync] Supabase Realtime channel [${channelName}] status:`, status, err || '');
+        });
+
+      window._activePayChannel = payChannel;
+    } catch (err) {
+      console.warn('[PaySync] Supabase Realtime setup error:', err);
+    }
+  }
+
+  // 2. BroadcastChannel API (Instant multi-tab communication)
   try {
     window._paySyncBc = new BroadcastChannel('lumengrove_pay_bus');
     window._paySyncBc.onmessage = (ev) => {
       if (ev.data && ev.data.type === 'PAYMENT_APPROVED' && ev.data.sessionId === sessionId) {
+        console.log('[PaySync] BroadcastChannel message received:', ev.data);
         window.onLivePaymentReceived(sessionId);
       }
     };
   } catch (e) {}
 
-  // 2. Storage event listener (across browser tabs)
+  // 3. Storage event listener (across browser tabs)
   const onStorage = (e) => {
     if (e.key === 'lg_pay_status_' + sessionId) {
       try {
         const val = JSON.parse(e.newValue || '{}');
         if (val.status === 'APPROVED') {
+          console.log('[PaySync] Storage event approval received:', val);
           window.onLivePaymentReceived(sessionId);
         }
       } catch (err) {}
@@ -153,10 +204,11 @@ window.startPaymentSyncListener = (sessionId) => {
   };
   window.addEventListener('storage', onStorage);
 
-  // 3. Fallback Polling (Every 500ms checking localStorage and Supabase)
+  // 4. Polling Fallback (Checking localStorage and local/server status endpoint every 500ms)
   window._paySyncInterval = setInterval(async () => {
     if (!S.pay || S.pay.paid) {
       clearInterval(window._paySyncInterval);
+      window._paySyncInterval = null;
       return;
     }
 
@@ -171,24 +223,26 @@ window.startPaymentSyncListener = (sessionId) => {
       }
     } catch (e) {}
 
-    if (window.supabaseClient) {
-      try {
-        const { data } = await window.supabaseClient
-          .from('payments')
-          .select('status')
-          .eq('session_id', sessionId)
-          .maybeSingle();
-        if (data && data.status === 'APPROVED') {
+    try {
+      const res = await fetch('/api/pay/status/' + encodeURIComponent(sessionId), { cache: 'no-store' });
+      if (res.ok) {
+        const apiData = await res.json();
+        if (apiData && apiData.status === 'APPROVED') {
           window.onLivePaymentReceived(sessionId);
+          return;
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
   }, 500);
 };
 
 window.onLivePaymentReceived = (sessionId) => {
   if (!S.pay || S.pay.paid) return;
-  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+  console.log('[PaySync] onLivePaymentReceived triggering paid() for session:', sessionId);
+  if (window._paySyncInterval) {
+    clearInterval(window._paySyncInterval);
+    window._paySyncInterval = null;
+  }
   toast(`✓ Live Mobile Payment Received (${sessionId}) · Kiosk Slot Unlocked`);
   paid();
 };
@@ -202,24 +256,36 @@ window.simulateBankWebhookApproval = () => {
 };
 
 window.cancelPayment = () => {
-  if (window._paySyncInterval) clearInterval(window._paySyncInterval);
+  if (window._paySyncInterval) {
+    clearInterval(window._paySyncInterval);
+    window._paySyncInterval = null;
+  }
+  if (window._activePayChannel && window.supabaseClient) {
+    try { window.supabaseClient.removeChannel(window._activePayChannel); } catch (e) {}
+    window._activePayChannel = null;
+  }
   S.pay = null;
-  rr();
+  if ($('#rb')) rr();
+  else go(1);
 };
 
 // Minimal Clean Mobile Payment Simulation View (#pay-sim)
 window.renderPaySimView = () => {
-  const hash = location.hash || '';
+  const searchParams = new URLSearchParams(window.location.search);
+  const hash = window.location.hash || '';
   const qIdx = hash.indexOf('?');
-  const params = new URLSearchParams(qIdx !== -1 ? hash.slice(qIdx + 1) : '');
-  const sessionId = params.get('id') || (S.pay ? S.pay.id : 'PAY-DEMO');
-  const amount = params.get('amount') || (S.pay ? S.pay.amount : '10');
-  const stnId = params.get('stn') || (S.pay && S.pay.b ? S.pay.b.id : 'library');
-  const dur = params.get('dur') || (S.pay ? S.dur : '1');
-  const cat = params.get('cat') || (S.pay ? S.cat : 'std');
+  const hashParams = new URLSearchParams(qIdx !== -1 ? hash.slice(qIdx + 1) : '');
+
+  const getParam = (k) => hashParams.get(k) || searchParams.get(k);
+
+  const sessionId = getParam('id') || (S.pay ? S.pay.id : 'PAY-DEMO');
+  const amount = getParam('amount') || (S.pay ? S.pay.amount : '10');
+  const stnId = getParam('stn') || (S.pay && S.pay.b ? S.pay.b.id : 'library');
+  const dur = getParam('dur') || (S.pay && S.pay.dur ? S.pay.dur : (S.dur || '1'));
+  const cat = getParam('cat') || (S.pay && S.pay.cat ? S.pay.cat : (S.cat || 'std'));
 
   const stn = (typeof getStn === 'function' ? getStn(stnId) : null) || (window.ST && window.ST.find(s => s.id === stnId)) || { n: 'Central Library' };
-  const catObj = (window.CATS && window.CATS[cat]) || { n: 'Standard Bank' };
+  const catObj = (window.CATS && window.CATS[cat]) || { n: 'Grove Phone' };
 
   return `
     <div class="wrap" style="max-width:440px;margin:28px auto;padding:16px">
@@ -252,7 +318,7 @@ window.renderPaySimView = () => {
             <span>⚡ Authorize Payment · ₹ ${amount}</span>
           </button>
           <p style="text-align:center;font-size:0.8rem;color:var(--mut);margin:12px 0 0;line-height:1.4">
-            Clicking Authorize simulates instant payment authorization. Your station kiosk will automatically detect this approval in real time.
+            Clicking Authorize simulates instant payment authorization. Your station kiosk on your laptop will automatically detect this approval in real time.
           </p>
         </div>
 
@@ -273,6 +339,7 @@ window.renderPaySimView = () => {
 };
 
 window.authorizeSimulatedPayment = async (sessionId) => {
+  console.log('[PaySim] Authorizing payment for session:', sessionId);
   const actionsEl = document.getElementById('pay-sim-actions');
   const confirmedEl = document.getElementById('pay-sim-confirmed');
 
@@ -280,7 +347,7 @@ window.authorizeSimulatedPayment = async (sessionId) => {
   if (actionsEl) actionsEl.style.display = 'none';
   if (confirmedEl) confirmedEl.style.display = 'block';
 
-  // 2. Write to localStorage (detected by storage event & kiosk poller)
+  // 2. Write to localStorage (detected by storage event & kiosk poller if same browser)
   try {
     localStorage.setItem('lg_pay_status_' + sessionId, JSON.stringify({
       status: 'APPROVED',
@@ -293,26 +360,61 @@ window.authorizeSimulatedPayment = async (sessionId) => {
   try {
     const bc = new BroadcastChannel('lumengrove_pay_bus');
     bc.postMessage({ type: 'PAYMENT_APPROVED', sessionId: sessionId });
-    setTimeout(() => { try { bc.close(); } catch(e){} }, 600);
+    setTimeout(() => { try { bc.close(); } catch(e){} }, 800);
   } catch (e) {}
 
-  // 4. Update in-memory session if present in same window
+  // 4. Supabase Realtime Broadcast (Internet / Vercel cross-device sync)
+  if (window.supabaseClient) {
+    try {
+      const channelName = 'lg_pay_' + sessionId;
+      const sendChannel = window.supabaseClient.channel(channelName, {
+        config: { broadcast: { self: false } }
+      });
+
+      const emitBroadcast = async () => {
+        try {
+          await sendChannel.send({
+            type: 'broadcast',
+            event: 'payment_approved',
+            payload: {
+              sessionId: sessionId,
+              status: 'APPROVED',
+              time: Date.now()
+            }
+          });
+          console.log('[PaySim] Supabase Realtime broadcast sent for session:', sessionId);
+        } catch (bErr) {
+          console.warn('[PaySim] Realtime broadcast error:', bErr);
+        }
+      };
+
+      sendChannel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await emitBroadcast();
+          setTimeout(emitBroadcast, 400);
+          setTimeout(emitBroadcast, 1200);
+        }
+      });
+    } catch (err) {
+      console.warn('[PaySim] Supabase channel error:', err);
+    }
+  }
+
+  // 5. Backend API notification if local server / LAN
+  try {
+    fetch('/api/pay/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: sessionId })
+    }).catch(() => {});
+  } catch (e) {}
+
+  // 6. Update in-memory session if present in same window
   if (window.S && window.S.pay && (window.S.pay.id === sessionId || sessionId.startsWith('PAY-'))) {
     window.S.pay.paid = true;
     if (typeof window.paid === 'function' && !window.S.rent) {
       window.paid();
     }
-  }
-
-  // 5. Supabase Write in background if connected
-  if (window.supabaseClient) {
-    try {
-      await window.supabaseClient.from('payments').insert({
-        session_id: sessionId,
-        status: 'APPROVED',
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {}
   }
 
   toast('✓ Payment Authorized! Kiosk confirmed.');
@@ -340,7 +442,7 @@ const payView = () => {
     return '';
   }
 
-  const c = CATS[S.cat],
+  const c = (window.CATS && window.CATS[p.cat || S.cat]) || CATS.std,
     r = S.rent;
   if (p.paid && r)
     return `
@@ -354,7 +456,7 @@ const payView = () => {
         <p style="color:var(--fg);line-height:1.4">Power bank at <b>${r.st.n}</b> is ready for pickup. Enter this PIN at the station kiosk simulator below to unlock your slot.</p>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
           <a class="btn" href="#app-rentals" onclick="S.pay=null;go(1)">View Active Rental & Timer →</a>
-          <button type="button" class="btn g" onclick="S.pay=null;rr()">Done</button>
+          <button type="button" class="btn g" onclick="S.pay=null;go(1)">Done</button>
         </div>
       </div>
     `;
@@ -362,7 +464,8 @@ const payView = () => {
   const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
     ? Number(window.PR.rate) 
     : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
-  const payTotal = ((S.dur || 1) * currentRate).toFixed(0);
+  const durHours = p.dur || S.dur || 1;
+  const payTotal = p.amount || Math.round(durHours * currentRate);
 
   // Ensure unique session ID and amount
   if (!p.id) {
@@ -372,8 +475,10 @@ const payView = () => {
 
   // Build the mobile payment simulation URL encoded into the QR code
   const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
-  const pathname = window.location.pathname.replace(/\/Index\.html$/i, '/');
-  const paySimUrl = `${origin}${pathname}#pay-sim?id=${p.id}&amount=${payTotal}&stn=${encodeURIComponent(p.b.id)}&dur=${S.dur}&cat=${S.cat}`;
+  let pathname = window.location.pathname || '/';
+  pathname = pathname.replace(/\/Index\.html$/i, '/').replace(/\/index\.html$/i, '/');
+  if (!pathname.endsWith('/')) pathname += '/';
+  const paySimUrl = `${origin}${pathname}#pay-sim?id=${p.id}&amount=${payTotal}&stn=${encodeURIComponent(p.b.id)}&dur=${durHours}&cat=${p.cat || S.cat}`;
 
   // Start two-way real-time listener for mobile approval
   window.startPaymentSyncListener(p.id);
@@ -411,7 +516,7 @@ const payView = () => {
         <div>
           <h2 style="margin:2px 0 4px">Scan or Simulate Pay</h2>
           <p style="color:var(--mut);font-size:0.88rem;margin:0">
-            ${c.n} · <b>${S.dur} hour rental</b> at <b>${p.b.n}</b>
+            ${c.n} · <b>${durHours} hour rental</b> at <b>${p.b.n}</b>
           </p>
         </div>
 
@@ -429,7 +534,7 @@ const payView = () => {
               <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Instant clearance without scanning (for viva examiners)</small>
             </div>
           </button>
-          <button type="button" class="btn g btn-cancel-checkout" onclick="cancelPayment()" style="width:100%;margin-top:6px;padding:8px">Cancel Checkout</button>
+          <button type="button" class="btn g btn-cancel-checkout" onclick="cancelPayment()" style="width:100%;margin-top:6px;padding:8px">↺ Change Configuration / Cancel</button>
         </div>
 
         <div class="upi-status-indicator">
@@ -463,14 +568,38 @@ window.startR = (stnId) => {
   }
   if (S.rent) return toast('You already have an active rental.');
   const b = S.pick || best();
-  if (b.stock[S.cat] < 1) return toast('No stock at this station for that category.');
+  const currentCat = S.cat || 'std';
+  if (!b.stock[currentCat] || b.stock[currentCat] < 1) {
+    return toast(`No stock for ${CATS[currentCat]?.n || 'selected bank'} at ${b.n}. Please choose another station or bank.`);
+  }
+
+  const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
+    ? Number(window.PR.rate) 
+    : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
+  const durHours = S.dur || 1;
+  const payTotal = Math.round(durHours * currentRate);
   const paySessionId = 'PAY-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
-  S.pay = { id: paySessionId, t: Date.now(), b, paid: false };
+
+  S.pay = {
+    id: paySessionId,
+    t: Date.now(),
+    b: b,
+    stnId: b.id,
+    cat: currentCat,
+    dur: durHours,
+    amount: payTotal,
+    paid: false
+  };
+
+  try {
+    localStorage.setItem('lg_active_pay_session', JSON.stringify(S.pay));
+  } catch (e) {}
+
   const payCardContainer = document.querySelector('.bento-pay-card-wrapper');
   if (payCardContainer) {
     payCardContainer.innerHTML = `<div class="card s4 bento-pay-card" style="--i:2">${payView()}</div>`;
     payCardContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    toast(`Checkout initiated at ${b.n} · Scan QR code to unlock`);
+    toast(`Checkout pass generated for ${b.n} · ₹ ${payTotal} (${durHours}h)`);
   } else {
     rr();
     setTimeout(() => {
@@ -488,21 +617,29 @@ window.paid = () => {
     return;
   }
   p.paid = true;
+  const targetStation = p.b || S.pick || best();
+  const targetCat = p.cat || S.cat || 'std';
+  const targetDur = (p.dur || S.dur || 1);
+
   S.rent = {
     id: 'LG-' + (1042 + S.hist.length),
     pin: String(100000 + ((Math.random() * 900000) | 0)),
-    st: p.b,
-    cat: S.cat,
-    dur: S.dur * 3600,
+    st: targetStation,
+    cat: targetCat,
+    dur: targetDur * 3600,
     started: 0,
     batt: 100,
     slot: null,
     done: false
   };
-  p.b.stock[S.cat]--;
+
+  if (targetStation.stock && targetStation.stock[targetCat] > 0) {
+    targetStation.stock[targetCat]--;
+  }
+
   toast('Payment received');
   if ($('#rb')) rr();
-  else if (location.hash.slice(1) === 'app-home' || location.hash.slice(1) === 'plug') go(1);
+  else go(1);
 };
 
 // Auto-confirm countdown disabled per viva requirements: approval is triggered manually via [⚡ Simulate Bank Webhook Approval]
