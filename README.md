@@ -177,8 +177,10 @@ For evaluators and examiners testing the application during vivas/presentations,
 
 ## 👥 Project Team
 
-- **Student Name 1**: [Your Name] · [USN] · [Department]
-- **Student Name 2**: [Teammate Name] · [USN] · [Department]
+- **Student Name 1**: Mahanidhi C · RVCE26BCS040 · CSE
+- **Student Name 2**: Pragathi Medi · RVCE26BAI104 · AI/ML
+- **Student Name 3**: B Jishnu  · RVCE26BEC009 · ECE
+- **Student Name 4**: Rohan Narendra · RVCE26BAS045 · ASE
 - **Institution**: R.V. College of Engineering (RVCE), Bengaluru, Karnataka, India
 - **Academic Year**: 2026 – 2027
 
