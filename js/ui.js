@@ -1758,45 +1758,184 @@ const PG = {
   'app-rentals': () => {
     if (!stu()) return need;
     const r = S.rent,
-      rows = (r ? [{ id: r.id, d: 'Today', st: r.st.n, cat: r.cat, h: r.dur / 3600 + ' h', s: r.started ? 'Active' : 'Paid' }] : []).concat(
+      rows = (r ? [{ id: r.id, d: 'Today', st: r.st.n, cat: r.cat, h: r.dur / 3600 + ' h', cost: r.started && window.computeRentalCost ? `₹ ${window.computeRentalCost(r).totalCost}` : '₹ —', s: r.started ? 'Active' : 'Paid' }] : []).concat(
         S.hist
       );
-    return `<div class="wrap"><h1 tabindex="-1">${t(
-      'rental_history'
-    )}</h1><p><button class="btn g" onclick="cmp()">File a complaint</button></p><h2>Current rental</h2>${
-      !r
-        ? '<p>No active rental.</p><a class="btn" href="#app-home">' + t('rental_hub') + '</a>'
-        : `<div class="grid"><div class="card"><span class="badge">${CATS[r.cat].n}</span><p>Your 6-digit PIN</p><div class="num" style="font-size:3.4rem;letter-spacing:.3em">${
-            r.pin
-          }</div><p>Pickup: <b>${r.st.n}</b>. Enter the PIN at the station kiosk.</p>${
-            r.started
-              ? `<div class="num" id="tm">${fmt(
-                  r.dur - el()
-                )}</div><label>Power bank charge <b id="bt">${Math.max(
-                  0,
-                  r.batt
-                ) | 0}%</b></label><div class="bar"><i id="bb" style="width:${Math.max(
-                  0,
-                  r.batt
-                )}%"></i></div><p><button class="btn" onclick="retn()">Return power bank</button> <a class="btn g" href="#app-report">Report a problem</a></p>`
-              : `<button class="btn g" onclick="nav(S.rent.st)">Navigate to station</button>`
-          }</div><div class="card"><h3>Station kiosk (simulator)</h3><div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">${[
-            ...Array(8)
-          ]
-            .map((_, i) => `<div class="kd${r.slot == i + 1 ? ' lit' : ''}">SLOT ${i + 1}</div>`)
-            .join('')}</div>${
-            r.started
-              ? `<p>Slot <b>${r.slot}</b> unlocked. Timer started.</p><label for="sp">Demo speed</label><select id="sp" onchange="S.speed=+this.value"><option value="1">1×</option><option value="60"${
-                  S.speed == 60 ? ' selected' : ''
-                }>60× (demo)</option></select>`
-              : `<label for="kp">Enter PIN</label><input id="kp" maxlength="6" inputmode="numeric" style="width:100%"><div class="err" id="ke"></div><button class="btn" onclick="kiosk()">Unlock slot</button>`
-          }</div></div>`
-    }<h2 style="margin-top:32px">Transaction history</h2><div class="tw"><table><tr><th>ID</th><th>Date</th><th>Station</th><th>Bank</th><th>Duration</th><th>Amount</th><th>Status</th><th></th></tr>${rows
-      .map(
-        x =>
-          `<tr><td>${x.id}</td><td>${x.d}</td><td>${x.st}</td><td>${CATS[x.cat].n}</td><td>${x.h}</td><td>₹ —</td><td><span class="badge">${x.s}</span></td><td><button class="btn g" onclick="cmp('${x.id}')">Complain</button></td></tr>`
-      )
-      .join('')}</table></div></div>`;
+
+    const costInfo = r && window.computeRentalCost ? window.computeRentalCost(r) : { totalCost: 10, rate: 10, baseCost: 10, lateFee: 0, graceMins: 15, isGrace: false, isOverdue: false, remainingGraceSec: 0, elapsedSec: 0 };
+    const elapsedSec = costInfo.elapsedSec || 0;
+    const remSec = r ? Math.max(0, r.dur - elapsedSec) : 0;
+    const battDrainRate = (r && window.CATS && window.CATS[r.cat]?.dr) || 16;
+    const battPct = r ? Math.max(0, 100 - (elapsedSec / 3600) * battDrainRate) | 0 : 100;
+    const volt = (3.60 + (battPct / 100) * 0.58).toFixed(2);
+    const temp = (28.0 + (elapsedSec / 800) % 8).toFixed(1);
+    const targetStn = typeof best === 'function' ? best(true) : { n: 'Central Library', free: 6 };
+
+    return `<div class="wrap" style="max-width:960px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <span class="tag" style="background:#00e5ff;color:#021626;font-size:0.75rem;letter-spacing:0.06em;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:6px">RVCE SOLAR MICROGRID</span>
+          <h1 tabindex="-1" style="margin:0">${t('rental_history')}</h1>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm g" onclick="cmp()">🛠️ File a Complaint</button>
+        </div>
+      </div>
+
+      <h2>Current Active Session</h2>
+      ${
+        !r
+          ? `<div class="card" style="text-align:center;padding:48px 24px;border:1px dashed var(--ln);border-radius:18px">
+               <div style="font-size:2.8rem;margin-bottom:10px">⚡</div>
+               <h3 style="margin:0 0 8px;font-size:1.4rem">No Active Power Bank Session</h3>
+               <p style="color:var(--mut);max-width:440px;margin:0 auto 20px;font-size:0.92rem">Ready to charge on clean solar energy? Browse the RVCE campus stations and reserve a high-speed bank.</p>
+               <a class="btn" href="#app-home" style="display:inline-flex;align-items:center;gap:6px">⚡ Open Campus Rental Hub</a>
+             </div>`
+          : !r.started
+          ? `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+               <div class="card" style="padding:24px;border:1px solid var(--ln);border-radius:18px">
+                 <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">${CATS[r.cat].n}</span>
+                 <p style="margin:12px 0 4px;color:var(--mut);text-transform:uppercase;font-size:0.75rem;font-weight:700;letter-spacing:0.06em">Your 6-Digit Kiosk PIN</p>
+                 <div class="num" style="font-size:3.6rem;letter-spacing:.25em;color:var(--fg);font-family:'Barlow Condensed',monospace;margin:6px 0">${r.pin}</div>
+                 <p style="color:var(--mut);font-size:0.9rem;line-height:1.4">Reserved at <b>${r.st.n}</b>. Walk up to the station and type this PIN on the touchscreen digitizer below to unlock your bank.</p>
+                 <button type="button" class="btn g" onclick="nav(S.rent.st)" style="margin-top:10px;width:100%">🗺️ Navigate to ${r.st.n}</button>
+               </div>
+               <div class="card" style="padding:24px;border:1px solid var(--ln);border-radius:18px">
+                 <h3 style="margin:0 0 8px">Station Kiosk Simulator</h3>
+                 <p style="font-size:0.84rem;color:var(--mut);margin:0 0 12px">Type your PIN or click "Unlock Slot" to simulate physical hardware ejection.</p>
+                 <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">
+                   ${[...Array(8)].map((_, i) => `<div class="kd${r.slot == i + 1 ? ' lit' : ''}" style="padding:8px;text-align:center;font-weight:700">BAY #${i + 1}</div>`).join('')}
+                 </div>
+                 <label for="kp" style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--mut);display:block;margin-top:12px">Enter 6-Digit PIN</label>
+                 <input id="kp" maxlength="6" inputmode="numeric" value="${r.pin}" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--ln);color:var(--fg);font-size:1.2rem;letter-spacing:0.15em;box-sizing:border-box">
+                 <div class="err" id="ke" style="margin:6px 0"></div>
+                 <button type="button" class="btn" onclick="kiosk()" style="width:100%;margin-top:10px">⚡ Unlock Hardware Slot</button>
+               </div>
+             </div>`
+          : `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+               <!-- Column 1: Live Digital Timer & Dynamic Cost Accumulator -->
+               <div class="card" style="padding:22px;border:1px solid var(--ln);border-radius:18px;display:flex;flex-direction:column;gap:14px">
+                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                   <span class="tag" style="background:#34d399;color:#021626;font-size:0.72rem;padding:3px 8px;border-radius:4px;font-weight:800">● SESSION IN PROGRESS</span>
+                   <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">${CATS[r.cat].n}</span>
+                 </div>
+
+                 <!-- Remaining Duration Countdown -->
+                 <div>
+                   <small style="color:var(--mut);display:block;text-transform:uppercase;letter-spacing:0.06em;font-size:0.74rem;font-weight:700">Remaining Time</small>
+                   <div id="tm" class="num" style="font-size:3.4rem;letter-spacing:0.04em;line-height:1;margin:4px 0;font-family:'Barlow Condensed',monospace;color:${remSec < 300 ? '#f08a24' : 'var(--fg)'}">
+                     ${fmt(remSec)}
+                   </div>
+                   <div style="font-size:0.84rem;color:var(--mut)">
+                     Elapsed: <b id="tm-elapsed" style="color:var(--fg)">${fmt(elapsedSec)}</b> · Booked: <b>${r.dur / 3600}h</b>
+                   </div>
+                 </div>
+
+                 <!-- Live Cost Accumulator Card -->
+                 <div style="background:rgba(0,0,0,0.25);border:1px solid var(--ln);border-radius:14px;padding:14px">
+                   <div style="display:flex;justify-content:space-between;align-items:baseline">
+                     <small style="color:var(--mut);text-transform:uppercase;font-size:0.72rem;font-weight:700;letter-spacing:0.06em">Live Billed Amount</small>
+                     <span id="live-rental-rate" style="font-size:0.78rem;color:var(--mut)">Rate: ₹ ${costInfo.rate}/hr · Base: ₹ ${costInfo.baseCost}</span>
+                   </div>
+                   <div id="live-rental-cost" style="font-size:2.5rem;font-weight:800;color:var(--ac,#00e5ff);font-family:'Barlow Condensed',monospace;margin:2px 0">
+                     ₹ ${costInfo.totalCost}
+                   </div>
+                   <div id="live-rental-grace" style="font-size:0.82rem;margin-top:4px">
+                     ${costInfo.isGrace ? `<span style="color:#f08a24;font-weight:700">⚡ Grace Period: ${Math.floor(costInfo.remainingGraceSec / 60)}m ${Math.floor(costInfo.remainingGraceSec % 60)}s remaining</span>` : costInfo.isOverdue ? `<span style="color:#f87171;font-weight:700">⚠️ Session Overdue · Late Penalty Applied (+₹${costInfo.lateFee})</span>` : `<span style="color:var(--mut)">Standard Session · ${costInfo.graceMins} min grace window on expiry</span>`}
+                   </div>
+                 </div>
+
+                 <!-- Interactive Acceleration Control for Viva Demonstration -->
+                 <div style="display:flex;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--ac) 8%,transparent);border:1px solid color-mix(in srgb,var(--ac) 25%,transparent);border-radius:12px;padding:10px 14px">
+                   <div>
+                     <b style="font-size:0.85rem;color:var(--fg);display:block">⚡ Timer Speed Multiplier</b>
+                     <small style="color:var(--mut);font-size:0.74rem">Accelerate time to demonstrate grace window & cost accumulation</small>
+                   </div>
+                   <select id="sp" onchange="S.speed=+this.value;if(window.updateRentalTimerDom)window.updateRentalTimerDom();" style="padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--ln);color:var(--fg);font-family:inherit;font-size:0.85rem;font-weight:700">
+                     <option value="1"${S.speed == 1 ? ' selected' : ''}>1× Realtime</option>
+                     <option value="60"${S.speed == 60 ? ' selected' : ''}>60× (1s = 1m)</option>
+                     <option value="300"${S.speed == 300 ? ' selected' : ''}>300× (Fast Test)</option>
+                   </select>
+                 </div>
+               </div>
+
+               <!-- Column 2: Hardware Battery Telemetry & Smart Return Advisor -->
+               <div class="card" style="padding:22px;border:1px solid var(--ln);border-radius:18px;display:flex;flex-direction:column;gap:14px">
+                 <div>
+                   <small style="color:var(--mut);text-transform:uppercase;font-size:0.72rem;font-weight:700;letter-spacing:0.06em">Power Bank Internal Telemetry</small>
+                   <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0">
+                     <span style="font-size:1.1rem;font-weight:700">Battery SoC</span>
+                     <b id="bt" style="font-size:1.5rem;color:#34d399;font-family:'Barlow Condensed',monospace">${battPct}%</b>
+                   </div>
+                   <div class="bar" style="height:12px;border-radius:99px;background:var(--ln);overflow:hidden">
+                     <i id="bb" style="width:${battPct}%;background:#34d399;display:block;height:100%;transition:width 0.3s"></i>
+                   </div>
+                   <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--mut);margin-top:6px">
+                     <span>Cell Voltage: <b id="rental-volt" style="color:var(--fg)">${volt} V</b></span>
+                     <span>Internal Temp: <b id="rental-temp" style="color:var(--fg)">${temp} °C</b></span>
+                   </div>
+                 </div>
+
+                 <!-- Smart Return Station Recommender -->
+                 <div style="background:rgba(0,0,0,0.22);border:1px dashed var(--ln);border-radius:12px;padding:12px">
+                   <small style="color:var(--mut);display:block;text-transform:uppercase;font-size:0.7rem;font-weight:700">Recommended Return Hub</small>
+                   <div id="rental-return-rec" style="font-weight:700;color:#00e5ff;font-size:0.95rem;margin:3px 0">
+                     ${targetStn.n} · ${typeof fmtDist === 'function' && typeof dist === 'function' ? fmtDist(dist(targetStn)) : '85m'} away (${targetStn.free} free bays)
+                   </div>
+                   <small style="color:var(--mut)">Return to any campus solar kiosk with an empty bay.</small>
+                 </div>
+
+                 <!-- Station Kiosk Visualizer -->
+                 <div>
+                   <small style="color:var(--mut);display:block;font-size:0.74rem">Dispensed from <b>${r.st.n} (Bay #${r.slot})</b></small>
+                   <div class="grid" style="grid-template-columns:repeat(8,1fr);gap:4px;margin-top:6px">
+                     ${[...Array(8)].map((_, i) => `<div class="kd${r.slot == i + 1 ? ' lit' : ''}" style="padding:6px 2px;font-size:0.7rem;text-align:center;font-weight:700">#${i + 1}</div>`).join('')}
+                   </div>
+                 </div>
+
+                 <div style="display:flex;gap:10px;margin-top:auto;flex-wrap:wrap">
+                   <button type="button" class="btn" onclick="retn()" style="flex:1">📥 Return Power Bank</button>
+                   <button type="button" class="btn g" onclick="cmp('${r.id}')">🛠️ Report Problem</button>
+                 </div>
+               </div>
+             </div>`
+      }
+
+      <h2 style="margin-top:36px">Transaction & Rental History</h2>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Station</th>
+              <th>Bank Type</th>
+              <th>Duration</th>
+              <th>Billed Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(
+                x =>
+                  `<tr>
+                    <td><b>${x.id}</b></td>
+                    <td>${x.d}</td>
+                    <td>${x.st}</td>
+                    <td>${CATS[x.cat]?.n || x.cat}</td>
+                    <td>${x.h}</td>
+                    <td><b style="color:#00e5ff">${x.cost || (x.s === 'Active' ? 'Active' : '₹ 20')}</b></td>
+                    <td><span class="badge" style="background:${x.s === 'Active' ? '#34d399' : 'var(--ln)'};color:${x.s === 'Active' ? '#021626' : 'var(--fg)'}">${x.s}</span></td>
+                    <td><button class="btn btn-sm g" onclick="cmp('${x.id}')">Report</button></td>
+                  </tr>`
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
   },
 
   'app-rent': () => renderBentoHub('home'),
@@ -1815,20 +1954,151 @@ const PG = {
       )}</div><input id="hi" aria-label="Message Lumi" placeholder="Type your question and press Enter" style="width:100%;margin-top:10px" onkeydown="if(event.key=='Enter')hask(this.value)"></div><div class="card"><h3>FAQ</h3><details><summary>How does renting work?</summary><p>Choose a bank and duration, pay by QR, then enter your PIN at the station kiosk.</p></details><details><summary>Charged but no PIN?</summary><p>File a complaint with the transaction ID from My rentals.</p></details><details><summary>How long can I rent?</summary><p>From 30 minutes to 6 hours.</p></details><details><summary>What if I return late?</summary><p>Late rules will be announced with pricing.</p></details><details><summary>Which bank fits my laptop?</summary><p>Grove Laptop for laptops only, Grove Fast for a laptop and phone together.</p></details></div><div class="card"><h3>Something wrong?</h3><p>Tell us about a stuck lock, a bank that is not charging, or a wrong amount.</p><button class="btn" onclick="cmp()">File a complaint</button></div><div class="card"><h3>Contact management</h3><p>Phone: to be added<br>Email: to be added<br>Office hours: to be added</p></div></div></div>`
 };
 
+let _lastHdrHeight = 0;
 function syncHeaderHeight() {
   const hd = $('#hd');
   if (hd) {
-    document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px');
+    const newH = hd.offsetHeight;
+    if (Math.abs(newH - _lastHdrHeight) > 3) {
+      _lastHdrHeight = newH;
+      document.documentElement.style.setProperty('--hdr-h', newH + 'px');
+    }
   }
 }
 
 addEventListener('resize', syncHeaderHeight);
 
+// Mobile Pop-up Sidebar Drawer Controls
+window.toggleMobileSidebar = (forceState) => {
+  const drawer = document.getElementById('mobile-sidebar-drawer');
+  const overlay = document.getElementById('mobile-sidebar-overlay');
+  const btn = document.querySelector('.mobile-nav-toggle-btn');
+  if (!drawer || !overlay) return;
+
+  const isOpen = forceState !== undefined ? forceState : !drawer.classList.contains('open');
+  drawer.classList.toggle('open', isOpen);
+  overlay.classList.toggle('open', isOpen);
+  if (btn) btn.classList.toggle('active', isOpen);
+  document.body.classList.toggle('sidebar-drawer-active', isOpen);
+};
+
+window.closeMobileSidebar = () => window.toggleMobileSidebar(false);
+
+function renderMobileSidebarDrawer(h, isSignedIn, u, safeName, prof, acctInner) {
+  return `
+    <div id="mobile-sidebar-overlay" class="mobile-sidebar-overlay" onclick="closeMobileSidebar()"></div>
+    <aside id="mobile-sidebar-drawer" class="mobile-sidebar-drawer" aria-label="Mobile Navigation Menu">
+      <!-- Drawer Header -->
+      <div class="drawer-header" style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--ln);margin-bottom:10px">
+        <a class="brand" href="#home" onclick="closeMobileSidebar()" style="font-size:1.15rem;display:flex;align-items:center;gap:8px">
+          ${logo(28)}LumenGrove
+        </a>
+        <button type="button" class="btn btn-sm g drawer-close-btn" onclick="closeMobileSidebar()" aria-label="Close menu" style="padding:4px 8px;font-size:0.9rem">✕</button>
+      </div>
+      <div class="drawer-subtag" style="font-family:'Barlow Condensed',monospace;font-size:0.75rem;color:#00e5ff;letter-spacing:0.08em;margin-bottom:14px">RVCE SOLAR MICROGRID · FLEET OPS</div>
+
+      <!-- User Profile / Session Card -->
+      <div class="drawer-user-card" style="background:color-mix(in srgb,var(--card) 90%,transparent);border:1px solid var(--ln);border-radius:14px;padding:12px 14px;margin-bottom:16px">
+        ${isSignedIn ? `
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.5rem;color:${prof.accent || 'var(--ac)'}">${getArchetypeIcon(prof.archetype, 22)}</span>
+            <div style="min-width:0;flex:1">
+              <div style="font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem">${safeName}</div>
+              <small style="color:#00e5ff;font-family:'Barlow Condensed',monospace">${u.role === 'super_admin' ? 'Super Admin' : u.role === 'technician' ? 'Field Technician' : (u.phone || '+91 98765 43210')}</small>
+            </div>
+            <button type="button" class="btn btn-sm g" onclick="signOut();closeMobileSidebar();" style="padding:4px 8px;font-size:0.75rem">Sign out</button>
+          </div>
+        ` : `
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-weight:700;color:var(--fg);font-size:0.92rem">Guest Explorer</div>
+              <small style="color:var(--mut);font-size:0.75rem">Sign in for student renting</small>
+            </div>
+            <a class="btn btn-sm" href="#signin" onclick="closeMobileSidebar()" style="padding:5px 12px;font-size:0.78rem">⚡ Sign In</a>
+          </div>
+        `}
+      </div>
+
+      <!-- Navigation Sections -->
+      <nav class="drawer-nav-sections" style="display:flex;flex-direction:column;gap:14px;margin-bottom:auto">
+        <div class="drawer-nav-group">
+          <small class="drawer-group-title" style="display:block;font-size:0.7rem;text-transform:uppercase;color:var(--mut);font-weight:700;letter-spacing:0.06em;margin-bottom:6px">Campus Solar Network</small>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <a href="#app-home" class="drawer-nav-link ${h === 'app-home' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">⚡</span>
+              <span>Rental Hub & Map</span>
+            </a>
+            <a href="#app-rentals" class="drawer-nav-link ${h === 'app-rentals' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🔋</span>
+              <span>Active Rental & Timer</span>
+            </a>
+            <a href="#home" class="drawer-nav-link ${h === 'home' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🌐</span>
+              <span>Explore RVCE Microgrid</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="drawer-nav-group">
+          <small class="drawer-group-title" style="display:block;font-size:0.7rem;text-transform:uppercase;color:var(--mut);font-weight:700;letter-spacing:0.06em;margin-bottom:6px">Student Support & Impact</small>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <a href="#app-report" class="drawer-nav-link ${h === 'app-report' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🛠️</span>
+              <span>Report a Hardware Problem</span>
+            </a>
+            <a href="#app-impact" class="drawer-nav-link ${h === 'app-impact' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🌱</span>
+              <span>My Clean Solar Impact</span>
+            </a>
+            <a href="#app-help" class="drawer-nav-link ${h === 'app-help' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🤖</span>
+              <span>Lumi Campus AI Help</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="drawer-nav-group">
+          <small class="drawer-group-title" style="display:block;font-size:0.7rem;text-transform:uppercase;color:var(--mut);font-weight:700;letter-spacing:0.06em;margin-bottom:6px">Operations & Hardware Telemetry</small>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <a href="#tech" class="drawer-nav-link ${h === 'tech' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🔧</span>
+              <span>Technician Field Console</span>
+            </a>
+            <a href="#admin" class="drawer-nav-link ${h === 'admin' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">🛰️</span>
+              <span>Admin Mission Control</span>
+            </a>
+            <a href="#app-settings" class="drawer-nav-link ${h === 'app-settings' ? 'on' : ''}" onclick="closeMobileSidebar()">
+              <span class="nav-icon">⚙️</span>
+              <span>Settings & Archetype Profile</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Drawer Footer Controls -->
+      <div class="drawer-footer-controls" style="border-top:1px solid var(--ln);padding-top:14px;margin-top:16px">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn btn-sm ${S.th === 'olive' ? '' : 'g'}" onclick="theme('olive');closeMobileSidebar();" style="padding:4px 8px;font-size:0.75rem">Olive</button>
+            <button type="button" class="btn btn-sm ${S.th === 'amber' ? '' : 'g'}" onclick="theme('amber');closeMobileSidebar();" style="padding:4px 8px;font-size:0.75rem">Amber</button>
+          </div>
+          <select aria-label="Language" onchange="S.l=this.value;sv('l',S.l);closeMobileSidebar();go()" style="padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--ln);color:var(--fg);font-size:0.8rem">
+            <option value="en"${S.l === 'en' ? ' selected' : ''}>English</option>
+            <option value="kn"${S.l === 'kn' ? ' selected' : ''}>ಕನ್ನಡ</option>
+            <option value="hi"${S.l === 'hi' ? ' selected' : ''}>हिन्दी</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+  `;
+}
+
 function hdr(h) {
   const isAuth = h === 'signin' || h === 'admin-login';
-  const isAdmin = h === 'admin';
+  const isAdmin = h === 'admin' || h === 'tech' || h === 'technician';
 
-  // Completely decouple and isolate #admin command center from student layout
+  // Completely decouple and isolate #admin and #tech command center from student layout
   if (isAdmin) {
     document.body.className = 'admin-telemetry-mode';
     const hd = $('#hd'); if (hd) hd.innerHTML = '';
@@ -1865,24 +2135,37 @@ function hdr(h) {
     : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
   document.body.className = inPlug ? 'ap' : '';
-  $('#hd').innerHTML = `${demoBanner}<header><a class="brand" href="#home">${logo()}LumenGrove</a><nav aria-label="Main"><div class="sw"><a href="#home" class="${
-    !inPlug ? 'on' : ''
-  }">Explore</a><a href="#app-home" class="${inPlug ? 'on' : ''}">${t('plug')}</a></div>${ex
-    .map(k => `<a href="#${k}" class="${h == k ? 'on' : ''}">${t(k)}</a>`)
-    .join('')}</nav><div class="hdr-actions"><select aria-label="Theme" onchange="theme(this.value)">${[
-    ['olive', 'Olive Night'],
-    ['amber', 'Amber Sun']
-  ]
-    .map(a => `<option value="${a[0]}"${S.th == a[0] ? ' selected' : ''}>${a[1]}</option>`)
-    .join('')}</select><select aria-label="Language" onchange="S.l=this.value;sv('l',S.l);go()">${[
-    ['en', 'EN'],
-    ['kn', 'ಕನ್'],
-    ['hi', 'हि']
-  ]
-    .map(a => `<option value="${a[0]}"${S.l == a[0] ? ' selected' : ''}>${a[1]}</option>`)
-    .join('')}</select><a class="nav-acct ${isSignedIn ? 'signed-in' : 'guest'}${
-    h == 'app-settings' ? ' on' : ''
-  }" href="#app-settings" title="${acctLabel}" aria-label="${acctLabel}">${acctInner}</a></div></header>`;
+  $('#hd').innerHTML = `
+    ${demoBanner}
+    <header>
+      <button type="button" class="mobile-nav-toggle-btn" onclick="toggleMobileSidebar()" aria-label="Open Navigation Drawer" title="Open Navigation Drawer">
+        <span class="cyber-bar"></span>
+        <span class="cyber-bar"></span>
+        <span class="cyber-bar"></span>
+      </button>
+      <a class="brand" href="#home">${logo()}LumenGrove</a>
+      <nav aria-label="Main">
+        <div class="sw">
+          <a href="#home" class="${!inPlug ? 'on' : ''}">Explore</a>
+          <a href="#app-home" class="${inPlug ? 'on' : ''}">${t('plug')}</a>
+        </div>
+        ${ex.map(k => `<a href="#${k}" class="${h == k ? 'on' : ''}">${t(k)}</a>`).join('')}
+      </nav>
+      <div class="hdr-actions">
+        <select aria-label="Theme" onchange="theme(this.value)">${[
+          ['olive', 'Olive Night'],
+          ['amber', 'Amber Sun']
+        ].map(a => `<option value="${a[0]}"${S.th == a[0] ? ' selected' : ''}>${a[1]}</option>`).join('')}</select>
+        <select aria-label="Language" onchange="S.l=this.value;sv('l',S.l);go()">${[
+          ['en', 'EN'],
+          ['kn', 'ಕನ್'],
+          ['hi', 'हि']
+        ].map(a => `<option value="${a[0]}"${S.l == a[0] ? ' selected' : ''}>${a[1]}</option>`).join('')}</select>
+        <a class="nav-acct ${isSignedIn ? 'signed-in' : 'guest'}${h == 'app-settings' ? ' on' : ''}" href="#app-settings" title="${acctLabel}" aria-label="${acctLabel}">${acctInner}</a>
+      </div>
+    </header>
+    ${renderMobileSidebarDrawer(h, isSignedIn, u, safeName, prof, acctInner)}
+  `;
 
   const sb = $('#sb');
   if (sb) {
@@ -1914,7 +2197,11 @@ function go(same) {
   const v = $('#v'),
     draw = () => {
       hdr(h);
-      v.innerHTML = h.startsWith('app-station-') ? stDetail(h.slice(12)) : h == 'admin' ? admin() : (PG[h] || PG.home)();
+      v.innerHTML = h.startsWith('app-station-')
+        ? stDetail(h.slice(12))
+        : (h === 'admin' || h === 'tech' || h === 'technician')
+        ? admin(h === 'tech' || h === 'technician')
+        : (PG[h] || PG.home)();
       v.className = 'in';
       fx();
       if (typeof xl === 'function') xl(h);
@@ -1930,8 +2217,12 @@ function go(same) {
         }
       }
     };
+
+  // Skip curtain animation on mobile or reduced motion to prevent visual flashing that looks like repeated refresh
+  const isMobile = window.innerWidth <= 768;
   if (
     same ||
+    isMobile ||
     matchMedia('(prefers-reduced-motion:reduce)').matches ||
     document.documentElement.classList.contains('rm')
   )

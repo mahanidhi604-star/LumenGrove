@@ -428,17 +428,25 @@ function showAuthError(msg, isAdmin, isDevNote) {
         }
       }
       window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        if (session && session.user) {
-          await loadProfile(session.user.id);
-        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
+        if (event === 'SIGNED_IN') {
+          if (session && session.user) await loadProfile(session.user.id);
+          if (typeof go === 'function') go(1);
+        } else if (event === 'SIGNED_OUT') {
           S.u = null;
           S.isDemo = false;
           sv('lg_user', '');
-          if (event === 'TOKEN_REFRESH_FAILED') {
-            S.authError = 'Your session has expired. Please sign in again.';
-          }
+          if (typeof go === 'function') go(1);
+        } else if (event === 'TOKEN_REFRESH_FAILED') {
+          S.u = null;
+          S.isDemo = false;
+          sv('lg_user', '');
+          S.authError = 'Your session has expired. Please sign in again.';
+          if (typeof go === 'function') go(1);
+        } else if (event === 'USER_UPDATED') {
+          if (session && session.user) await loadProfile(session.user.id);
+          if (typeof go === 'function') go(1);
         }
-        if (typeof go === 'function') go(1);
+        // Background events like 'TOKEN_REFRESHED' and 'INITIAL_SESSION' are silent to prevent repeated mobile reload!
       });
     } catch (e) {
       console.warn('Session restoration error:', e);

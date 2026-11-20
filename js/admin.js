@@ -966,7 +966,9 @@ window.startDatavClock = () => {
 
 // Station Inspection HUD Card (rendered beneath globe when a station is clicked/inspected)
 const renderStationInspectionCard = (stnId) => {
-  const s = ST.find(x => x.id === stnId) || ST[0];
+  const s = getStn(stnId);
+  const isTechMode = !!(window.S && (window.S.isTechMode || (window.S.u && window.S.u.role === 'technician') || location.hash.includes('tech')));
+
   return `
     <div class="datav-panel datav-inspect-card">
       <div class="datav-panel-header">
@@ -1007,7 +1009,10 @@ const renderStationInspectionCard = (stnId) => {
         <span class="stock-item">Laptop: <b>${s.stock.laptop || 0}</b></span>
       </div>
       <div class="inspect-actions-row">
-        <button class="btn btn-sm g" onclick="tg('${s.id}')">Toggle Power</button>
+        ${isTechMode
+          ? `<span class="datav-status-tag ${s.ok ? 'online' : 'offline'}" style="font-size:0.75rem;padding:6px 10px;border-radius:4px" title="Station master power switch is restricted to Super Admin">● POWER: ${s.ok ? 'ONLINE' : 'MAINTENANCE'} (LOCKED)</span>`
+          : `<button class="btn btn-sm g" onclick="tg('${s.id}')">Toggle Power</button>`
+        }
         <button class="btn btn-sm g" onclick="techCalibrate('${s.id}')">Run Diagnostics</button>
         <button class="btn btn-sm" onclick="document.getElementById('datav-tech-bays-container')?.scrollIntoView({behavior:'smooth'})">Inspect 8 Bays ↓</button>
       </div>
@@ -1347,7 +1352,11 @@ const renderComplaintsHub = () => {
 };
 
 // Main Admin & Technician Command Center View
-function admin() {
+function admin(isExplicitTech = false) {
+  const isHashTech = location.hash.includes('tech');
+  const isTechMode = !!(isExplicitTech || isHashTech || (window.S && window.S.u && window.S.u.role === 'technician'));
+  if (window.S) window.S.isTechMode = isTechMode;
+
   const isStaff = S.u && (S.u.role === 'super_admin' || S.u.role === 'technician');
   if (!isStaff) {
     S.adminError = 'Staff session required. Please sign in with an authorized Google account.';
@@ -1355,7 +1364,7 @@ function admin() {
     return PG['admin-login']();
   }
 
-  const isSuper = S.u.role === 'super_admin';
+  const isSuper = S.u.role === 'super_admin' && !isTechMode;
   const totalSlots = ST.reduce((a, s) => a + s.slots, 0);
   const totalFree = ST.reduce((a, s) => a + s.free, 0);
   const totalSolar = ST.reduce((a, s) => a + s.solar, 0) | 0;
@@ -1384,8 +1393,8 @@ function admin() {
             </svg>
           </div>
           <div>
-            <div class="datav-sys-title">DATAV // SOLAR MICROGRID & ENERGY STORAGE COMMAND</div>
-            <div class="datav-sys-subtitle">LUMENGROVE SOLAR TELEMETRY MISSION CONTROL</div>
+            <div class="datav-sys-title">${isTechMode ? 'DATAV // FIELD HARDWARE & TELEMETRY TERMINAL' : 'DATAV // SOLAR MICROGRID & ENERGY STORAGE COMMAND'}</div>
+            <div class="datav-sys-subtitle">${isTechMode ? 'FIELD TECHNICIAN HARDWARE OPERATIONS // RVCE MICROGRID' : 'LUMENGROVE SOLAR TELEMETRY MISSION CONTROL'}</div>
           </div>
         </div>
 
@@ -1409,7 +1418,7 @@ function admin() {
             <span>🌐 Public Portal</span>
           </button>
           <div class="operator-meta">
-            <span class="operator-role">${isSuper ? 'SUPER_ADMIN // LVL-1' : 'FIELD_TECHNICIAN // HARDWARE'}</span>
+            <span class="operator-role">${isSuper ? 'SUPER_ADMIN // LVL-1' : 'FIELD_TECHNICIAN // HARDWARE (RESTRICTED)'}</span>
             <b class="operator-name">${S.u.name || S.u.email}</b>
           </div>
           <button class="btn btn-sm g datav-exit-btn" onclick="signOut()" title="End staff session">Sign Out</button>
@@ -1766,6 +1775,53 @@ function admin() {
                 </div>
               </div>
             ` : `
+              <!-- Field Technician Read-Only Pricing Policy Card (Restricted Control) -->
+              <div class="datav-panel">
+                <div class="datav-panel-header">
+                  <span class="datav-corner-bracket tl"></span>
+                  <span class="datav-corner-bracket tr"></span>
+                  <span class="datav-corner-bracket bl"></span>
+                  <span class="datav-corner-bracket br"></span>
+                  <div class="panel-title-row">
+                    <span class="datav-panel-tag">CAMPUS PRICING POLICY (READ-ONLY)</span>
+                    <span class="badge" style="background:#071c26;border-color:#00e5ff;color:#00e5ff">LOCKED BY SUPER ADMIN</span>
+                  </div>
+                </div>
+                <div class="datav-config-form" style="padding:12px">
+                  <div style="font-size:0.75rem;color:var(--adm-mut);margin-bottom:10px;line-height:1.4">
+                    🔒 Billing & pricing rules are managed strictly by Super Administrators. Field technicians have telemetry & diagnostic privileges only.
+                  </div>
+                  <div class="cyber-policy-row" style="opacity:0.9">
+                    <div class="cyber-policy-label">
+                      <span>HOURLY RATE</span>
+                      <small>BASE BILLING RATE</small>
+                    </div>
+                    <div class="cyber-display-box" style="width:auto;min-width:90px">₹ ${PR.rate || 10}/hr</div>
+                  </div>
+                  <div class="cyber-policy-row" style="opacity:0.9">
+                    <div class="cyber-policy-label">
+                      <span>GRACE PERIOD</span>
+                      <small>DISCONNECT BUFFER</small>
+                    </div>
+                    <div class="cyber-display-box" style="width:auto;min-width:90px">${PR.grace || 15} MIN</div>
+                  </div>
+                  <div class="cyber-policy-row" style="opacity:0.9">
+                    <div class="cyber-policy-label">
+                      <span>LATE OVERAGE FEE</span>
+                      <small>PER ADDITIONAL HOUR</small>
+                    </div>
+                    <div class="cyber-display-box" style="width:auto;min-width:90px">₹ ${PR.late || 20}/hr</div>
+                  </div>
+                  <div class="cyber-policy-row" style="opacity:0.9">
+                    <div class="cyber-policy-label">
+                      <span>REFUNDABLE DEPOSIT</span>
+                      <small>SESSION HOLD</small>
+                    </div>
+                    <div class="cyber-display-box" style="width:auto;min-width:90px">₹ ${PR.dep || 0}</div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Field Technician Fast Operations Card -->
               <div class="datav-panel">
                 <div class="datav-panel-header">
@@ -1850,7 +1906,7 @@ setInterval(() => {
     s.temp = Math.min(55, Math.max(28, s.temp + Math.random() - 0.5));
   });
 
-  if (location.hash === '#admin') {
+  if (location.hash === '#admin' || location.hash === '#tech' || location.hash === '#technician') {
     const totalSolar = ST.reduce((a, s) => a + s.solar, 0) | 0;
     const inflowEl = document.getElementById('datav-inflow');
     if (inflowEl) inflowEl.textContent = `${totalSolar} W`;

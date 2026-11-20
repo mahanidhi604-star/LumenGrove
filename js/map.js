@@ -90,10 +90,10 @@ window.locateDeviceGps = async function(userInitiated = true) {
       return;
     }
 
-    // Mobile jitter dampening: if we already have coordinates, and movement is < 15 meters, ignore passive updates!
+    // Mobile jitter dampening: if we already have coordinates, and movement is < 35 meters, ignore passive updates!
     if (S.gpsCoords && S.gpsCoords.lat && S.gpsCoords.lng && !userInitiated) {
       const d = window.geoDist ? window.geoDist(lat, lng, S.gpsCoords.lat, S.gpsCoords.lng) : 999;
-      if (d < 15) {
+      if (d < 35) {
         S.gpsCoords.acc = acc;
         return;
       }

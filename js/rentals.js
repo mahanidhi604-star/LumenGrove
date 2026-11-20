@@ -7,7 +7,13 @@ const fmt = x => {
   return pad((x / 3600) | 0) + ':' + pad(((x % 3600) / 60) | 0) + ':' + pad(x % 60);
 };
 
-const el = () => (S.rent && S.rent.started ? ((Date.now() - S.rent.started) / 1000) * S.speed : 0);
+const el = () => {
+  if (!S.rent || !S.rent.started) return 0;
+  const startTs = (typeof S.rent.started === 'number' && S.rent.started > 1000000000) 
+    ? S.rent.started 
+    : (typeof S.rent.t === 'number' && S.rent.t > 1000000000 ? S.rent.t : Date.now());
+  return Math.max(0, ((Date.now() - startTs) / 1000) * (S.speed || 1));
+};
 
 const DL = h => (h < 1 ? '30 min' : h == 1 ? '1 hour' : h + ' hours');
 const DS = h => (h <= 1 ? 'Quick top-up' : h <= 2 ? 'Standard' : h <= 4 ? 'Long session' : 'Extended');
@@ -197,15 +203,142 @@ window.kiosk = () => {
   go(1);
 };
 
+// Compute live rental cost, grace period, and late penalty
+window.computeRentalCost = (r) => {
+  if (!r) return { totalCost: 0, baseCost: 0, lateFee: 0, isGrace: false, isOverdue: false, remainingGraceSec: 0, rate: 10, graceMins: 15, lateRate: 20, elapsedSec: 0 };
+  const rate = Number(window.PR ? window.PR.rate : ((typeof PR !== 'undefined' && PR.rate) ? PR.rate : 10)) || 10;
+  const graceMins = Number(window.PR ? window.PR.grace : ((typeof PR !== 'undefined' && PR.grace) ? PR.grace : 15)) || 15;
+  const lateRate = Number(window.PR ? window.PR.late : ((typeof PR !== 'undefined' && PR.late) ? PR.late : 20)) || 20;
+  const graceSec = graceMins * 60;
+
+  const elapsedSec = el();
+  const durSec = r.dur || 3600;
+  const durHours = Math.max(0.5, durSec / 3600);
+  const baseCost = Math.round(durHours * rate);
+
+  let lateFee = 0;
+  let isGrace = false;
+  let isOverdue = false;
+  let remainingGraceSec = 0;
+
+  if (elapsedSec <= durSec) {
+    // Normal rental duration window
+    isGrace = false;
+    isOverdue = false;
+  } else if (elapsedSec <= durSec + graceSec) {
+    // Within grace period (no penalty yet!)
+    isGrace = true;
+    isOverdue = false;
+    remainingGraceSec = Math.max(0, (durSec + graceSec) - elapsedSec);
+  } else {
+    // Overdue: late fee applies
+    isGrace = false;
+    isOverdue = true;
+    const overdueSec = elapsedSec - (durSec + graceSec);
+    const overdueHours = Math.ceil(overdueSec / 3600);
+    lateFee = overdueHours * lateRate;
+  }
+
+  const totalCost = baseCost + lateFee;
+  return {
+    rate,
+    graceMins,
+    lateRate,
+    baseCost,
+    lateFee,
+    totalCost,
+    isGrace,
+    isOverdue,
+    remainingGraceSec,
+    elapsedSec
+  };
+};
+
+window.updateRentalTimerDom = () => {
+  const r = S.rent;
+  if (!r || !r.started) return;
+
+  const cost = window.computeRentalCost(r);
+  const elapsedSec = cost.elapsedSec;
+  const remSec = r.dur - elapsedSec;
+
+  // 1. Digital Countdown & Elapsed Display
+  const tEl = document.getElementById('tm');
+  if (tEl) {
+    if (remSec > 0) {
+      tEl.textContent = fmt(remSec);
+      tEl.style.color = remSec < 300 ? '#f08a24' : 'var(--fg)';
+    } else {
+      tEl.textContent = `+${fmt(Math.abs(remSec))}`;
+      tEl.style.color = '#f87171';
+    }
+  }
+
+  const elapsedEl = document.getElementById('tm-elapsed');
+  if (elapsedEl) {
+    elapsedEl.textContent = fmt(elapsedSec);
+  }
+
+  // 2. Battery Percentage & Segmented Readout
+  const battDrainRate = (window.CATS && window.CATS[r.cat]?.dr) || 16;
+  r.batt = Math.max(0, 100 - (elapsedSec / 3600) * battDrainRate);
+  const battPct = Math.max(0, r.batt) | 0;
+
+  const bt = document.getElementById('bt');
+  if (bt) bt.textContent = `${battPct}%`;
+  const bb = document.getElementById('bb');
+  if (bb) bb.style.width = `${battPct}%`;
+
+  // 3. Live Cell Voltage & Temperature Telemetry
+  const volt = (3.60 + (r.batt / 100) * 0.58).toFixed(2);
+  const temp = (28.0 + (elapsedSec / 800) % 8).toFixed(1);
+
+  const voltEl = document.getElementById('rental-volt');
+  if (voltEl) voltEl.textContent = `${volt} V`;
+  const tempEl = document.getElementById('rental-temp');
+  if (tempEl) tempEl.textContent = `${temp} °C`;
+
+  // 4. Live Cost Ticker & Grace Readout
+  const costEl = document.getElementById('live-rental-cost');
+  if (costEl) costEl.textContent = `₹ ${cost.totalCost}`;
+
+  const rateEl = document.getElementById('live-rental-rate');
+  if (rateEl) rateEl.textContent = `Rate: ₹ ${cost.rate}/hr · Base: ₹ ${cost.baseCost}`;
+
+  const graceEl = document.getElementById('live-rental-grace');
+  if (graceEl) {
+    if (cost.isGrace) {
+      const gMin = Math.floor(cost.remainingGraceSec / 60);
+      const gSec = Math.floor(cost.remainingGraceSec % 60);
+      graceEl.innerHTML = `<span style="color:#f08a24;font-weight:700">⚡ Grace Period: ${gMin}m ${gSec}s remaining (no late fee)</span>`;
+    } else if (cost.isOverdue) {
+      graceEl.innerHTML = `<span style="color:#f87171;font-weight:700">⚠️ Session Overdue · Late Fee Applied (+₹${cost.lateFee})</span>`;
+    } else {
+      graceEl.innerHTML = `<span style="color:var(--mut)">Standard Session · ${cost.graceMins} min grace window on expiry</span>`;
+    }
+  }
+
+  // 5. Smart Return Station Recommender
+  const returnRecEl = document.getElementById('rental-return-rec');
+  if (returnRecEl && typeof best === 'function' && typeof dist === 'function' && typeof fmtDist === 'function') {
+    const targetStn = best(true);
+    if (targetStn) {
+      returnRecEl.textContent = `${targetStn.n} · ${fmtDist(dist(targetStn))} away (${targetStn.free} bays free)`;
+    }
+  }
+};
+
 window.retn = () => {
   const r = S.rent;
   if (!r) return;
+  const cost = window.computeRentalCost ? window.computeRentalCost(r) : { totalCost: 20 };
   S.hist.unshift({
     id: r.id,
     d: 'Today',
     st: r.st.n,
     cat: r.cat,
     h: fmt(el()).slice(0, 5).replace(':', ' h ') + ' m',
+    cost: `₹ ${cost.totalCost}`,
     s: 'Completed'
   });
   S.pay = null;
@@ -213,23 +346,16 @@ window.retn = () => {
   b.free = Math.max(0, b.free - 1);
   b.stock[r.cat]++;
   S.rent = null;
-  toast('Returned at ' + b.n + '. Thanks for using solar power.');
+  toast(`Returned at ${b.n}. Total billed: ₹${cost.totalCost}. Thanks for using solar power.`);
   go(1);
 };
 
-// 1-second active rental timer and discharge
+// 1-second active rental timer, cost ticker and discharge
 setInterval(() => {
   const r = S.rent;
   if (r && r.started) {
-    r.batt = 100 - (el() / 3600) * CATS[r.cat].dr * 300;
-    const T = $('#tm');
-    if (T) {
-      T.textContent = fmt(r.dur - el());
-      const bt = $('#bt'),
-        bb = $('#bb');
-      if (bt) bt.textContent = ((Math.max(0, r.batt) | 0) + '%');
-      if (bb) bb.style.width = Math.max(0, r.batt) + '%';
-    }
+    window.updateRentalTimerDom();
+
     if (!r.done && el() >= r.dur) {
       r.done = true;
       const b = best(true);
