@@ -1388,22 +1388,112 @@ window.updateImpactCalculator = function(hours) {
   if (coalEl) coalEl.textContent = `${coal} g`;
 };
 
+// Smooth, GPU-composited mouse parallax for #home background (Zero-Lag RAF)
+function initHomeDynamicBackdrop() {
+  const backdrop = document.querySelector('.home-dynamic-backdrop');
+  if (!backdrop) return;
+
+  let targetX = 0, targetY = 0;
+  let currentX = 0, currentY = 0;
+  let isMoving = false;
+  let rafId = null;
+
+  function onMouseMove(e) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    targetX = ((e.clientX / w) - 0.5) * 36;
+    targetY = ((e.clientY / h) - 0.5) * 36;
+    if (!isMoving) {
+      isMoving = true;
+      rafId = requestAnimationFrame(updateParallax);
+    }
+  }
+
+  function updateParallax() {
+    if (!document.querySelector('.home-dynamic-backdrop')) {
+      isMoving = false;
+      return;
+    }
+    currentX += (targetX - currentX) * 0.08;
+    currentY += (targetY - currentY) * 0.08;
+
+    backdrop.style.setProperty('--mx', `${currentX.toFixed(2)}px`);
+    backdrop.style.setProperty('--my', `${currentY.toFixed(2)}px`);
+
+    if (Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05) {
+      rafId = requestAnimationFrame(updateParallax);
+    } else {
+      isMoving = false;
+    }
+  }
+
+  window.addEventListener('mousemove', onMouseMove, { passive: true });
+}
+
 const PG = {
-  home: () =>
-    `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
-      'h1'
-    )}</h1><p>${t('sub')}</p><p><a class="btn plug" href="#plug">${t(
-      'plug'
-    )} ⚡</a> <a class="btn g" href="#how">${t(
-      'how'
-    )}</a></p></div><div class="g3" role="img" aria-label="Interactive 3D power bank"><canvas id="cv"></canvas></div></div>
-  <h2>Three steps</h2><div class="grid"><div class="card"><span class="num">01</span><h3>Find</h3><p>Pick a station with free, fully charged banks.</p></div><div class="card"><span class="num">02</span><h3>Unlock</h3><p>Reserve, pay and the lock opens from your phone.</p></div><div class="card"><span class="num">03</span><h3>Return</h3><p>Drop it at any station. Return is checked automatically.</p></div></div>
-  <div id="interactive-arch-mount">
-    ${typeof renderInteractiveArchDiagram === 'function' ? renderInteractiveArchDiagram() : ''}
-  </div>
-  <h2 style="margin-top:48px">Live stations</h2><div class="grid">${ST.map(
-      stn
-    ).join('')}</div></div>`,
+  home: () => {
+    setTimeout(() => { if (typeof initHomeDynamicBackdrop === 'function') initHomeDynamicBackdrop(); }, 20);
+    return `
+      <div class="wrap" style="position:relative">
+        <!-- Dynamic Solarpunk & Solar Corona Fusion Backdrop -->
+        <div class="home-dynamic-backdrop" aria-hidden="true">
+          <div class="backdrop-solar-radial-glow"></div>
+          
+          <!-- Layer 0: Solar Eclipse Corona & Atmospheric Flare -->
+          <div class="backdrop-layer layer-corona">
+            <div class="solar-eclipse-ring"></div>
+            <div class="solar-corona-breathing-ring"></div>
+          </div>
+
+          <!-- Layer 1: Solarpunk Arch Biosphere Structure -->
+          <div class="backdrop-layer layer-arch">
+            <div class="solarpunk-arch-silhouette"></div>
+            <div class="solarpunk-arch-accent-frame"></div>
+          </div>
+
+          <!-- Layer 2: Rotating Solarpunk Astrolabe & Celestial Gear Rings -->
+          <div class="backdrop-layer layer-astrolabe">
+            <div class="astrolabe-main-rotor"></div>
+            <div class="astrolabe-counter-ring"></div>
+            <div class="astrolabe-inner-azimuth"></div>
+          </div>
+
+          <!-- Layer 3: Ambient Solar Flare Dust Embers -->
+          <div class="backdrop-layer layer-particles">
+            <span class="solar-ember ember-1"></span>
+            <span class="solar-ember ember-2"></span>
+            <span class="solar-ember ember-3"></span>
+            <span class="solar-ember ember-4"></span>
+            <span class="solar-ember ember-5"></span>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div>
+            <span class="k">LumenGrove · campus power</span>
+            <h1 tabindex="-1">${t('h1')}</h1>
+            <p>${t('sub')}</p>
+            <p><a class="btn plug" href="#plug">${t('plug')} ⚡</a> <a class="btn g" href="#how">${t('how')}</a></p>
+          </div>
+          <div class="g3" role="img" aria-label="Interactive 3D power bank"><canvas id="cv"></canvas></div>
+        </div>
+
+        <h2>Three steps</h2>
+        <div class="grid">
+          <div class="card"><span class="num">01</span><h3>Find</h3><p>Pick a station with free, fully charged banks.</p></div>
+          <div class="card"><span class="num">02</span><h3>Unlock</h3><p>Reserve, pay and the lock opens from your phone.</p></div>
+          <div class="card"><span class="num">03</span><h3>Return</h3><p>Drop it at any station. Return is checked automatically.</p></div>
+        </div>
+
+        <div id="interactive-arch-mount">
+          ${typeof renderInteractiveArchDiagram === 'function' ? renderInteractiveArchDiagram() : ''}
+        </div>
+
+        <h2 style="margin-top:48px">Live stations</h2>
+        <div class="grid">${ST.map(stn).join('')}</div>
+      </div>
+    `;
+  },
 
   how: () =>
     `<div class="wrap how-page-wrap">
