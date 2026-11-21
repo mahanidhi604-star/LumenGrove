@@ -17,10 +17,15 @@
 
 ### System Highlights:
 1. **Public Student Bento Portal (`#app-home`)**: Seamless kiosk discovery, real-time GPS geolocation (Haversine formula), solar power bank rental with guest lockout protection, and custom solarpunk profile cards.
-2. **Cross-Device Mobile Payment Simulation Gateway (`#pay-sim`)**: Dynamic QR code checkout that synchronizes station configurations across laptop and mobile phones, unlocking kiosk slots in real time via **Supabase Realtime WebSockets**.
-3. **Continuous Time-Dilation Kiosk Simulator**: Interactive hardware simulator with 8-bay solenoid ejection, live battery SoC/voltage telemetry, and continuous elapsed time accumulation across $1\times$, $60\times$, and $300\times$ speeds.
-4. **Account-Scoped Relational Rental History (`#app-rentals`)**: Full database lifecycle management in `public.rentals` (Paid $\rightarrow$ Active $\rightarrow$ Completed), persistent across sign-outs with strict student account isolation.
-5. **10k Cyber Aerospace Mission Control (`#admin`)**: An isolated, full-bleed telemetry HUD featuring stationary RVCE vector radar, click-to-select station targeting, 8-bay hardware diagnostics, and an integrated **Customer Complaints Hub**.
+2. **Interactive Dual-Track Architecture Semi-Flowchart**: Visual dual-track system map featuring **Track A (Physical Energy Flow)** and **Track B (Digital Control Loop)** with step-by-step filtering, live telemetry cards, and node spotlight drilldowns.
+3. **Campus Workflow Guide (`#how`)**: Step-by-step 4-phase interactive guide (Discover, Mobile Unlock, Mobile Power, Automated Drop-Off) featuring hardware callout tags.
+4. **Hardware Parts Registry & BOM (`#tech`)**: Searchable and filterable Bill of Materials cataloging all 15 authentic system components (ESP32-WROOM-32D, INA219, MPPT Controller, Solenoid Latches, LiFePO4 Battery Cells, RFID, etc.) with pin interfaces and electrical ratings.
+5. **Sustainability Dashboard & Carbon Calculator (`#impact`)**: UN SDG alignment (SDG 7, 11, 12), live ecological KPIs (1,284 kWh generated, 1,053 kg CO₂ mitigated), and an interactive carbon mitigation slider.
+6. **Solarpunk Philosophy & FAQ Accordion (`#about`)**: Engineering pillars (Radical Autonomy, Open Hardware, Student Commons) with interactive accordion FAQs.
+7. **Cross-Device Mobile Payment Simulation Gateway (`#pay-sim`)**: Dynamic QR code checkout that synchronizes station configurations across laptop and mobile phones, unlocking kiosk slots in real time via **Supabase Realtime WebSockets**.
+8. **Continuous Time-Dilation Kiosk Simulator**: Interactive hardware simulator with 8-bay solenoid ejection, live battery SoC/voltage telemetry, and continuous elapsed time accumulation across $1\times$, $60\times$, and $300\times$ speeds.
+9. **Account-Scoped Relational Rental History (`#app-rentals`)**: Full database lifecycle management in `public.rentals` (Paid $\rightarrow$ Active $\rightarrow$ Completed), persistent across sign-outs with strict student account isolation.
+10. **Mission Control Telemetry HUD (`#admin`)**: An isolated, full-bleed telemetry HUD featuring stationary RVCE vector radar, click-to-select station targeting, 8-bay hardware diagnostics, and an integrated **Customer Complaints Hub**.
 
 > 💡 **For Viva Evaluators:** Refer to [DEMO_CHEAT_SHEET.md](DEMO_CHEAT_SHEET.md) for a timed 3-minute presentation script and technical defense answers.
 
@@ -29,7 +34,7 @@
 ## 📸 Visual Showcase & UI Gallery
 
 ### 1. Stationary Campus Microgrid Radar Map & Mission Control (`#admin`)
-*Isolated 10k Mission Control with stationary RVCE vector radar, click-to-select station targeting, and 8-bay hardware diagnostics.*
+*Isolated Mission Control with stationary RVCE vector radar, click-to-select station targeting, and 8-bay hardware diagnostics.*
 
 | Stationary RVCE Campus Microgrid Radar Map | Cyber Pricing Deck & Segmented Battery Matrix |
 |:---:|:---:|
@@ -95,6 +100,45 @@
 - Instant multi-parameter search (by student name, ticket ID, phone number) and status filter pills.
 - Verified student contact details with registered `+91` numbers.
 - One-click staff resolution: `[🛠️ Dispatch Field Technician]` and `[✓ Mark as Resolved]`.
+
+### 7. 🗺️ Dual-Track Architecture Semi-Flowchart
+- **Semi-Flowchart Topology**: Direct visual mapping separating hardware energy generation from cloud IoT telemetry.
+  - **Track A (Physical Energy Flow)**: Solar Photons $\rightarrow$ Bifacial PV Panels $\rightarrow$ MPPT Solar Charger $\rightarrow$ 12V Buffer Battery $\rightarrow$ High-Efficiency Buck Regulators $\rightarrow$ 8-Bay Kiosk Slots $\rightarrow$ Swappable LiFePO4 Power Banks.
+  - **Track B (Digital Control Loop)**: ESP32-WROOM Controller $\rightarrow$ INA219 Voltage/Current Sensors $\rightarrow$ 12V Solenoid Locking Latches $\rightarrow$ Supabase Realtime WebSockets $\rightarrow$ Student Smartphone Browser $\rightarrow$ Mission Control Dashboard.
+- **Interactive Filtering & Spotlight**: Filter by All Nodes, Track A, or Track B; click-to-spotlight any hardware stage to inspect electrical specifications, communication bus interfaces (I²C, SPI, GPIO), and live operational telemetry.
+
+### 8. 🛠️ Campus Workflow Guide (`#how`)
+- **4-Phase End-to-End Walkthrough**:
+  1. *Discover & Reserve*: Geolocation-based station discovery and real-time bay availability.
+  2. *Scan & Unlock*: Seamless QR checkout triggering instant solenoid release.
+  3. *Power Anywhere*: High-speed 22.5W USB-PD fast-charging across campus study hubs.
+  4. *Frictionless Drop-off*: Automatic hardware authentication, slot latching, and session completion.
+- **Hardware Highlight Pills**: Clear component mapping at each phase (`ESP32 MCU`, `Bifacial PV`, `12V Solenoid`, `LiFePO4`).
+
+### 9. ⚙️ Hardware Parts Registry & Bill of Materials (`#tech`)
+- **Interactive Component Catalog**: Full Bill of Materials (BOM) cataloging 15 physical components with dynamic category filtering:
+  - `MCU`: ESP32-WROOM-32D Dual-Core 240MHz microcontroller.
+  - `Sensors`: INA219 High-Side I²C Current/Power Monitor, DS18B20 1-Wire Digital Temperature Sensor.
+  - `Power`: 50W Monocrystalline Bifacial PV Panel, 12V 10A MPPT Solar Charge Controller, Step-Down Buck Converters (5V/3A & 12V/2A).
+  - `Mechanism`: 12V DC Solenoid Cabinet Door Latches, RC522 13.56MHz RFID Reader, 8-Channel Optocoupled Relay Module.
+  - `Storage`: 32700 3.2V 6000mAh LiFePO4 Lithium Iron Phosphate cylindrical cells, 4S 30A Active BMS with Overcurrent Protection.
+- **Searchable Specs**: Instant keyword search filtering by component name, manufacturer part number, or bus interface.
+
+### 10. 🌱 Sustainability Dashboard & Carbon Calculator (`#impact`)
+- **Real-Time Ecological Metrics**:
+  - `1,284 kWh`: Cumulative clean solar energy harvested.
+  - `1,053 kg`: Net CO₂ emissions mitigated.
+  - `8,600+`: Mobile device study hours powered by sunlight.
+  - `100%`: Off-grid autonomy at all 4 campus stations.
+- **UN Sustainable Development Goals (SDGs)**: Explicit alignment with SDG 7 (Affordable & Clean Energy), SDG 11 (Sustainable Cities & Communities), and SDG 12 (Responsible Consumption & Production).
+- **Interactive Carbon Calculator**: Dynamic slider allowing students to calculate personal kWh savings, grams of carbon displaced, and equivalent tree-absorption hours.
+
+### 11. 🌿 Solarpunk Philosophy & FAQ Accordion (`#about`)
+- **Engineering Pillars**:
+  - *Radical Energy Autonomy*: Full decentralization independent of fossil fuels or grid blackouts.
+  - *Open Hardware & Modularity*: Repairable, swappable components preventing planned obsolescence.
+  - *Student-Centric Commons*: Clean public utility infrastructure engineered for campus equity.
+- **Accessible FAQ Accordion**: Interactive `<details>` list answering critical operational questions (overdue policies, power bank capacities, rain and overcast solar resiliency).
 
 ---
 
