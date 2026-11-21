@@ -8,3 +8,8 @@ window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'sb_publishable_kX0xur9mO
 // Feature Flag: Enable/disable demo student client simulation
 // When set to false, all demo buttons and demo code paths are completely hidden/disabled.
 window.ENABLE_DEMO = true;
+
+// MQTT over WebSockets Configuration (HiveMQ Public Broker)
+window.MQTT_BROKER_WSS = window.MQTT_BROKER_WSS || 'wss://broker.hivemq.com:8884/mqtt';
+window.MQTT_RENT_TOPIC = window.MQTT_RENT_TOPIC || 'lumengrove/stations/station_01/rent';
+window.DEFAULT_STATION_ID = window.DEFAULT_STATION_ID || 'station_01';

@@ -252,12 +252,111 @@ window.onLivePaymentReceived = (sessionId) => {
   paid();
 };
 
-window.simulateBankWebhookApproval = () => {
+window.publishMqttRentCommand = async (rentPayload) => {
+  return new Promise((resolve, reject) => {
+    const mqttLib = window.mqtt || (typeof mqtt !== 'undefined' ? mqtt : null);
+    if (!mqttLib || !mqttLib.connect) {
+      console.warn('[MQTT] mqtt.js library not available.');
+      return reject(new Error('MQTT library not loaded'));
+    }
+
+    const brokerUrl = window.MQTT_BROKER_WSS || 'wss://broker.hivemq.com:8884/mqtt';
+    const topic = window.MQTT_RENT_TOPIC || 'lumengrove/stations/station_01/rent';
+    const clientId = 'lumengrove_web_' + Math.random().toString(16).substring(2, 10);
+
+    console.log(`[MQTT] Connecting to ${brokerUrl} as ${clientId}...`);
+    const client = mqttLib.connect(brokerUrl, {
+      clientId,
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 0
+    });
+
+    const timer = setTimeout(() => {
+      try { client.end(true); } catch (e) {}
+      reject(new Error('MQTT publish timeout'));
+    }, 6000);
+
+    client.on('connect', () => {
+      console.log('[MQTT] Connected to broker. Publishing rent command to topic:', topic);
+      const message = JSON.stringify(rentPayload);
+      client.publish(topic, message, { qos: 0 }, (err) => {
+        clearTimeout(timer);
+        if (err) {
+          console.error('[MQTT] Publish error:', err);
+          try { client.end(true); } catch (e) {}
+          reject(err);
+        } else {
+          console.log('[MQTT] Successfully published message:', message);
+          try { client.end(true); } catch (e) {}
+          resolve(rentPayload);
+        }
+      });
+    });
+
+    client.on('error', (err) => {
+      clearTimeout(timer);
+      console.error('[MQTT] Connection error:', err);
+      try { client.end(true); } catch (e) {}
+      reject(err);
+    });
+  });
+};
+
+window.simulateBankWebhookApproval = async () => {
   const p = S.pay;
   if (!p || p.paid) return;
   const txnId = p.id || ('UPI-' + Math.floor(100000 + Math.random() * 900000));
   toast(`⚡ Bank Webhook: Instant Approval Received (${txnId})`);
-  paid();
+
+  // 1. Dynamically fetch first available power bank from Supabase power_banks view/table
+  let bankId = null;
+  if (window.supabaseClient) {
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('power_banks')
+        .select('id, rfid_tag, bank_type_id, is_rented')
+        .eq('is_rented', false)
+        .limit(1);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        bankId = data[0].id;
+        console.log('[Rentals] Dynamically fetched available bank from Supabase:', bankId);
+      }
+    } catch (e) {
+      console.warn('[Rentals] Error fetching bank from Supabase:', e);
+    }
+  }
+
+  // Fallback to initial seeded bank UUID if database query returns empty
+  if (!bankId) {
+    bankId = '1fb492d3-9244-455c-a13f-071f14436393';
+  }
+
+  // 2. Identify student user UUID (or fallback demo student UUID for foreign key validity)
+  const userId = (S.u && S.u.id && S.u.id.length > 20)
+    ? S.u.id
+    : '015eb091-8a66-4f25-a96f-2880378fb9b1';
+
+  // 3. Formulate JSON rent command for ESP32
+  const stationId = (p.b && p.b.id) ? p.b.id : (window.DEFAULT_STATION_ID || 'station_01');
+  const rentPayload = {
+    action: 'rent',
+    station_id: 'station_01',
+    bank_id: bankId,
+    user_id: userId
+  };
+
+  // 4. Publish via MQTT over WebSockets
+  try {
+    await window.publishMqttRentCommand(rentPayload);
+    toast(`⚡ MQTT Sent: Renting Bank [${bankId.substring(0, 8)}] at Station [${stationId}]`);
+  } catch (mqttErr) {
+    console.warn('[MQTT] Publish error (proceeding with local flow):', mqttErr);
+  }
+
+  // 5. Complete website rental processing with the selected bankId
+  paid(rentPayload);
 };
 
 window.cancelPayment = () => {
@@ -613,7 +712,7 @@ window.startR = (stnId) => {
   }
 };
 
-window.paid = () => {
+window.paid = (customCmd) => {
   const p = S.pay;
   if (!p || S.rent) return;
   if (typeof stu === 'function' && !stu()) {
@@ -625,6 +724,7 @@ window.paid = () => {
   const targetStation = p.b || S.pick || best();
   const targetCat = p.cat || S.cat || 'std';
   const targetDur = (p.dur || S.dur || 1);
+  const selectedBankId = (customCmd && customCmd.bank_id) ? customCmd.bank_id : null;
 
   const currentRate = (window.PR && window.PR.rate !== undefined && window.PR.rate !== '') 
     ? Number(window.PR.rate) 
@@ -637,6 +737,7 @@ window.paid = () => {
     pin: String(100000 + ((Math.random() * 900000) | 0)),
     st: targetStation,
     cat: targetCat,
+    bank_id: selectedBankId,
     dur: targetDur * 3600,
     started: 0,
     batt: 100,
@@ -653,6 +754,7 @@ window.paid = () => {
     d: 'Today',
     st: targetStation.n,
     station_id: targetStation.id,
+    bank_id: selectedBankId,
     cat: targetCat,
     bank_type_id: targetCat,
     h: `${targetDur} h`,
@@ -676,6 +778,7 @@ window.paid = () => {
       id: rentalId,
       user_id: (S.u.id && S.u.id.length > 20) ? S.u.id : null,
       station_id: targetStation.id,
+      bank_id: selectedBankId,
       bank_type_id: targetCat,
       duration_hours: targetDur,
       amount_paise: amountPaise,
@@ -1091,3 +1194,54 @@ setInterval(() => {
     }
   }
 }, 1000);
+
+// ============================================================
+// SUPABASE REALTIME SUBSCRIPTION FOR LIVE RENTAL UPDATES
+// ============================================================
+window.initRentalsRealtime = () => {
+  if (!window.supabaseClient) {
+    setTimeout(window.initRentalsRealtime, 800);
+    return;
+  }
+  if (window._rentalsRealtimeSubscribed) return;
+  window._rentalsRealtimeSubscribed = true;
+
+  try {
+    const channel = window.supabaseClient
+      .channel('public:rentals-kiosk-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rentals' },
+        (payload) => {
+          console.log('[Supabase Realtime] Event on rentals table:', payload);
+          if (payload.eventType === 'INSERT') {
+            const newRow = payload.new;
+            toast(`⚡ Hardware Kiosk Confirmed: Bank Taken [${(newRow.bank_id || '').substring(0, 8)}]`);
+          }
+          if (typeof window.loadUserRentalHistory === 'function') {
+            window.loadUserRentalHistory().then(() => {
+              const currentHash = location.hash.slice(1).split('?')[0];
+              if (currentHash === 'app-rentals' || currentHash === 'app-home') {
+                go(1);
+              }
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Supabase Realtime] rentals channel status:', status);
+      });
+    window._rentalsRealtimeChannel = channel;
+  } catch (err) {
+    console.warn('[Supabase Realtime] Initialization warning:', err);
+  }
+};
+
+// Initialize Supabase Realtime on load
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initRentalsRealtime);
+  } else {
+    setTimeout(window.initRentalsRealtime, 500);
+  }
+}
