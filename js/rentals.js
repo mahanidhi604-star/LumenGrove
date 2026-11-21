@@ -241,54 +241,77 @@ window.startPaymentSyncListener = (sessionId) => {
   }, 500);
 };
 
-window.onLivePaymentReceived = (sessionId) => {
+window.onLivePaymentReceived = async (sessionId) => {
   if (!S.pay || S.pay.paid) return;
-  console.log('[PaySync] onLivePaymentReceived triggering paid() for session:', sessionId);
+  console.log('[PaySync] onLivePaymentReceived triggering simulation flow for session:', sessionId);
   if (window._paySyncInterval) {
     clearInterval(window._paySyncInterval);
     window._paySyncInterval = null;
   }
   toast(`✓ Live Mobile Payment Received (${sessionId}) · Kiosk Slot Unlocked`);
-  paid();
+  await window.simulateBankWebhookApproval();
 };
 
 window.publishMqttRentCommand = async (rentPayload) => {
   return new Promise((resolve, reject) => {
     const mqttLib = window.mqtt || (typeof mqtt !== 'undefined' ? mqtt : null);
     if (!mqttLib || !mqttLib.connect) {
-      console.warn('[MQTT] mqtt.js library not available.');
-      return reject(new Error('MQTT library not loaded'));
+      const err = new Error('MQTT library (mqtt.js) is not available. Please ensure vendor/mqtt.min.js is loaded.');
+      console.error('[MQTT]', err.message);
+      return reject(err);
     }
 
     const brokerUrl = window.MQTT_BROKER_WSS || 'wss://broker.hivemq.com:8884/mqtt';
     const topic = window.MQTT_RENT_TOPIC || 'lumengrove/stations/station_01/rent';
     const clientId = 'lumengrove_web_' + Math.random().toString(16).substring(2, 10);
 
-    console.log(`[MQTT] Connecting to ${brokerUrl} as ${clientId}...`);
-    const client = mqttLib.connect(brokerUrl, {
-      clientId,
-      clean: true,
-      connectTimeout: 5000,
-      reconnectPeriod: 0
-    });
+    console.log(`[MQTT] 1. Initiating connection to HiveMQ broker: ${brokerUrl}`);
+    console.log(`[MQTT]    Client ID: ${clientId}`);
 
+    let client;
+    try {
+      client = mqttLib.connect(brokerUrl, {
+        clientId,
+        clean: true,
+        keepalive: 60,
+        connectTimeout: 10000,
+        reconnectPeriod: 0
+      });
+    } catch (e) {
+      console.error('[MQTT] ✗ Connection initialization failed:', e);
+      return reject(e);
+    }
+
+    let settled = false;
     const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.error('[MQTT] ✗ Connection timed out after 10s (HiveMQ broker was unreachable)');
       try { client.end(true); } catch (e) {}
-      reject(new Error('MQTT publish timeout'));
-    }, 6000);
+      reject(new Error('MQTT connection timeout'));
+    }, 10000);
 
     client.on('connect', () => {
-      console.log('[MQTT] Connected to broker. Publishing rent command to topic:', topic);
+      console.log(`[MQTT] 2. ✓ Connected successfully to HiveMQ broker (${brokerUrl})`);
       const message = JSON.stringify(rentPayload);
+      console.log(`[MQTT] 3. Publishing rent command to topic: "${topic}"`);
+      console.log(`[MQTT]    Payload:`, message);
+
       client.publish(topic, message, { qos: 0 }, (err) => {
         clearTimeout(timer);
+        if (settled) return;
+        settled = true;
+
         if (err) {
-          console.error('[MQTT] Publish error:', err);
+          console.error(`[MQTT] ✗ Failed to publish to topic "${topic}":`, err);
           try { client.end(true); } catch (e) {}
           reject(err);
         } else {
-          console.log('[MQTT] Successfully published message:', message);
-          try { client.end(true); } catch (e) {}
+          console.log(`[MQTT] 4. ✓ Successfully published rent command to topic "${topic}"!`);
+          console.log(`[MQTT]    Message dispatched to ESP32:`, message);
+          setTimeout(() => {
+            try { client.end(false); } catch (e) {}
+          }, 500);
           resolve(rentPayload);
         }
       });
@@ -296,41 +319,82 @@ window.publishMqttRentCommand = async (rentPayload) => {
 
     client.on('error', (err) => {
       clearTimeout(timer);
-      console.error('[MQTT] Connection error:', err);
+      if (settled) return;
+      settled = true;
+      console.error('[MQTT] ✗ Connection error event received:', err);
       try { client.end(true); } catch (e) {}
       reject(err);
+    });
+
+    client.on('offline', () => {
+      console.warn('[MQTT] Client went offline');
+    });
+
+    client.on('close', () => {
+      console.log('[MQTT] Client connection closed.');
     });
   });
 };
 
 window.simulateBankWebhookApproval = async () => {
-  const p = S.pay;
-  if (!p || p.paid) return;
+  let p = S.pay;
+  if (!p || p.paid) {
+    console.log('[SimulatePay] Initializing/resetting active checkout session for testing...');
+    if (!p) {
+      p = S.pay = {
+        id: 'UPI-' + Math.floor(100000 + Math.random() * 900000),
+        amount: 10,
+        dur: 1,
+        cat: 'std',
+        b: { id: 'station_01', n: 'Central Library Kiosk' },
+        paid: false
+      };
+    } else {
+      p.paid = false;
+    }
+  }
+
   const txnId = p.id || ('UPI-' + Math.floor(100000 + Math.random() * 900000));
   toast(`⚡ Bank Webhook: Instant Approval Received (${txnId})`);
 
-  // 1. Dynamically fetch first available power bank from Supabase power_banks view/table
+  // 1. Dynamically fetch first available power bank from Supabase banks table (is_rented = false)
+  console.log('[Rentals] 1. Querying Supabase for first available power bank (is_rented = false)...');
   let bankId = null;
   if (window.supabaseClient) {
     try {
-      const { data, error } = await window.supabaseClient
-        .from('power_banks')
+      let { data, error } = await window.supabaseClient
+        .from('banks')
         .select('id, rfid_tag, bank_type_id, is_rented')
         .eq('is_rented', false)
         .limit(1);
 
+      if ((error || !data || data.length === 0) && window.supabaseClient.from) {
+        const pbRes = await window.supabaseClient
+          .from('power_banks')
+          .select('id, rfid_tag, bank_type_id, is_rented')
+          .eq('is_rented', false)
+          .limit(1);
+        if (!pbRes.error && Array.isArray(pbRes.data) && pbRes.data.length > 0) {
+          data = pbRes.data;
+          error = null;
+        }
+      }
+
       if (!error && Array.isArray(data) && data.length > 0) {
         bankId = data[0].id;
-        console.log('[Rentals] Dynamically fetched available bank from Supabase:', bankId);
+        console.log('[Rentals] ✓ Fetched available bank from Supabase:', bankId);
+      } else {
+        console.warn('[Rentals] Supabase returned no rows with is_rented=false. Error:', error);
       }
     } catch (e) {
       console.warn('[Rentals] Error fetching bank from Supabase:', e);
     }
   }
 
-  // Fallback to initial seeded bank UUID if database query returns empty
+  // Fallback to verified seeded bank UUID if database query returns empty
   if (!bankId) {
     bankId = '1fb492d3-9244-455c-a13f-071f14436393';
+    console.log('[Rentals] Using fallback seeded bank ID:', bankId);
   }
 
   // 2. Identify student user UUID (or fallback demo student UUID for foreign key validity)
@@ -339,25 +403,32 @@ window.simulateBankWebhookApproval = async () => {
     : '015eb091-8a66-4f25-a96f-2880378fb9b1';
 
   // 3. Formulate JSON rent command for ESP32
-  const stationId = (p.b && p.b.id) ? p.b.id : (window.DEFAULT_STATION_ID || 'station_01');
+  const stationId = 'station_01';
   const rentPayload = {
     action: 'rent',
-    station_id: 'station_01',
+    station_id: stationId,
     bank_id: bankId,
     user_id: userId
   };
 
+  console.log('[Rentals] Formulated Rent Payload:', JSON.stringify(rentPayload));
+
   // 4. Publish via MQTT over WebSockets
   try {
+    console.log('[Rentals] Publishing MQTT rent command to HiveMQ broker...');
     await window.publishMqttRentCommand(rentPayload);
     toast(`⚡ MQTT Sent: Renting Bank [${bankId.substring(0, 8)}] at Station [${stationId}]`);
   } catch (mqttErr) {
-    console.warn('[MQTT] Publish error (proceeding with local flow):', mqttErr);
+    console.error('[MQTT] Publish error:', mqttErr);
+    toast('⚠️ MQTT publish failed, check browser console');
   }
 
   // 5. Complete website rental processing with the selected bankId
   paid(rentPayload);
 };
+
+// Alias for convenience so simulatePayment() also triggers this handler
+window.simulatePayment = window.simulateBankWebhookApproval;
 
 window.cancelPayment = () => {
   if (window._paySyncInterval) {
@@ -634,8 +705,8 @@ const payView = () => {
           <button type="button" class="btn btn-simulate-webhook" onclick="simulateBankWebhookApproval()" title="Simulate instant bank authorization webhook">
             <span class="webhook-bolt">⚡</span>
             <div style="text-align:left">
-              <div style="font-size:0.95rem;font-weight:800;line-height:1.2">Simulate Bank Webhook Approval</div>
-              <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Instant clearance without scanning (for viva examiners)</small>
+              <div style="font-size:0.95rem;font-weight:800;line-height:1.2">Simulate Payment (Bank Webhook Approval)</div>
+              <small style="font-size:0.72rem;opacity:0.9;display:block;text-transform:none;font-weight:normal">Dispatches MQTT rent command to ESP32 Station 01</small>
             </div>
           </button>
           <button type="button" class="btn g btn-cancel-checkout" onclick="cancelPayment()" style="width:100%;margin-top:6px;padding:8px">↺ Change Configuration / Cancel</button>
