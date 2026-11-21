@@ -801,7 +801,9 @@ window.paid = (customCmd) => {
     ? Number(window.PR.rate) 
     : ((typeof PR !== 'undefined' && PR.rate) ? Number(PR.rate) : 10);
   const amountPaise = Math.round(targetDur * currentRate * 100);
-  const rentalId = 'LG-' + (1042 + (Array.isArray(S.hist) ? S.hist.length : 0));
+  const rentalId = (customCmd && customCmd.rental_id) 
+    ? customCmd.rental_id 
+    : `LG-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
   S.rent = {
     id: rentalId,
@@ -856,9 +858,9 @@ window.paid = (customCmd) => {
       status: 'paid',
       created_at: new Date().toISOString()
     };
-    window.supabaseClient.from('rentals').insert(dbRecord).then(({ error }) => {
-      if (error) console.warn('[Rentals DB] Insert error (table rentals):', error);
-      else console.log('[Rentals DB] Configured & inserted rental into rentals table:', rentalId);
+    window.supabaseClient.from('rentals').upsert(dbRecord, { onConflict: 'id' }).then(({ error }) => {
+      if (error) console.warn('[Rentals DB] Insert/Upsert error (table rentals):', error);
+      else console.log('[Rentals DB] Configured & recorded rental in rentals table:', rentalId);
     }).catch(err => console.warn('[Rentals DB] Insert exception:', err));
   }
 
