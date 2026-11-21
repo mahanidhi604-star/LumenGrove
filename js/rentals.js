@@ -402,7 +402,25 @@ window.simulateBankWebhookApproval = async () => {
     ? S.u.id
     : '015eb091-8a66-4f25-a96f-2880378fb9b1';
 
-  // 3. Formulate JSON rent command for ESP32
+  // 3. Before inserting a new rental, close/complete any existing open/active rental for this user in Supabase
+  if (window.supabaseClient && userId) {
+    try {
+      console.log('[Rentals] Closing/completing prior open/active rentals for user to satisfy idx_one_open_rental_per_user:', userId);
+      await window.supabaseClient
+        .from('rentals')
+        .update({
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .in('status', ['pending', 'paid', 'active', 'overdue']);
+      console.log('[Rentals] ✓ Prior open rentals successfully marked as completed.');
+    } catch (closeErr) {
+      console.warn('[Rentals] Notice closing prior open rentals:', closeErr);
+    }
+  }
+
+  // 4. Formulate JSON rent command for ESP32
   const stationId = 'station_01';
   const rentPayload = {
     action: 'rent',
@@ -413,7 +431,7 @@ window.simulateBankWebhookApproval = async () => {
 
   console.log('[Rentals] Formulated Rent Payload:', JSON.stringify(rentPayload));
 
-  // 4. Publish via MQTT over WebSockets
+  // 5. Publish via MQTT over WebSockets
   try {
     console.log('[Rentals] Publishing MQTT rent command to HiveMQ broker...');
     await window.publishMqttRentCommand(rentPayload);
@@ -423,7 +441,7 @@ window.simulateBankWebhookApproval = async () => {
     toast('⚠️ MQTT publish failed, check browser console');
   }
 
-  // 5. Complete website rental processing with the selected bankId
+  // 6. Complete website rental processing with the selected bankId
   paid(rentPayload);
 };
 
@@ -847,9 +865,10 @@ window.paid = (customCmd) => {
 
   // Configure & insert rental into Supabase database table 'rentals'
   if (window.supabaseClient && S.u && !S.isDemo) {
+    const targetUserId = (S.u.id && S.u.id.length > 20) ? S.u.id : null;
     const dbRecord = {
       id: rentalId,
-      user_id: (S.u.id && S.u.id.length > 20) ? S.u.id : null,
+      user_id: targetUserId,
       station_id: targetStation.id,
       bank_id: selectedBankId,
       bank_type_id: targetCat,
@@ -858,10 +877,30 @@ window.paid = (customCmd) => {
       status: 'paid',
       created_at: new Date().toISOString()
     };
-    window.supabaseClient.from('rentals').upsert(dbRecord, { onConflict: 'id' }).then(({ error }) => {
-      if (error) console.warn('[Rentals DB] Insert/Upsert error (table rentals):', error);
-      else console.log('[Rentals DB] Configured & recorded rental in rentals table:', rentalId);
-    }).catch(err => console.warn('[Rentals DB] Insert exception:', err));
+
+    (async () => {
+      // Close/complete any prior open rentals for this user before inserting to satisfy idx_one_open_rental_per_user
+      if (targetUserId) {
+        try {
+          await window.supabaseClient
+            .from('rentals')
+            .update({
+              status: 'completed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', targetUserId)
+            .in('status', ['pending', 'paid', 'active', 'overdue']);
+          console.log('[Rentals DB] Prior open rentals completed for user:', targetUserId);
+        } catch (closeErr) {
+          console.warn('[Rentals DB] Notice closing prior open rentals:', closeErr);
+        }
+      }
+
+      window.supabaseClient.from('rentals').upsert(dbRecord, { onConflict: 'id' }).then(({ error }) => {
+        if (error) console.warn('[Rentals DB] Insert/Upsert error (table rentals):', error);
+        else console.log('[Rentals DB] Configured & recorded rental in rentals table:', rentalId);
+      }).catch(err => console.warn('[Rentals DB] Insert exception:', err));
+    })();
   }
 
   toast('Payment received');
