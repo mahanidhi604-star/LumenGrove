@@ -40,8 +40,8 @@
 // 2. NETWORK, MQTT & SUPABASE CREDENTIALS
 // ============================================================================
 // Wi-Fi Credentials
-const char *WIFI_SSID = "Rohan";        // TODO: UPDATE WI-FI SSID
-const char *WIFI_PASSWORD = "rohan123"; // TODO: UPDATE WI-FI PASSWORD
+const char *WIFI_SSID = "GalaxyM12";      // TODO: UPDATE WI-FI SSID
+const char *WIFI_PASSWORD = "galaxy1234"; // TODO: UPDATE WI-FI PASSWORD
 
 // Public HiveMQ MQTT Broker (TCP Port 1883 for ESP32)
 const char *MQTT_BROKER = "broker.hivemq.com";
@@ -185,18 +185,26 @@ void showLcdRentState(const char *bankId)
 // ============================================================================
 // 7. WI-FI & MQTT CONNECTION MANAGERS
 // ============================================================================
-const char* getWiFiStatusStr(wl_status_t status)
+const char *getWiFiStatusStr(wl_status_t status)
 {
   switch (status)
   {
-    case WL_IDLE_STATUS:     return "Idle / Connecting";
-    case WL_NO_SSID_AVAIL:   return "SSID not found (Check if 2.4 GHz)";
-    case WL_SCAN_COMPLETED:  return "Scan completed";
-    case WL_CONNECTED:       return "Connected";
-    case WL_CONNECT_FAILED:  return "Connect failed (Check password)";
-    case WL_CONNECTION_LOST: return "Connection lost";
-    case WL_DISCONNECTED:    return "Disconnected";
-    default:                 return "Unknown status";
+  case WL_IDLE_STATUS:
+    return "Idle / Connecting";
+  case WL_NO_SSID_AVAIL:
+    return "SSID not found (Check if 2.4 GHz)";
+  case WL_SCAN_COMPLETED:
+    return "Scan completed";
+  case WL_CONNECTED:
+    return "Connected";
+  case WL_CONNECT_FAILED:
+    return "Connect failed (Check password)";
+  case WL_CONNECTION_LOST:
+    return "Connection lost";
+  case WL_DISCONNECTED:
+    return "Disconnected";
+  default:
+    return "Unknown status";
   }
 }
 
