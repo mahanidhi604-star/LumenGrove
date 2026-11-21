@@ -3121,52 +3121,53 @@ body.pay-sim-mode {
   flex: 1;
   min-width: 175px;
   background: var(--card);
-  border: 1.5px solid var(--ln);
+  border: 1px solid var(--ln);
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px 14px;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .flow-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--fg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
 }
 
 .flow-card-active {
   border-color: var(--ac) !important;
-  background: color-mix(in srgb, var(--ac) 14%, var(--card)) !important;
-  box-shadow: 0 0 20px color-mix(in srgb, var(--ac) 38%, transparent), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-  transform: translateY(-3px);
+  background: color-mix(in srgb, var(--ac) 6%, var(--card)) !important;
+  box-shadow: 0 0 0 1px var(--ac), 0 0 18px color-mix(in srgb, var(--ac) 28%, transparent), 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px);
   opacity: 1 !important;
 }
 
 .flow-card-input {
-  border-color: #34d399 !important;
-  background: color-mix(in srgb, #34d399 10%, var(--card)) !important;
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.3) !important;
+  border-color: rgba(52, 211, 153, 0.55) !important;
+  background: color-mix(in srgb, #34d399 3%, var(--card)) !important;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.14) !important;
   opacity: 1 !important;
 }
 
 .flow-card-output {
-  border-color: #00e5ff !important;
-  background: color-mix(in srgb, #00e5ff 10%, var(--card)) !important;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3) !important;
+  border-color: rgba(0, 229, 255, 0.55) !important;
+  background: color-mix(in srgb, #00e5ff 3%, var(--card)) !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.14) !important;
   opacity: 1 !important;
 }
 
 .flow-card-bridge {
-  border-color: #a855f7 !important;
-  background: color-mix(in srgb, #a855f7 10%, var(--card)) !important;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.3) !important;
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  background: color-mix(in srgb, #a855f7 3%, var(--card)) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.14) !important;
   opacity: 1 !important;
 }
 
 .flow-card-dim {
-  opacity: 0.42;
+  opacity: 0.92;
 }
 
 .flow-track-muted {
@@ -3176,20 +3177,20 @@ body.pay-sim-mode {
 }
 
 .flow-hover-focus {
-  border-color: #00e5ff !important;
-  box-shadow: 0 0 18px rgba(0, 229, 255, 0.4) !important;
-  transform: translateY(-3px) !important;
+  border-color: var(--ac) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ac) 28%, transparent) !important;
+  transform: translateY(-2px) !important;
   opacity: 1 !important;
 }
 
 .flow-hover-linked {
-  border-color: var(--ac) !important;
-  background: color-mix(in srgb, var(--ac) 8%, var(--card)) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08) !important;
   opacity: 1 !important;
 }
 
 .flow-hover-dim {
-  opacity: 0.28 !important;
+  opacity: 0.85 !important;
 }
 
 .flow-pulsing {
@@ -3221,40 +3222,7 @@ body.pay-sim-mode {
   font-size: 1.3rem;
 }
 
-.flow-spotlight-pill {
-  display: inline-block;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 1px 6px;
-  border-radius: 3px;
-  margin-bottom: 6px;
-}
 
-.spotlight-active {
-  background: var(--ac);
-  color: var(--on);
-}
-
-.spotlight-input {
-  background: rgba(52, 211, 153, 0.2);
-  color: #34d399;
-  border: 1px solid #34d399;
-}
-
-.spotlight-output {
-  background: rgba(0, 229, 255, 0.2);
-  color: #00e5ff;
-  border: 1px solid #00e5ff;
-}
-
-.spotlight-bridge {
-  background: rgba(168, 85, 247, 0.2);
-  color: #d8b4fe;
-  border: 1px solid #a855f7;
-}
 
 .flow-step-name {
   margin: 0 0 2px;
@@ -3513,30 +3481,7 @@ body.pay-sim-mode {
   line-height: 1.35;
 }
 
-.flow-hud-viva-box {
-  background: color-mix(in srgb, #f59e0b 10%, var(--bg));
-  border: 1px solid #f59e0b;
-  border-left: 4px solid #f59e0b;
-  border-radius: 8px;
-  padding: 12px 14px;
-}
 
-.flow-viva-title {
-  display: block;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 0.74rem;
-  color: #f59e0b;
-  letter-spacing: 0.08em;
-  margin-bottom: 4px;
-}
-
-.flow-hud-viva-box p {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--fg);
-  line-height: 1.45;
-}
 
 .flow-specs-title {
   margin: 0 0 10px;

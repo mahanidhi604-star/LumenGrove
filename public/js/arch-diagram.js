@@ -238,7 +238,6 @@
       const isSelected = nodeId === window.selectedArchNode;
 
       // Determine spotlight roles relative to selected step
-      let spotlightRole = '';
       let isInput = activeStep.inputs && activeStep.inputs.includes(nodeId);
       let isOutput = activeStep.outputs && activeStep.outputs.includes(nodeId);
       let isBridge = activeStep.crossConduits && activeStep.crossConduits.includes(nodeId);
@@ -246,16 +245,12 @@
       let cardClasses = ['flow-card'];
       if (isSelected) {
         cardClasses.push('flow-card-active');
-        spotlightRole = '<span class="flow-spotlight-pill spotlight-active">CURRENT INSPECTION</span>';
       } else if (isInput) {
         cardClasses.push('flow-card-input');
-        spotlightRole = '<span class="flow-spotlight-pill spotlight-input">◄ INPUT SOURCE</span>';
       } else if (isOutput) {
         cardClasses.push('flow-card-output');
-        spotlightRole = '<span class="flow-spotlight-pill spotlight-output">OUTPUT TARGET ►</span>';
       } else if (isBridge) {
         cardClasses.push('flow-card-bridge');
-        spotlightRole = '<span class="flow-spotlight-pill spotlight-bridge">⚡ CROSS-TRACK SYNC</span>';
       } else {
         cardClasses.push('flow-card-dim');
       }
@@ -279,7 +274,6 @@
             <span class="flow-step-tag">STEP ${step.track}-${step.stepNumber}</span>
             <span class="flow-step-icon">${step.icon}</span>
           </div>
-          ${spotlightRole}
           <h4 class="flow-step-name">${step.title}</h4>
           <div class="flow-step-sub">${step.stepTitle}</div>
           <div class="flow-step-status">
@@ -412,12 +406,6 @@
                   <div class="stream-val">${activeStep.outputDesc || 'Terminal Consumer / Admin Display'}</div>
                 </div>
               </div>
-
-              <!-- Viva Presentation Defense Box -->
-              <div class="flow-hud-viva-box">
-                <span class="flow-viva-title">💡 VIVA DEFENSE & ARCHITECTURAL HIGHLIGHT</span>
-                <p>${activeStep.vivaNote}</p>
-              </div>
             </div>
 
             <!-- Right Column: Technical Specs & Pulse Action -->
@@ -470,15 +458,13 @@
         card.classList.add('flow-hover-focus');
       } else if (step.inputs.includes(id) || step.outputs.includes(id) || (step.crossConduits && step.crossConduits.includes(id))) {
         card.classList.add('flow-hover-linked');
-      } else {
-        card.classList.add('flow-hover-dim');
       }
     });
   };
 
   window.resetFlowStepHighlight = function () {
     document.querySelectorAll('.flow-card').forEach(card => {
-      card.classList.remove('flow-hover-focus', 'flow-hover-linked', 'flow-hover-dim');
+      card.classList.remove('flow-hover-focus', 'flow-hover-linked');
     });
   };
 
