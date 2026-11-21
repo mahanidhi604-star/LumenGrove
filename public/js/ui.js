@@ -1390,13 +1390,151 @@ window.updateImpactCalculator = function(hours) {
 
 const PG = {
   home: () =>
-    `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
-      'h1'
-    )}</h1><p>${t('sub')}</p><p><a class="btn plug" href="#plug">${t(
-      'plug'
-    )} ⚡</a> <a class="btn g" href="#how">${t(
-      'how'
-    )}</a></p></div><div class="g3" role="img" aria-label="Interactive 3D power bank"><canvas id="cv"></canvas></div></div>
+    `<div class="wrap solarpunk-home-wrap" style="position:relative">
+      <div class="solarpunk-ambient-glow" aria-hidden="true"></div>
+      <div class="hero solarpunk-poster-hero">
+        <div class="poster-hero-content">
+          <div class="poster-badge-row">
+            <span class="poster-chip-4cl">4CL</span>
+            <span class="poster-chip-tag">SOLARPUNK // CLEAN ENERGY ARCHITECTURE</span>
+            <span class="poster-pulse-dot" title="Live Campus Grid Online"></span>
+          </div>
+          <h1 class="poster-hero-heading" tabindex="-1">
+            <span class="poster-heading-kicker">LUMENGROVE ECO-GRID</span>
+            ${t('h1')}
+          </h1>
+          <p class="poster-hero-desc">${t('sub')}</p>
+          <div class="poster-cta-group">
+            <a class="btn plug poster-btn-primary" href="#plug">${t('plug')} ⚡</a>
+            <a class="btn g poster-btn-secondary" href="#how">${t('how')}</a>
+            <a class="btn g poster-btn-secondary" href="#tech">Parts BOM</a>
+            <a class="btn g poster-btn-secondary" href="#impact">Impact</a>
+          </div>
+          <div class="poster-live-metrics-strip">
+            <div class="poster-metric-box">
+              <span class="pmb-val">3.4 <small>kW</small></span>
+              <span class="pmb-lbl">Solar Harvest</span>
+            </div>
+            <div class="poster-metric-box">
+              <span class="pmb-val">48<small>/52</small></span>
+              <span class="pmb-lbl">Ready Banks</span>
+            </div>
+            <div class="poster-metric-box">
+              <span class="pmb-val">1,053 <small>kg</small></span>
+              <span class="pmb-lbl">CO₂ Mitigated</span>
+            </div>
+          </div>
+          <div class="poster-geo-coords">
+            <span>LAT 12.9237° N · LON 77.4987° E</span>
+            <span class="pgc-sep">|</span>
+            <span>RVCE CENTRAL COMMONS // BENGALURU</span>
+          </div>
+        </div>
+
+        <div class="poster-showcase-panel" role="region" aria-label="Solarpunk Architecture Poster">
+          <div class="solarpunk-poster-card">
+            <!-- Top Header Strip -->
+            <div class="sp-poster-top">
+              <div class="sp-poster-brand">
+                <span class="sp-brand-main">SOLAR</span>
+                <span class="sp-brand-sub">PUNK</span>
+              </div>
+              <div class="sp-badge-4cl">
+                <span class="sp-4cl-txt">4CL</span>
+                <div class="sp-4cl-stripes"></div>
+              </div>
+            </div>
+
+            <!-- Main Architectural Visual Body -->
+            <div class="sp-poster-stage">
+              <!-- Left ochre technical column -->
+              <div class="sp-tech-col">
+                <div class="sp-sciec-badge">
+                  <div class="sp-sciec-hatch"></div>
+                  <div class="sp-sciec-text">
+                    <span>SCI</span>
+                    <span>EC</span>
+                  </div>
+                </div>
+                <div class="sp-data-ribbon">
+                  <span class="sdr-code">69312959</span>
+                  <span class="sdr-spec">SYS: OPTIMAL</span>
+                  <span class="sdr-spec">48V BIFACIAL</span>
+                  <span class="sdr-bar">||| | || |||| |</span>
+                </div>
+                <!-- Blueprint dial arc -->
+                <div class="sp-dial-arc">
+                  <svg viewBox="0 0 100 100" class="sp-dial-svg">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+                    <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="0.75"/>
+                    <line x1="50" y1="8" x2="50" y2="18" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="50" y1="82" x2="50" y2="92" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="8" y1="50" x2="18" y2="50" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="82" y1="50" x2="92" y2="50" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="50" cy="50" r="3" fill="currentColor"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Center Arch Portal with Biosphere and Astrolabe -->
+              <div class="sp-arch-container">
+                <!-- Coordinate stamp above arch -->
+                <div class="sp-arch-coords">KHOY · ARY · FEATERN 832</div>
+                
+                <!-- The Arched Window -->
+                <div class="sp-arch-portal">
+                  <div class="sp-canopy-glow"></div>
+                  <img src="solarpunk-arch.png" alt="Solarpunk Biosphere Architecture" class="sp-arch-img" loading="eager" />
+                  <div class="sp-arch-vtext">SOLAR-GRID</div>
+                </div>
+
+                <!-- The Astrolabe Gear at the base of the Arch -->
+                <div class="sp-astrolabe-mount">
+                  <img src="solarpunk-astrolabe.svg" alt="Mechanical Astrolabe Solar Dial" class="sp-astrolabe-gear" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Poster Banner with Ethos & Micro-Specs -->
+            <div class="sp-poster-bottom">
+              <div class="sp-poster-headline">
+                <span class="sph-bold">SOLARPUNK</span>
+                <span class="sph-thin">ARCHITECTURE</span>
+              </div>
+              <div class="sp-poster-footer-row">
+                <div class="sp-qr-badge">
+                  <div class="sp-qr-inner">
+                    <svg viewBox="0 0 24 24" class="sp-qr-svg">
+                      <rect x="2" y="2" width="6" height="6" fill="currentColor"/>
+                      <rect x="3.5" y="3.5" width="3" height="3" fill="#fff"/>
+                      <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
+                      <rect x="16" y="2" width="6" height="6" fill="currentColor"/>
+                      <rect x="17.5" y="3.5" width="3" height="3" fill="#fff"/>
+                      <rect x="18" y="4" width="2" height="2" fill="currentColor"/>
+                      <rect x="2" y="16" width="6" height="6" fill="currentColor"/>
+                      <rect x="3.5" y="17.5" width="3" height="3" fill="#fff"/>
+                      <rect x="4" y="18" width="2" height="2" fill="currentColor"/>
+                      <rect x="10" y="3" width="2" height="4" fill="currentColor"/>
+                      <rect x="13" y="5" width="2" height="2" fill="currentColor"/>
+                      <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
+                      <rect x="16" y="11" width="3" height="2" fill="currentColor"/>
+                      <rect x="10" y="16" width="2" height="5" fill="currentColor"/>
+                      <rect x="14" y="17" width="4" height="2" fill="currentColor"/>
+                      <rect x="19" y="16" width="3" height="5" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <span class="sp-qr-label">CAMPUS GRID</span>
+                </div>
+                <p class="sp-ethos-para">
+                  Bifacial monocrystalline solar harvesting paired with swappable LiFePO4 energy storage. Distributed resilient power cells engineered for RVCE academic commons.
+                </p>
+              </div>
+            </div>
+          </div>
+          <!-- Hidden canvas hook so Three.js initialization continues gracefully without errors -->
+          <div class="g3" style="display:none" aria-hidden="true"><canvas id="cv"></canvas></div>
+        </div>
+      </div>
   <h2>Three steps</h2><div class="grid"><div class="card"><span class="num">01</span><h3>Find</h3><p>Pick a station with free, fully charged banks.</p></div><div class="card"><span class="num">02</span><h3>Unlock</h3><p>Reserve, pay and the lock opens from your phone.</p></div><div class="card"><span class="num">03</span><h3>Return</h3><p>Drop it at any station. Return is checked automatically.</p></div></div>
   <div id="interactive-arch-mount">
     ${typeof renderInteractiveArchDiagram === 'function' ? renderInteractiveArchDiagram() : ''}

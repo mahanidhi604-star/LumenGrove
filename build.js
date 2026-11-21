@@ -30,7 +30,7 @@ function copyDirSync(src, dest) {
 });
 
 // Copy asset files
-['rvce_map.jpg'].forEach(file => {
+['rvce_map.jpg', 'solarpunk-arch.png', 'solarpunk-astrolabe.svg', 'solarpunk-ref.jpg'].forEach(file => {
   const src = path.join(rootDir, file);
   const dest = path.join(publicDir, file);
   if (fs.existsSync(src)) fs.copyFileSync(src, dest);
