@@ -405,18 +405,26 @@ window.simulateBankWebhookApproval = async () => {
   // 3. Before inserting a new rental, close/complete any existing open/active rental for this user in Supabase
   if (window.supabaseClient && userId) {
     try {
-      console.log('[Rentals] Closing/completing prior open/active rentals for user to satisfy idx_one_open_rental_per_user:', userId);
-      await window.supabaseClient
+      console.log('[Rentals] Closing/completing prior open/active rentals for user:', userId);
+      const { error: patchErr } = await window.supabaseClient
         .from('rentals')
-        .update({
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
+        .update({ status: 'completed' })
         .eq('user_id', userId)
-        .in('status', ['pending', 'paid', 'active', 'overdue']);
-      console.log('[Rentals] ✓ Prior open rentals successfully marked as completed.');
+        .in('status', ['pending', 'active']);
+      if (patchErr) console.warn('[Rentals] Notice closing pending/active rentals:', patchErr);
+      else console.log('[Rentals] ✓ Prior open rentals successfully marked as completed.');
     } catch (closeErr) {
       console.warn('[Rentals] Notice closing prior open rentals:', closeErr);
+    }
+
+    try {
+      await window.supabaseClient
+        .from('rentals')
+        .update({ status: 'cancelled' })
+        .eq('user_id', userId)
+        .eq('status', 'paid');
+    } catch (paidErr) {
+      // Non-critical cleanup
     }
   }
 
@@ -882,17 +890,25 @@ window.paid = (customCmd) => {
       // Close/complete any prior open rentals for this user before inserting to satisfy idx_one_open_rental_per_user
       if (targetUserId) {
         try {
-          await window.supabaseClient
+          const { error: patchErr } = await window.supabaseClient
             .from('rentals')
-            .update({
-              status: 'completed',
-              updated_at: new Date().toISOString()
-            })
+            .update({ status: 'completed' })
             .eq('user_id', targetUserId)
-            .in('status', ['pending', 'paid', 'active', 'overdue']);
-          console.log('[Rentals DB] Prior open rentals completed for user:', targetUserId);
+            .in('status', ['pending', 'active']);
+          if (patchErr) console.warn('[Rentals DB] Notice completing pending/active rentals:', patchErr);
+          else console.log('[Rentals DB] Prior open rentals completed for user:', targetUserId);
         } catch (closeErr) {
           console.warn('[Rentals DB] Notice closing prior open rentals:', closeErr);
+        }
+
+        try {
+          await window.supabaseClient
+            .from('rentals')
+            .update({ status: 'cancelled' })
+            .eq('user_id', targetUserId)
+            .eq('status', 'paid');
+        } catch (paidErr) {
+          // Non-critical cleanup
         }
       }
 
