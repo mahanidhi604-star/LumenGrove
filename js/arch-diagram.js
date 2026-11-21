@@ -230,6 +230,61 @@
   window.currentArchFilter = 'all'; // 'all', 'trackA', 'trackB', 'bridges'
   window.selectedArchNode = 'esp32';
 
+  const renderFlowHudHtml = (activeStep) => `
+    <div class="flow-telemetry-hud" id="flow-hud-container">
+      <div class="flow-hud-top-bar">
+        <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">FLOW STAGE: [TRACK ${activeStep.track} · STEP ${activeStep.stepNumber}]</span>
+        <span class="flow-hud-subsystem">${activeStep.trackName}</span>
+        <span class="flow-hud-live-tag">● SYNCHRONIZED</span>
+      </div>
+
+      <div class="flow-hud-content-grid">
+        <!-- Left Column: Component Description & I/O Streams -->
+        <div class="flow-hud-left-col">
+          <div class="flow-hud-name-row">
+            <span class="flow-hud-big-icon">${activeStep.icon}</span>
+            <div>
+              <h3 class="flow-hud-name">${activeStep.title}</h3>
+              <div class="flow-hud-stage-sub">${activeStep.badge} · Operational State: <b style="color:var(--ac)">${activeStep.status}</b></div>
+            </div>
+          </div>
+          <p class="flow-hud-desc">${activeStep.desc}</p>
+
+          <!-- Real-time Flow Stream Cards -->
+          <div class="flow-streams-box">
+            <div class="flow-stream-item stream-in">
+              <span class="stream-label">◄ INPUT STREAM</span>
+              <div class="stream-val">${activeStep.inputDesc || 'Direct User / Solar Initiation'}</div>
+            </div>
+            <div class="flow-stream-item stream-out">
+              <span class="stream-label">OUTPUT TARGET ►</span>
+              <div class="stream-val">${activeStep.outputDesc || 'Terminal Consumer / Admin Display'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Technical Specs & Pulse Action -->
+        <div class="flow-hud-right-col">
+          <h4 class="flow-specs-title">Hardware Specs & Data Protocols</h4>
+          <div class="flow-specs-list">
+            ${Object.entries(activeStep.specs).map(([k, v]) => `
+              <div class="flow-spec-row">
+                <span class="flow-spec-key">${k}</span>
+                <span class="flow-spec-val">${v}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="flow-action-wrapper">
+            <button type="button" class="btn flow-pulse-btn" onclick="window.simulateFlowPulse('${activeStep.id}')">
+              ⚡ Simulate Flow Pulse through this Step
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
   window.renderInteractiveArchDiagram = function () {
     const activeStep = ARCH_FLOW_STEPS[window.selectedArchNode] || ARCH_FLOW_STEPS.esp32;
 
@@ -267,9 +322,12 @@
       return `
         <div class="${cardClasses.join(' ')}" 
              id="flow-step-${step.id}"
-             onclick="window.selectArchNode('${step.id}')"
-             onmouseenter="window.highlightFlowStep('${step.id}')"
-             onmouseleave="window.resetFlowStepHighlight()">
+             onclick="window.selectArchNode('${step.id}')">
+          <!-- Subtle Floating Mini-HUD Tooltip on Hover -->
+          <div class="flow-card-tooltip" role="tooltip">
+            <span class="tooltip-badge-pill">${step.badge}</span>
+            <span class="tooltip-status-pill">● ${step.status}</span>
+          </div>
           <div class="flow-card-top">
             <span class="flow-step-tag">STEP ${step.track}-${step.stepNumber}</span>
             <span class="flow-step-icon">${step.icon}</span>
@@ -284,13 +342,15 @@
       `;
     };
 
-    const renderFlowConnector = (label, arrow = '►') => `
-      <div class="flow-connector">
-        <div class="flow-connector-line">
-          <span class="flow-pulse-particle"></span>
+    const renderVerticalConnector = (label) => `
+      <div class="flow-vert-connector">
+        <div class="flow-vert-line">
+          <span class="flow-vert-pulse"></span>
         </div>
-        <div class="flow-connector-arrow">${arrow}</div>
-        <div class="flow-connector-label">${label}</div>
+        <div class="flow-vert-label">
+          <span class="flow-vert-arrow">▼</span>
+          <span>${label}</span>
+        </div>
       </div>
     `;
 
@@ -300,12 +360,12 @@
         <div class="arch-flow-header">
           <div class="arch-flow-meta">
             <div class="arch-tag-row">
-              <span class="tag arch-blueprint-tag">SYSTEM TOPOLOGY // SEMI-FLOWCHART</span>
+              <span class="tag arch-blueprint-tag">SYSTEM TOPOLOGY // DUAL-COLUMN FLOW</span>
               <span class="arch-freq-pill"><span class="arch-pulse-dot"></span> DUAL-TRACK CLOSED LOOP · 50.02 Hz STABLE</span>
             </div>
             <h2 class="arch-flow-title">Dual-Track Energy & Control Flowchart</h2>
             <p class="arch-flow-desc">
-              Visualizing how clean solar DC power flows physically from photovoltaic canopies to charging docks (Track A), synchronized in a closed loop with edge microcontrollers and real-time cloud triggers (Track B). Click any step to trace inputs, outputs, and hardware defense points.
+              Visualizing clean solar DC power flowing through physical microgrid hardware (Track A, Left), synchronized in real time with edge microcontrollers and cloud triggers (Track B, Right). Hover over any node for a quick mini-HUD or click to inspect full telemetry.
             </p>
           </div>
 
@@ -326,108 +386,76 @@
           </div>
         </div>
 
-        <!-- TRACK A: Physical Solar Energy Pipeline -->
-        <div class="flow-track-lane track-a-lane">
-          <div class="flow-track-badge-row">
-            <span class="flow-track-id">TRACK A // PHYSICAL PIPELINE</span>
-            <span class="flow-track-heading">⚡ Solar Generation, Storage & Bay Latch Rails</span>
-            <span class="flow-track-meta">DIRECTIONAL DC TRANSMISSION</span>
+        <!-- DUAL COLUMNS: Track A (Left), Center Spine, Track B (Right) -->
+        <div class="flow-dual-columns-container">
+          <!-- COLUMN 1: Track A Physical Pipeline -->
+          <div class="flow-track-column track-a-col ${window.currentArchFilter === 'trackB' ? 'flow-track-muted' : ''}">
+            <div class="flow-col-header">
+              <span class="flow-col-id">TRACK A // PHYSICAL PIPELINE</span>
+              <h3 class="flow-col-title">⚡ Solar Energy & Hardware Rails</h3>
+              <div class="flow-col-meta">DIRECTIONAL DC GENERATION & STORAGE</div>
+            </div>
+            <div class="flow-steps-vertical">
+              ${renderFlowCard('pv')}
+              ${renderVerticalConnector('24V Raw DC')}
+              ${renderFlowCard('power')}
+              ${renderVerticalConnector('5V/3A Power Rails')}
+              ${renderFlowCard('dock')}
+              ${renderVerticalConnector('Solenoid Latch Release')}
+              ${renderFlowCard('bank')}
+            </div>
           </div>
-          <div class="flow-steps-row">
-            ${renderFlowCard('pv')}
-            ${renderFlowConnector('24V Raw DC')}
-            ${renderFlowCard('power')}
-            ${renderFlowConnector('5V/3A Rails')}
-            ${renderFlowCard('dock')}
-            ${renderFlowConnector('Latch Release')}
-            ${renderFlowCard('bank')}
-          </div>
-        </div>
 
-        <!-- INTER-TRACK BRIDGES (Cross-Track Energy <-> Control Pulses) -->
-        <div class="flow-intertrack-bridge-indicator">
-          <div class="bridge-line-left"></div>
-          <div class="bridge-center-badge">
-            <span class="bridge-dot"></span>
-            <span class="bridge-text">BIDIRECTIONAL CROSS-TRACK TELEMETRY & SOLENOID ACTUATION BUS</span>
-            <span class="bridge-dot"></span>
-          </div>
-          <div class="bridge-line-right"></div>
-        </div>
+          <!-- CENTER SPINE: Cross-Track Synchronized Conduits -->
+          <div class="flow-spine-column ${window.currentArchFilter === 'trackA' || window.currentArchFilter === 'trackB' ? 'flow-track-muted' : ''}">
+            <div class="flow-spine-badge">
+              <span class="flow-spine-dot"></span>
+              <span>CROSS-CONDUIT BUS</span>
+              <span class="flow-spine-dot"></span>
+            </div>
 
-        <!-- TRACK B: Digital Control, Cloud & Telemetry Loop -->
-        <div class="flow-track-lane track-b-lane">
-          <div class="flow-track-badge-row">
-            <span class="flow-track-id">TRACK B // DIGITAL CONTROL LOOP</span>
-            <span class="flow-track-heading">📡 Edge Microcontroller, WebSocket Broadcast & Cloud RLS</span>
-            <span class="flow-track-meta">FULL-DUPLEX REALTIME SYNC</span>
+            <div class="flow-spine-bridge-wire wire-pwr-esp">
+              <div class="spine-wire-label">◄ ADC Telemetry Bus</div>
+              <div class="spine-wire-bar"><span class="spine-wire-particle left-to-right"></span></div>
+              <div class="spine-wire-nodes">Power Core ↔ ESP32</div>
+            </div>
+
+            <div class="flow-spine-bridge-wire wire-dock-esp">
+              <div class="spine-wire-label">GPIO Solenoid Fire ►</div>
+              <div class="spine-wire-bar"><span class="spine-wire-particle right-to-left"></span></div>
+              <div class="spine-wire-nodes">ESP32 ↔ 8-Bay Dock</div>
+            </div>
+
+            <div class="flow-spine-bridge-wire wire-bank-cloud">
+              <div class="spine-wire-label">◄ Rental State Sync</div>
+              <div class="spine-wire-bar"><span class="spine-wire-particle left-to-right"></span></div>
+              <div class="spine-wire-nodes">Power Bank ↔ Supabase</div>
+            </div>
           </div>
-          <div class="flow-steps-row">
-            ${renderFlowCard('bento')}
-            ${renderFlowConnector('QR Intent')}
-            ${renderFlowCard('mobile')}
-            ${renderFlowConnector('WSS Broadcast')}
-            ${renderFlowCard('cloud')}
-            ${renderFlowConnector('Edge Trigger')}
-            ${renderFlowCard('esp32')}
-            ${renderFlowConnector('Telemetry Feed')}
-            ${renderFlowCard('datav')}
+
+          <!-- COLUMN 2: Track B Digital Loop -->
+          <div class="flow-track-column track-b-col ${window.currentArchFilter === 'trackA' ? 'flow-track-muted' : ''}">
+            <div class="flow-col-header">
+              <span class="flow-col-id">TRACK B // DIGITAL CONTROL LOOP</span>
+              <h3 class="flow-col-title">📡 IoT, WebSockets & Cloud RLS</h3>
+              <div class="flow-col-meta">FULL-DUPLEX REALTIME PROTOCOL</div>
+            </div>
+            <div class="flow-steps-vertical">
+              ${renderFlowCard('bento')}
+              ${renderVerticalConnector('UPI Intent QR')}
+              ${renderFlowCard('mobile')}
+              ${renderVerticalConnector('WSS WebSocket Broadcast')}
+              ${renderFlowCard('cloud')}
+              ${renderVerticalConnector('Edge Solenoid Trigger')}
+              ${renderFlowCard('esp32')}
+              ${renderVerticalConnector('Live Telemetry Radar Feed')}
+              ${renderFlowCard('datav')}
+            </div>
           </div>
         </div>
 
         <!-- Dynamic Flow Telemetry HUD Card -->
-        <div class="flow-telemetry-hud" id="flow-hud-container">
-          <div class="flow-hud-top-bar">
-            <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">FLOW STAGE: [TRACK ${activeStep.track} · STEP ${activeStep.stepNumber}]</span>
-            <span class="flow-hud-subsystem">${activeStep.trackName}</span>
-            <span class="flow-hud-live-tag">● SYNCHRONIZED</span>
-          </div>
-
-          <div class="flow-hud-content-grid">
-            <!-- Left Column: Component Description & I/O Streams -->
-            <div class="flow-hud-left-col">
-              <div class="flow-hud-name-row">
-                <span class="flow-hud-big-icon">${activeStep.icon}</span>
-                <div>
-                  <h3 class="flow-hud-name">${activeStep.title}</h3>
-                  <div class="flow-hud-stage-sub">${activeStep.badge} · Operational State: <b style="color:var(--ac)">${activeStep.status}</b></div>
-                </div>
-              </div>
-              <p class="flow-hud-desc">${activeStep.desc}</p>
-
-              <!-- Real-time Flow Stream Cards -->
-              <div class="flow-streams-box">
-                <div class="flow-stream-item stream-in">
-                  <span class="stream-label">◄ INPUT STREAM</span>
-                  <div class="stream-val">${activeStep.inputDesc || 'Direct User / Solar Initiation'}</div>
-                </div>
-                <div class="flow-stream-item stream-out">
-                  <span class="stream-label">OUTPUT TARGET ►</span>
-                  <div class="stream-val">${activeStep.outputDesc || 'Terminal Consumer / Admin Display'}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right Column: Technical Specs & Pulse Action -->
-            <div class="flow-hud-right-col">
-              <h4 class="flow-specs-title">Hardware Specs & Data Protocols</h4>
-              <div class="flow-specs-list">
-                ${Object.entries(activeStep.specs).map(([k, v]) => `
-                  <div class="flow-spec-row">
-                    <span class="flow-spec-key">${k}</span>
-                    <span class="flow-spec-val">${v}</span>
-                  </div>
-                `).join('')}
-              </div>
-
-              <div class="flow-action-wrapper">
-                <button type="button" class="btn flow-pulse-btn" onclick="window.simulateFlowPulse('${activeStep.id}')">
-                  ⚡ Simulate Flow Pulse through this Step
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        ${renderFlowHudHtml(activeStep)}
       </section>
     `;
   };
@@ -435,9 +463,27 @@
   window.selectArchNode = function (nodeId) {
     if (!ARCH_FLOW_STEPS[nodeId]) return;
     window.selectedArchNode = nodeId;
-    const mount = document.getElementById('interactive-arch-mount');
-    if (mount) {
-      mount.innerHTML = window.renderInteractiveArchDiagram();
+    const activeStep = ARCH_FLOW_STEPS[nodeId];
+
+    // Smoothly update card classes in place without destroying DOM
+    document.querySelectorAll('.flow-card').forEach(card => {
+      const id = card.id.replace('flow-step-', '');
+      card.classList.remove('flow-card-active', 'flow-card-input', 'flow-card-output', 'flow-card-bridge');
+      if (id === nodeId) {
+        card.classList.add('flow-card-active');
+      } else if (activeStep.inputs && activeStep.inputs.includes(id)) {
+        card.classList.add('flow-card-input');
+      } else if (activeStep.outputs && activeStep.outputs.includes(id)) {
+        card.classList.add('flow-card-output');
+      } else if (activeStep.crossConduits && activeStep.crossConduits.includes(id)) {
+        card.classList.add('flow-card-bridge');
+      }
+    });
+
+    // Update HUD container
+    const hud = document.getElementById('flow-hud-container');
+    if (hud) {
+      hud.outerHTML = renderFlowHudHtml(activeStep);
     }
   };
 
@@ -449,24 +495,8 @@
     }
   };
 
-  window.highlightFlowStep = function (nodeId) {
-    const step = ARCH_FLOW_STEPS[nodeId];
-    if (!step) return;
-    document.querySelectorAll('.flow-card').forEach(card => {
-      const id = card.id.replace('flow-step-', '');
-      if (id === nodeId) {
-        card.classList.add('flow-hover-focus');
-      } else if (step.inputs.includes(id) || step.outputs.includes(id) || (step.crossConduits && step.crossConduits.includes(id))) {
-        card.classList.add('flow-hover-linked');
-      }
-    });
-  };
-
-  window.resetFlowStepHighlight = function () {
-    document.querySelectorAll('.flow-card').forEach(card => {
-      card.classList.remove('flow-hover-focus', 'flow-hover-linked');
-    });
-  };
+  window.highlightFlowStep = function () {};
+  window.resetFlowStepHighlight = function () {};
 
   window.simulateFlowPulse = function (nodeId) {
     const step = ARCH_FLOW_STEPS[nodeId];
@@ -476,7 +506,7 @@
       card.classList.add('flow-pulsing');
       setTimeout(() => card.classList.remove('flow-pulsing'), 900);
     }
-    document.querySelectorAll('.flow-pulse-particle').forEach(p => {
+    document.querySelectorAll('.flow-vert-pulse, .spine-wire-particle').forEach(p => {
       p.classList.add('pulse-boost');
       setTimeout(() => p.classList.remove('pulse-boost'), 900);
     });

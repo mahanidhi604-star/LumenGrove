@@ -3053,37 +3053,45 @@ body.pay-sim-mode {
   box-shadow: 0 2px 12px color-mix(in srgb, var(--ac) 35%, transparent);
 }
 
-/* Flow Tracks */
-.flow-track-lane {
+/* Dual-Column Flow Architecture Layout */
+.flow-dual-columns-container {
+  display: grid;
+  grid-template-columns: 1fr 140px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.flow-track-column {
   background: color-mix(in srgb, var(--card) 45%, var(--bg));
   border: 1px solid var(--ln);
   border-radius: 16px;
-  padding: 20px 22px;
-  position: relative;
-  z-index: 2;
+  padding: 20px 18px;
   transition: all 0.25s ease;
-}
-
-.track-a-lane {
-  border-left: 4px solid #f59e0b;
-  margin-bottom: 8px;
-}
-
-.track-b-lane {
-  border-left: 4px solid #00e5ff;
-}
-
-.flow-track-badge-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
-.flow-track-id {
+.track-a-col {
+  border-top: 4px solid #f59e0b;
+}
+
+.track-b-col {
+  border-top: 4px solid #00e5ff;
+}
+
+.flow-col-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ln);
+}
+
+.flow-col-id {
+  display: inline-block;
   font-family: 'Barlow Condensed', monospace;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--ac);
@@ -3091,41 +3099,200 @@ body.pay-sim-mode {
   padding: 2px 8px;
   border-radius: 4px;
   border: 1px solid var(--ln);
+  margin-bottom: 6px;
 }
 
-.flow-track-heading {
+.flow-col-title {
+  margin: 0 0 4px;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--fg);
 }
 
-.flow-track-meta {
+.flow-col-meta {
   font-family: 'Barlow Condensed', monospace;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--mut);
-  margin-left: auto;
+  letter-spacing: 0.05em;
 }
 
-/* Flow Steps Row */
-.flow-steps-row {
+/* Vertical Steps Stack inside Column */
+.flow-steps-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+/* Vertical Flow Connectors between Steps */
+.flow-vert-connector {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scrollbar-width: thin;
+  padding: 8px 0;
+  position: relative;
+  user-select: none;
+}
+
+.flow-vert-line {
+  width: 2px;
+  height: 22px;
+  background: var(--ln);
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.flow-vert-pulse {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--ac), transparent);
+  animation: vert-pulse 1.8s infinite linear;
+}
+
+@keyframes vert-pulse {
+  0% { top: -12px; }
+  100% { top: 22px; }
+}
+
+.flow-vert-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mut);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid var(--ln);
+  border-radius: 4px;
+  padding: 2px 8px;
+  letter-spacing: 0.05em;
+}
+
+.flow-vert-arrow {
+  color: var(--ac);
+  font-size: 0.65rem;
+}
+
+/* Center Cross-Track Bus Spine */
+.flow-spine-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  min-height: 480px;
+  padding: 20px 8px;
+  border-left: 1px dashed var(--ln);
+  border-right: 1px dashed var(--ln);
+  background: color-mix(in srgb, var(--card) 40%, transparent);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+
+.flow-spine-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: #a855f7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.1);
+  text-align: center;
+}
+
+.flow-spine-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 6px #a855f7;
+  animation: pulse-dot-anim 1.6s infinite ease-in-out;
+}
+
+.flow-spine-bridge-wire {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  border: 1px solid var(--ln);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.spine-wire-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.spine-wire-bar {
+  width: 85%;
+  height: 2px;
+  background: var(--ln);
+  position: relative;
+  overflow: hidden;
+  margin: 4px 0;
+  border-radius: 1px;
+}
+
+.spine-wire-particle {
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 100%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px #00e5ff;
+}
+
+.spine-wire-particle.left-to-right {
+  animation: spine-p-lr 2s infinite ease-in-out;
+}
+
+.spine-wire-particle.right-to-left {
+  animation: spine-p-rl 2s infinite ease-in-out;
+}
+
+@keyframes spine-p-lr {
+  0% { left: -24px; }
+  100% { left: 100%; }
+}
+
+@keyframes spine-p-rl {
+  0% { right: -24px; }
+  100% { right: 100%; }
+}
+
+.spine-wire-nodes {
+  font-size: 0.65rem;
+  color: var(--mut);
+  font-family: var(--font-mono, monospace);
 }
 
 /* Individual Flow Step Cards */
 .flow-card {
-  flex: 1;
-  min-width: 175px;
+  width: 100%;
   background: var(--card);
   border: 1px solid var(--ln);
   border-radius: 12px;
-  padding: 16px 14px;
+  padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   user-select: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -3133,8 +3300,62 @@ body.pay-sim-mode {
 
 .flow-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+
+/* Instant Floating Mini-HUD Tooltip on Hover */
+.flow-card-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--ac);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.flow-card-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--ac);
+}
+
+.flow-card:hover .flow-card-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-badge-pill {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--ac);
+}
+
+.tooltip-status-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  color: #34d399;
 }
 
 .flow-card-active {
@@ -3176,30 +3397,13 @@ body.pay-sim-mode {
   pointer-events: none;
 }
 
-.flow-hover-focus {
-  border-color: var(--ac) !important;
-  box-shadow: 0 0 16px color-mix(in srgb, var(--ac) 28%, transparent) !important;
-  transform: translateY(-2px) !important;
-  opacity: 1 !important;
-}
-
-.flow-hover-linked {
-  border-color: rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08) !important;
-  opacity: 1 !important;
-}
-
-.flow-hover-dim {
-  opacity: 0.85 !important;
-}
-
 .flow-pulsing {
   animation: card-flow-pulse 0.9s ease-in-out;
 }
 
 @keyframes card-flow-pulse {
   0% { transform: scale(1); box-shadow: 0 0 0 0 var(--ac); }
-  50% { transform: scale(1.04); box-shadow: 0 0 26px 8px var(--ac); border-color: var(--ac); }
+  50% { transform: scale(1.03); box-shadow: 0 0 24px 6px var(--ac); border-color: var(--ac); }
   100% { transform: scale(1); }
 }
 
@@ -3221,8 +3425,6 @@ body.pay-sim-mode {
 .flow-step-icon {
   font-size: 1.3rem;
 }
-
-
 
 .flow-step-name {
   margin: 0 0 2px;
@@ -3254,101 +3456,9 @@ body.pay-sim-mode {
   display: inline-block;
 }
 
-/* Directional Flow Connectors between Steps */
-.flow-connector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 54px;
-  flex-shrink: 0;
-  user-select: none;
-  padding: 0 4px;
-}
-
-.flow-connector-line {
-  width: 100%;
-  height: 2px;
-  background: var(--ln);
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 3px;
-}
-
-.flow-pulse-particle {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 18px;
-  background: linear-gradient(90deg, transparent, var(--ac), transparent);
-  animation: flow-particle-travel 1.8s linear infinite;
-}
-
-@keyframes flow-particle-travel {
-  0% { transform: translateX(-18px); }
-  100% { transform: translateX(60px); }
-}
-
 .pulse-boost {
-  background: linear-gradient(90deg, transparent, #00e5ff, transparent) !important;
-  animation-duration: 0.6s !important;
-}
-
-.flow-connector-arrow {
-  font-size: 0.85rem;
-  color: var(--ac);
-  line-height: 1;
-}
-
-.flow-connector-label {
-  font-family: 'Barlow Condensed', monospace;
-  font-size: 0.68rem;
-  color: var(--mut);
-  white-space: nowrap;
-  margin-top: 3px;
-}
-
-/* Inter-Track Bridge Indicator */
-.flow-intertrack-bridge-indicator {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  position: relative;
-  z-index: 2;
-}
-
-.bridge-line-left,
-.bridge-line-right {
-  flex: 1;
-  height: 1px;
-  background: dashed 1px var(--ln);
-  border-top: 1px dashed var(--ln);
-}
-
-.bridge-center-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(168, 85, 247, 0.08);
-  border: 1px dashed #a855f7;
-  padding: 4px 12px;
-  border-radius: 99px;
-  font-family: 'Barlow Condensed', monospace;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #d8b4fe;
-  letter-spacing: 0.06em;
-}
-
-.bridge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #a855f7;
-  box-shadow: 0 0 6px #a855f7;
-  animation: pulse-dot-anim 1.8s infinite;
+  background: linear-gradient(to bottom, transparent, #00e5ff, transparent) !important;
+  animation-duration: 0.7s !important;
 }
 
 /* Telemetry Flow HUD Card */
@@ -3536,27 +3646,28 @@ body.pay-sim-mode {
   gap: 8px;
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 900px) {
-  .flow-steps-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    overflow-x: visible;
+/* Responsive Layout */
+@media (max-width: 950px) {
+  .flow-dual-columns-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
-  .flow-connector {
+  .flow-spine-column {
+    min-height: auto;
     flex-direction: row;
-    min-height: 28px;
-    min-width: 0;
-    gap: 8px;
+    border-left: none;
+    border-right: none;
+    border-top: 1px dashed var(--ln);
+    border-bottom: 1px dashed var(--ln);
+    padding: 14px 10px;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-  .flow-connector-line {
-    width: 2px;
-    height: 18px;
-    margin-bottom: 0;
-  }
-  .flow-connector-arrow {
-    transform: rotate(90deg);
+  .flow-spine-bridge-wire {
+    flex: 1;
+    min-width: 160px;
+    margin: 4px;
   }
   .flow-hud-content-grid {
     grid-template-columns: 1fr;
@@ -3572,7 +3683,7 @@ body.pay-sim-mode {
     padding: 20px 14px;
     border-radius: 16px;
   }
-  .flow-track-lane {
+  .flow-track-column {
     padding: 16px 14px;
   }
   .flow-telemetry-hud {
