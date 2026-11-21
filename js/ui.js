@@ -1142,6 +1142,252 @@ function renderBentoHub(activeView) {
   return `${stickyHud}<div class="wrap"><div class="bento">${orderedCards}</div></div>`;
 }
 
+const LUMEN_PARTS_REGISTRY = [
+  {
+    id: 'esp32',
+    name: 'ESP32-WROOM-32D IoT Controller',
+    category: 'mcu',
+    catName: 'Microcontroller & IoT',
+    icon: '🎛️',
+    specs: 'Dual-core 240MHz Xtensa LX6 · 520KB SRAM · 4MB Flash',
+    interfaces: ['Wi-Fi 802.11 b/g/n', 'BLE 4.2', 'SPI / I2C / GPIO'],
+    role: 'Station Edge Gateway & Solenoid Controller',
+    desc: 'Acts as the physical station brain: executes real-time slot release routines, processes multi-factor return checks, and communicates over WebSockets.'
+  },
+  {
+    id: 'rfid',
+    name: 'RC522 RFID Reader / Writer Module',
+    category: 'sensor',
+    catName: 'Sensors & Telemetry',
+    icon: '🏷️',
+    specs: '13.56 MHz High-Frequency · ISO/IEC 14443A · SPI Bus',
+    interfaces: ['SPI Bus (SCK, MISO, MOSI, SS)', '3.3V Logic'],
+    role: 'Hardware Return Authentication & ID Verification',
+    desc: 'Interrogates the embedded Mifare/NTAG token on each power bank upon insertion to verify that authentic equipment has been docked.'
+  },
+  {
+    id: 'ina219',
+    name: 'INA219 High-Side DC Current & Voltage IC',
+    category: 'sensor',
+    catName: 'Sensors & Telemetry',
+    icon: '⚡',
+    specs: '0–26V DC sensing range · ±3.2A continuous · 12-bit ADC',
+    interfaces: ['I2C Fast Mode (400kHz)', '0x40 / 0x41 Addresses'],
+    role: 'Slot Current Telemetry & Power Rail Monitoring',
+    desc: 'Measures live charging current to guarantee authentic 5V draw during returns, dynamically throttling dock load when multiple discharged banks are returned.'
+  },
+  {
+    id: 'sw420',
+    name: 'SW-420 High-Sensitivity Vibration Sensor',
+    category: 'sensor',
+    catName: 'Sensors & Telemetry',
+    icon: '🛡️',
+    specs: 'Normally Closed vibration switch · LM393 comparator',
+    interfaces: ['Digital GPIO Interrupt', 'Hardware Pot Sensitivity'],
+    role: 'Cabinet Anti-Tamper & Security Alarm',
+    desc: 'Monitors the modular steel enclosure for unauthorized impacts, pry attempts, or forced bay extraction, triggering immediate safety lockout.'
+  },
+  {
+    id: 'ds18b20',
+    name: 'DS18B20 Digital Temperature Sensor',
+    category: 'sensor',
+    catName: 'Sensors & Telemetry',
+    icon: '🌡️',
+    specs: '-55°C to +125°C range · ±0.5°C accuracy · 9–12 bit',
+    interfaces: ['1-Wire Protocol (One GPIO)', '4.7kΩ Pull-Up'],
+    role: 'Solar Canopy & Battery Thermal Management',
+    desc: 'Provides continuous thermal surveillance over station LiFePO4 cells and overhead solar panel surface to protect cells against overheating.'
+  },
+  {
+    id: 'limit-switch',
+    name: 'Miniature Roller Lever Limit Switches (x8)',
+    category: 'sensor',
+    catName: 'Sensors & Telemetry',
+    icon: '🎚️',
+    specs: 'SPDT snap-action · 5A 125VAC · Subminiature casing',
+    interfaces: ['Digital GPIO Input', 'RC Debounce Filter'],
+    role: 'Physical Slot Seating & Insertion Check',
+    desc: 'Provides tactile physical confirmation that a power bank is fully pressed and mechanically seated into the bay before latching engages.'
+  },
+  {
+    id: 'pv-panel',
+    name: '200W Bifacial Monocrystalline Solar Panel',
+    category: 'power',
+    catName: 'Power & Solar Microgrid',
+    icon: '☀️',
+    specs: '200W Nominal · 24V Vmp · +18% to +24% Albedo Harvest',
+    interfaces: ['MC4 Connectors', '4mm² UV Solar Cable'],
+    role: 'Primary Renewable Energy Generation Canopy',
+    desc: 'Harvests direct sunlight along with concrete ground reflection across RVCE walkways, producing clean DC power with zero grid emissions.'
+  },
+  {
+    id: 'mppt',
+    name: 'MPPT Solar Charge Controller (24V)',
+    category: 'power',
+    catName: 'Power & Solar Microgrid',
+    icon: '⚙️',
+    specs: '98.4% Peak Efficiency · Fast Perturb & Observe algorithm',
+    interfaces: ['Direct Screw Terminal DC Bus', 'LED Status Bar'],
+    role: 'Solar Microgrid Conversion & Battery Float Regulator',
+    desc: 'Extracts maximum instantaneous power from bifacial PV panels regardless of cloud cover, safely charging the station buffer pack.'
+  },
+  {
+    id: 'lifepo4',
+    name: '24V 20Ah LiFePO4 Buffer Storage Battery',
+    category: 'power',
+    catName: 'Power & Solar Microgrid',
+    icon: '🔋',
+    specs: '480Wh Total Capacity · 2,000+ Deep Cycles · Integrated BMS',
+    interfaces: ['Anderson Powerpole 45A', 'Internal Balancer'],
+    role: '24/7 Campus Microgrid Storage Reservoir',
+    desc: 'Ensures stations continue dispensing fully-charged power banks 24 hours a day, weathering monsoon cloud cover and evening peak demand.'
+  },
+  {
+    id: 'buck-converter',
+    name: 'Synchronous 24V to 5V Step-Down Buck Regulators',
+    category: 'power',
+    catName: 'Power & Solar Microgrid',
+    icon: '🔌',
+    specs: '24V DC Input → 5.1V DC Regulated Rails · 95% Efficiency',
+    interfaces: ['Dual Copper Power Bus', 'Thermal Heat Sinks'],
+    role: '5V Dedicated Slot Charging Rail Supply',
+    desc: 'Converts high-voltage storage pack electricity into safe, steady 5V/3A power rails feeding all 8 charging bays simultaneously.'
+  },
+  {
+    id: 'solenoid',
+    name: 'JF-0824B 12V 1.2A Pull-Type Solenoid Latches (x8)',
+    category: 'mech',
+    catName: 'Actuators & Mechanics',
+    icon: '🧲',
+    specs: '12V DC · 1.2A Peak Pulse · 10mm Throw · Spring Ejection',
+    interfaces: ['Opto-Isolated Relay Channels', 'Flyback Diode Protected'],
+    role: 'Mechanical Bay Locking & Spring Ejection Mechanism',
+    desc: 'Firmly secures each power bank in its individual steel slot, energizing for 500ms upon PIN authentication to push the bank out to the student.'
+  },
+  {
+    id: 'relays',
+    name: '8-Channel Opto-Isolated Relay Module',
+    category: 'mech',
+    catName: 'Actuators & Mechanics',
+    icon: '⚡',
+    specs: '8 Discrete Channels · PC817 Optocouplers · 10A/250VAC',
+    interfaces: ['8x ESP32 GPIO Pins', 'Separate 12V VCC Rail'],
+    role: 'High-Current Solenoid Isolation Driver',
+    desc: 'Provides galvanic optical isolation between sensitive ESP32 logic and inductive solenoid coils to eliminate electromagnetic reset glitches.'
+  },
+  {
+    id: 'pogo-pins',
+    name: 'Gold-Plated Magnetic Spring Pogo Pins',
+    category: 'mech',
+    catName: 'Actuators & Mechanics',
+    icon: '📍',
+    specs: '5A Continuous Rating · 10,000+ Cycles · Gold-plated Brass',
+    interfaces: ['Surface Mount PCB Pads', 'Magnetic Keying Guide'],
+    role: 'Self-Aligning Dock Charging Contacts',
+    desc: 'Enables smooth, frictionless zero-wear connection between the kiosk charging rail and the power bank battery pads.'
+  },
+  {
+    id: 'inr18650',
+    name: 'Samsung INR18650-35E Li-ion Cells (x3 Pack)',
+    category: 'bank',
+    catName: 'Power Banks',
+    icon: '🔋',
+    specs: '3500mAh @ 3.6V per cell · 10,500mAh (38.8Wh) Total Pack',
+    interfaces: ['Spot-Welded Pure Nickel Strip', 'Thermal Fuse'],
+    role: 'High-Energy Density Student Power Bank Core',
+    desc: 'Industrial grade lithium-ion cells engineered for maximum capacity-to-weight ratio, powering smartphones and laptops across campus.'
+  },
+  {
+    id: 'ip5389',
+    name: 'IP5389 Bidirectional USB-PD 65W Fast Charge PCB',
+    category: 'bank',
+    catName: 'Power Banks',
+    icon: '⚡',
+    specs: 'USB-PD 3.0 (65W Output) · QC 3.0 · Multi-level Protection',
+    interfaces: ['1x USB-C PD 65W', '2x USB-A 18W', '4x LED Fuel Gauge'],
+    role: 'Portable Multi-Protocol Power Bank Management PCB',
+    desc: 'Negotiates fast-charging power delivery profiles with student MacBooks, Windows ultrabooks, iPhones, and Android devices.'
+  }
+];
+
+window.currentPartsCategory = 'all';
+window.currentPartsSearch = '';
+
+window.filterPartsCategory = function(cat) {
+  window.currentPartsCategory = cat;
+  document.querySelectorAll('.parts-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
+  });
+  window.renderPartsCards();
+};
+
+window.searchPartsRegistry = function(query) {
+  window.currentPartsSearch = (query || '').toLowerCase().trim();
+  window.renderPartsCards();
+};
+
+window.renderPartsCards = function() {
+  const container = document.getElementById('parts-cards-grid');
+  if (!container) return;
+
+  const filtered = LUMEN_PARTS_REGISTRY.filter(item => {
+    const matchesCat = window.currentPartsCategory === 'all' || item.category === window.currentPartsCategory;
+    const matchesSearch = !window.currentPartsSearch || 
+      item.name.toLowerCase().includes(window.currentPartsSearch) ||
+      item.specs.toLowerCase().includes(window.currentPartsSearch) ||
+      item.role.toLowerCase().includes(window.currentPartsSearch) ||
+      item.catName.toLowerCase().includes(window.currentPartsSearch) ||
+      item.interfaces.some(i => i.toLowerCase().includes(window.currentPartsSearch));
+    return matchesCat && matchesSearch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="parts-empty-state"><span style="font-size:2rem">🔍</span><p>No components match your search filter.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(p => `
+    <div class="part-card" id="part-card-${p.id}">
+      <div class="part-card-header">
+        <span class="part-icon">${p.icon}</span>
+        <span class="part-cat-badge">${p.catName}</span>
+      </div>
+      <h3 class="part-title">${p.name}</h3>
+      <div class="part-role">${p.role}</div>
+      <p class="part-desc">${p.desc}</p>
+      <div class="part-specs-row">
+        <span class="part-spec-label">Hardware Specs:</span>
+        <span class="part-spec-val">${p.specs}</span>
+      </div>
+      <div class="part-interfaces-row">
+        ${p.interfaces.map(iface => `<span class="part-iface-tag">${iface}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+};
+
+window.updateImpactCalculator = function(hours) {
+  const h = parseInt(hours, 10) || 3;
+  const label = document.getElementById('calc-hours-display');
+  if (label) label.textContent = `${h} ${h === 1 ? 'Hour' : 'Hours'}`;
+
+  // 1 hour laptop/phone charging ~= 0.1 kWh solar energy
+  const kwh = (h * 0.1).toFixed(2);
+  // Indian grid carbon intensity ~= 820g CO2 per kWh
+  const co2 = Math.round(kwh * 820);
+  // Thermal coal consumption ~= 400g coal per kWh
+  const coal = Math.round(kwh * 400);
+
+  const co2El = document.getElementById('calc-co2-val');
+  if (co2El) co2El.textContent = `${co2} g`;
+
+  const kwhEl = document.getElementById('calc-kwh-val');
+  if (kwhEl) kwhEl.textContent = `${kwh} kWh`;
+
+  const coalEl = document.getElementById('calc-coal-val');
+  if (coalEl) coalEl.textContent = `${coal} g`;
+};
+
 const PG = {
   home: () =>
     `<div class="wrap" style="position:relative"><div class="sun"></div><div class="hero"><div><span class="k">LumenGrove · campus power</span><h1 tabindex="-1">${t(
@@ -1160,24 +1406,321 @@ const PG = {
     ).join('')}</div></div>`,
 
   how: () =>
-    `<div class="wrap"><h1 tabindex="-1">${t(
-      'how'
-    )}</h1><h3>Power path</h3><div class="flow"><span>Solar panel</span><i>→</i><span>Charge controller</span><i>→</i><span>Station battery</span><i>→</i><span>5 V slot chargers</span></div><h3 style="margin-top:32px">Control path</h3><div class="flow"><span>Mobile app</span><i>→</i><span>ESP32 allocates a slot</span><i>→</i><span>Solenoid lock</span><i>→</i><span>Return check: RFID · 5 V · switch</span></div></div>`,
+    `<div class="wrap how-page-wrap">
+      <div class="how-hero-header">
+        <span class="tag how-tag">CAMPUS WORKFLOW // END-TO-END GUIDE</span>
+        <h1 class="how-title" tabindex="-1">How LumenGrove Works</h1>
+        <p class="how-sub">From bifacial solar generation to frictionless smartphone checkout and authentic hardware return — here is how clean campus power travels into your hands.</p>
+      </div>
 
-  tech: () =>
-    `<div class="wrap"><h1 tabindex="-1">${t(
-      'tech'
-    )}</h1><div class="grid"><div class="card"><h3>Hardware</h3><p>ESP32, RFID RC522, INA219 sensors, SW-420 vibration sensor, solenoid locks, solar panel with charge controller.</p></div><div class="card"><h3>Solar-aware slot allocation</h3><p>The station hands out the best-charged bank, based on current solar yield.</p></div><div class="card"><h3>Multi-factor return check</h3><p>RFID, 5 V current draw and a limit switch must all agree.</p></div></div></div>`,
+      <div class="how-steps-timeline">
+        <!-- Step 1 -->
+        <div class="how-step-card">
+          <div class="how-step-badge">STEP 01</div>
+          <div class="how-step-icon">📍</div>
+          <div class="how-step-content">
+            <h3>Discover & Reserve Live Kiosks</h3>
+            <p>Open LumenGrove on your laptop or mobile browser. The campus radar uses your GPS location (Haversine formula) to locate the nearest solar kiosk across Central Library, Cauvery Canteen, Admin Block, and Tech Quad, displaying real-time charged bank availability.</p>
+            <div class="how-tech-pills">
+              <span class="how-pill">📡 HTML5 Geolocation</span>
+              <span class="how-pill">⚡ Live Slot Radar</span>
+              <span class="how-pill">⏱️ 15-Min Reservation Lock</span>
+            </div>
+          </div>
+        </div>
 
-  impact: () =>
-    `<div class="wrap"><h1 tabindex="-1">${t(
-      'impact'
-    )}</h1><div class="grid"><div class="card"><div class="num">1,284</div><p>kWh solar used (demo data)</p></div><div class="card"><div class="num">1,053 kg</div><p>CO₂ avoided (demo data)</p></div><div class="card"><div class="num">SDG 7 · 12</div><p>Clean energy and responsible consumption.</p></div></div></div>`,
+        <!-- Step 2 -->
+        <div class="how-step-card">
+          <div class="how-step-badge">STEP 02</div>
+          <div class="how-step-icon">📱</div>
+          <div class="how-step-content">
+            <h3>Dynamic QR Scan & Mobile Authorization</h3>
+            <p>Scan the station's dynamic QR code with your smartphone camera. The zero-install web gateway opens instantly with your pre-selected rental configuration. Authorize simulated UPI payment; the kiosk receives a live WebSocket event and generates an encrypted 6-digit release PIN.</p>
+            <div class="how-tech-pills">
+              <span class="how-pill">🔒 Supabase WebSockets (WSS)</span>
+              <span class="how-pill">💳 Mobile Payment Sim</span>
+              <span class="how-pill">🔑 6-Digit PIN Match</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="how-step-card">
+          <div class="how-step-badge">STEP 03</div>
+          <div class="how-step-icon">⚡</div>
+          <div class="how-step-content">
+            <h3>Solenoid Latch Ejection & Mobile Charging</h3>
+            <p>Enter your 6-digit PIN on the station digitizer. The ESP32 triggers a 500ms pulse to the 12V pull solenoid, popping open the designated bay. Take your 10,000mAh biopolymer power bank to power your laptop (65W USB-PD) or smartphone anywhere on campus.</p>
+            <div class="how-tech-pills">
+              <span class="how-pill">🧲 JF-0824B 12V Solenoid</span>
+              <span class="how-pill">🔋 Samsung 18650 Cells</span>
+              <span class="how-pill">🔌 65W USB-C PD Fast Charge</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="how-step-card">
+          <div class="how-step-badge">STEP 04</div>
+          <div class="how-step-icon">🔄</div>
+          <div class="how-step-content">
+            <h3>Multi-Factor Return Verification</h3>
+            <p>Slide the bank into any free bay across campus until the mechanical limit switch clicks. The ESP32 runs a triple-factor handshake (RFID token UID, 5V current draw via INA219, and switch closure) to prevent false returns, instantly stopping the rental timer and logging your CO₂ savings.</p>
+            <div class="how-tech-pills">
+              <span class="how-pill">🏷️ RC522 RFID SPI Handshake</span>
+              <span class="how-pill">⚡ INA219 5V Pogo Pin Sensing</span>
+              <span class="how-pill">🎚️ Physical Snap-Action Switch</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Banner -->
+      <div class="how-cta-banner">
+        <div>
+          <h3>Ready to rent your first solar power bank?</h3>
+          <p>Explore live campus stations and simulate checkout right from the Rental Hub.</p>
+        </div>
+        <a href="#app-home" class="btn plug">Launch Rental Hub ⚡</a>
+      </div>
+    </div>`,
+
+  tech: () => {
+    setTimeout(() => { if (typeof window.renderPartsCards === 'function') window.renderPartsCards(); }, 10);
+    return `
+      <div class="wrap tech-page-wrap">
+        <div class="tech-hero-header">
+          <span class="tag tech-tag">HARDWARE ARCHITECTURE // BILL OF MATERIALS</span>
+          <h1 class="tech-title" tabindex="-1">Station Hardware & Parts Registry</h1>
+          <p class="tech-sub">Complete engineering Bill of Materials (BOM) powering the LumenGrove solar microgrid station, edge microcontroller firmware, and portable student power banks.</p>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="parts-controls-row">
+          <div class="parts-search-box">
+            <span class="parts-search-icon">🔍</span>
+            <input type="text" id="parts-search-input" placeholder="Search parts, protocols, ICs, or specs..." oninput="window.searchPartsRegistry(this.value)">
+          </div>
+          <div class="parts-filter-bar">
+            <button type="button" class="parts-filter-btn active" data-cat="all" onclick="window.filterPartsCategory('all')">All Parts (15)</button>
+            <button type="button" class="parts-filter-btn" data-cat="mcu" onclick="window.filterPartsCategory('mcu')">🎛️ Microcontroller & IoT</button>
+            <button type="button" class="parts-filter-btn" data-cat="sensor" onclick="window.filterPartsCategory('sensor')">📡 Sensors & Telemetry</button>
+            <button type="button" class="parts-filter-btn" data-cat="power" onclick="window.filterPartsCategory('power')">☀️ Solar & Microgrid</button>
+            <button type="button" class="parts-filter-btn" data-cat="mech" onclick="window.filterPartsCategory('mech')">🧲 Actuators & Mechanics</button>
+            <button type="button" class="parts-filter-btn" data-cat="bank" onclick="window.filterPartsCategory('bank')">🔋 Power Banks</button>
+          </div>
+        </div>
+
+        <!-- Parts Grid -->
+        <div class="parts-cards-grid" id="parts-cards-grid">
+          <!-- Populated by window.renderPartsCards() -->
+        </div>
+      </div>
+    `;
+  },
+
+  impact: () => {
+    setTimeout(() => { if (typeof window.updateImpactCalculator === 'function') window.updateImpactCalculator(3); }, 10);
+    return `
+      <div class="wrap impact-page-wrap">
+        <div class="impact-hero-header">
+          <span class="tag impact-tag">ECOLOGICAL TELEMETRY // RVCE CAMPUS SUSTAINABILITY</span>
+          <h1 class="impact-title" tabindex="-1">Solar Microgrid Ecological Impact</h1>
+          <p class="impact-sub">Tracking real-time renewable kilowatt-hours, atmospheric emissions prevented, and circular hardware reuse replacing disposable lithium waste across RVCE.</p>
+        </div>
+
+        <!-- 4 High-Impact KPI Counter Cards -->
+        <div class="impact-kpi-grid">
+          <div class="impact-kpi-card">
+            <div class="kpi-icon-row">
+              <span class="kpi-icon">☀️</span>
+              <span class="kpi-status-tag">REALTIME PV</span>
+            </div>
+            <div class="kpi-value">1,284 <small>kWh</small></div>
+            <div class="kpi-label">Clean Solar Energy Harvested</div>
+            <p class="kpi-desc">Generated directly by RVCE bifacial solar canopies with zero fossil grid reliance.</p>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-icon-row">
+              <span class="kpi-icon">🌱</span>
+              <span class="kpi-status-tag">CARBON OFFSET</span>
+            </div>
+            <div class="kpi-value">1,053 <small>kg</small></div>
+            <div class="kpi-label">Atmospheric CO₂ Avoided</div>
+            <p class="kpi-desc">Equivalent to planting 48 mature teak trees on campus grounds.</p>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-icon-row">
+              <span class="kpi-icon">⚡</span>
+              <span class="kpi-status-tag">CAMPUS SESSIONS</span>
+            </div>
+            <div class="kpi-value">18,420+</div>
+            <div class="kpi-label">Student Device Charges Powered</div>
+            <p class="kpi-desc">MacBooks, Windows laptops, and mobile devices kept running through lectures.</p>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-icon-row">
+              <span class="kpi-icon">🔄</span>
+              <span class="kpi-status-tag">CIRCULAR ECONOMY</span>
+            </div>
+            <div class="kpi-value">100%</div>
+            <div class="kpi-label">Reusable Shared Hardware Fleet</div>
+            <p class="kpi-desc">Eliminating personal disposable power bank electronic waste through circular station docks.</p>
+          </div>
+        </div>
+
+        <!-- UN Sustainable Development Goals (SDGs) -->
+        <div class="impact-sdg-section">
+          <h2 class="sdg-heading">Aligned with United Nations Sustainable Development Goals</h2>
+          <div class="impact-sdg-grid">
+            <div class="sdg-card sdg-7">
+              <div class="sdg-num">SDG 07</div>
+              <h3>Affordable & Clean Energy</h3>
+              <p>Decentralized microgrid stations powered by bifacial PV arrays bring 100% renewable electricity directly to student study hubs at nominal campus rates.</p>
+            </div>
+
+            <div class="sdg-card sdg-11">
+              <div class="sdg-num">SDG 11</div>
+              <h3>Sustainable Cities & Communities</h3>
+              <p>Transforming educational institutions into resilient, self-powered solar microgrids capable of autonomous off-grid operation during campus brownouts.</p>
+            </div>
+
+            <div class="sdg-card sdg-12">
+              <div class="sdg-num">SDG 12</div>
+              <h3>Responsible Consumption & Production</h3>
+              <p>A closed-loop shared battery ecosystem where 32 high-durability power banks serve 2,000+ students, drastically curbing personal lithium-ion battery scrap.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Student Carbon Calculator -->
+        <div class="impact-calc-card">
+          <div class="calc-header">
+            <span class="calc-badge">⚡ INTERACTIVE CALCULATOR</span>
+            <h3>Estimate Your Personal Solar Carbon Offset</h3>
+            <p>See how much atmospheric carbon you prevent by choosing solar-buffered power banks over thermal grid charging.</p>
+          </div>
+          <div class="calc-body">
+            <div class="calc-slider-wrapper">
+              <div class="calc-slider-label">
+                <span>Charging Duration:</span>
+                <b id="calc-hours-display">3 Hours</b>
+              </div>
+              <input type="range" id="calc-hours-slider" min="1" max="12" value="3" step="1" oninput="window.updateImpactCalculator(this.value)">
+            </div>
+            <div class="calc-results-grid">
+              <div class="calc-result-item">
+                <span class="calc-res-label">CO₂ Prevented</span>
+                <div class="calc-res-value" id="calc-co2-val">246 g</div>
+              </div>
+              <div class="calc-result-item">
+                <span class="calc-res-label">Solar Clean Energy</span>
+                <div class="calc-res-value" id="calc-kwh-val">0.30 kWh</div>
+              </div>
+              <div class="calc-result-item">
+                <span class="calc-res-label">Thermal Coal Offset</span>
+                <div class="calc-res-value" id="calc-coal-val">120 g</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
   about: () =>
-    `<div class="wrap"><h1 tabindex="-1">${t(
-      'about'
-    )}</h1><p>LumenGrove is an IoT, solar-powered power bank rental network for campus. Phase 1 plans the idea, Phase 2 builds the hardware, Phase 3 tests and presents.</p><h2>FAQ</h2><details><summary>Is it safe?</summary><p>Banks are charged within safe limits and locked in station slots.</p></details><details><summary>What if a bank is stolen?</summary><p>Locks, RFID and vibration sensing flag unauthorised removal.</p></details><details><summary>Something is not charging</summary><p>Use “Report a problem” in Plug In.</p></details></div>`,
+    `<div class="wrap about-page-wrap">
+      <div class="about-hero-header">
+        <span class="tag about-tag">SYSTEM IDENTITY // SOLARPUNK PHILOSOPHY</span>
+        <h1 class="about-title" tabindex="-1">About LumenGrove</h1>
+        <p class="about-sub">An autonomous solar microgrid and smart hardware sharing infrastructure engineered for higher education campuses.</p>
+      </div>
+
+      <!-- Project Vision & Engineering Pillars -->
+      <div class="about-vision-card">
+        <div class="vision-intro">
+          <h2>The Solarpunk Campus Vision</h2>
+          <p>LumenGrove re-imagines campus infrastructure as an ecological, living energy network. Instead of chaining students to wall outlets powered by fossil-fueled municipal grids, self-sustaining solar canopies harvest the sun, buffer energy into resilient LiFePO4 cells, and dispense portable power on-demand with zero carbon footprint.</p>
+        </div>
+
+        <div class="about-pillars-grid">
+          <div class="pillar-card">
+            <span class="pillar-num">01</span>
+            <h3>Physical Microgrid Autonomy</h3>
+            <p>Bifacial 200W solar canopies paired with LiFePO4 storage packs guarantee continuous off-grid operation independent of municipal load shedding.</p>
+          </div>
+          <div class="pillar-card">
+            <span class="pillar-num">02</span>
+            <h3>Edge Hardware Reliability</h3>
+            <p>Dual-core ESP32 microcontrollers run deterministic FreeRTOS routines with triple-factor hardware validation (RFID, current draw, and limit switches).</p>
+          </div>
+          <div class="pillar-card">
+            <span class="pillar-num">03</span>
+            <h3>Frictionless Realtime Cloud</h3>
+            <p>Supabase PostgreSQL with Row-Level Security and bidirectional Phoenix WebSocket channels deliver instant cross-device mobile unlocking with zero app installation.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Streamlined FAQ Accordion -->
+      <div class="about-faq-section">
+        <h2 class="faq-section-title">Frequently Asked Questions</h2>
+        <div class="about-faq-list">
+          <details class="faq-item" open>
+            <summary class="faq-question">
+              <span>How does the station operate on cloudy or rainy days?</span>
+              <span class="faq-arrow">▼</span>
+            </summary>
+            <div class="faq-answer">
+              <p>Each station houses a heavy-duty 24V 20Ah LiFePO4 storage battery (480Wh capacity). During peak sunshine, excess energy is buffered into this reservoir, ensuring full uninterrupted 24/7 charging rails even during prolonged overcast weather.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>How are power banks protected against unauthorized removal or theft?</span>
+              <span class="faq-arrow">▼</span>
+            </summary>
+            <div class="faq-answer">
+              <p>Every bay is locked by a heavy-duty 12V 1.2A pull-type solenoid latch. To unlock, students must reserve via their verified @rvce.edu.in account and input a 6-digit cryptographic PIN. Additionally, SW-420 vibration sensors detect unauthorized physical tampering.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>What devices can I charge with a LumenGrove power bank?</span>
+              <span class="faq-arrow">▼</span>
+            </summary>
+            <div class="faq-answer">
+              <p>Each pack delivers 10,000mAh capacity equipped with USB-C Power Delivery (up to 65W output) and dual USB-A (18W QuickCharge). It safely charges MacBooks, Windows laptops, tablets, smartphones, and noise-canceling headphones.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>How does the station verify that a power bank was truly returned?</span>
+              <span class="faq-arrow">▼</span>
+            </summary>
+            <div class="faq-answer">
+              <p>LumenGrove employs triple-factor verification: (1) An RC522 RFID reader reads the power bank's embedded tag UID, (2) An INA219 sensor confirms authentic 5V charging current across the pogo pins, and (3) A mechanical microswitch verifies physical latch seating.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>What happens if my rental goes past the scheduled duration?</span>
+              <span class="faq-arrow">▼</span>
+            </summary>
+            <div class="faq-answer">
+              <p>A 15-minute grace window is granted to reach any campus station. If exceeded, a transparent nominal late fee is accumulated per minute and settled automatically upon slot return.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>`,
 
   plug: () =>
     `<div class="wrap hub"><span class="k">LumenGrove · Rental Hub</span><h1 tabindex="-1">${t(
@@ -2091,7 +2634,7 @@ function renderMobileSidebarDrawer(h, isSignedIn, u, safeName, prof, acctInner) 
         <div class="drawer-nav-group">
           <small class="drawer-group-title" style="display:block;font-size:0.7rem;text-transform:uppercase;color:var(--mut);font-weight:700;letter-spacing:0.06em;margin-bottom:6px">Operations & Hardware Telemetry</small>
           <div style="display:flex;flex-direction:column;gap:4px">
-            <a href="#tech" class="drawer-nav-link ${h === 'tech' ? 'on' : ''}" onclick="closeMobileSidebar()">
+            <a href="#technician" class="drawer-nav-link ${h === 'technician' ? 'on' : ''}" onclick="closeMobileSidebar()">
               <span class="nav-icon">🔧</span>
               <span>Technician Field Console</span>
             </a>
@@ -2127,7 +2670,7 @@ function renderMobileSidebarDrawer(h, isSignedIn, u, safeName, prof, acctInner) 
 
 function hdr(h) {
   const isAuth = h === 'signin' || h === 'admin-login';
-  const isAdmin = h === 'admin' || h === 'tech' || h === 'technician';
+  const isAdmin = h === 'admin' || h === 'technician';
 
   // Standalone distraction-free mobile payment gateway layout
   const isPaySim = h === 'pay-sim';
@@ -2243,8 +2786,8 @@ function go(same) {
       hdr(h);
       v.innerHTML = h.startsWith('app-station-')
         ? stDetail(h.slice(12))
-        : (h === 'admin' || h === 'tech' || h === 'technician')
-        ? admin(h === 'tech' || h === 'technician')
+        : (h === 'admin' || h === 'technician')
+        ? admin(h === 'technician')
         : (PG[h] || PG.home)();
       v.className = 'in';
       fx();
