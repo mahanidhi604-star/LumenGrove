@@ -204,7 +204,7 @@
       trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
       stepNumber: '05',
       stepTitle: 'Aerospace Telemetry',
-      title: '10k Cyber Aerospace Mission Control (#admin)',
+      title: 'Mission Control',
       badge: 'DataV Telemetry Command HUD',
       icon: '🛰️',
       status: 'Stationary Tactical Radar',
