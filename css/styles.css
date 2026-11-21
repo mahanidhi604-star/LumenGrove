@@ -2918,3 +2918,485 @@ body.pay-sim-mode {
 
 
 
+
+
+/* -------------------------------------------------------------
+   INTERACTIVE ARCHITECTURE BLUEPRINT & TOPOLOGY DIAGRAM (#home)
+   ------------------------------------------------------------- */
+.arch-blueprint-wrapper {
+  position: relative;
+  background: color-mix(in srgb, var(--card) 50%, var(--bg));
+  border: 1.5px solid var(--ln);
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  margin-top: 48px;
+  overflow: hidden;
+}
+
+.arch-blueprint-wrapper:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--ac) 8%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 90% 85%, color-mix(in srgb, #00e5ff 6%, transparent) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.arch-header {
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.arch-header-meta {
+  max-width: 840px;
+}
+
+.arch-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.arch-blueprint-tag {
+  background: var(--ac);
+  color: var(--on);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.arch-freq-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.8rem;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-weight: 700;
+}
+
+.arch-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px #00e5ff;
+  animation: pulse-dot-anim 1.5s infinite;
+}
+
+@keyframes pulse-dot-anim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.8); }
+}
+
+.arch-main-title {
+  font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+  margin: 4px 0 10px;
+  line-height: 1.1;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.arch-subtitle {
+  color: var(--mut);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.arch-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--ln);
+}
+
+.arch-filter-btn {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  color: var(--fg);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.arch-filter-btn:hover {
+  border-color: var(--ac);
+  color: var(--ac);
+}
+
+.arch-filter-btn.active {
+  background: var(--ac);
+  color: var(--on);
+  border-color: var(--ac);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--ac) 35%, transparent);
+}
+
+/* 3-Tier Grid Canvas */
+.arch-diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 24px;
+}
+
+.arch-tier-column {
+  background: color-mix(in srgb, var(--card) 45%, var(--bg));
+  border: 1px solid var(--ln);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arch-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ln);
+}
+
+.arch-tier-icon {
+  font-size: 1.6rem;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.arch-tier-step {
+  display: block;
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.72rem;
+  color: var(--ac);
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.arch-tier-title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.arch-tier-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.arch-node-card {
+  background: var(--card);
+  border: 1.5px solid var(--ln);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.arch-node-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--fg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.arch-node-card.selected {
+  border-color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 12%, var(--card));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ac) 30%, transparent), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.arch-node-card.hover-highlight {
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4) !important;
+}
+
+.arch-node-card.hover-connected {
+  border-color: var(--ac) !important;
+  background: color-mix(in srgb, var(--ac) 8%, var(--card)) !important;
+}
+
+.arch-node-card.hover-dim,
+.arch-node-card.muted {
+  opacity: 0.32;
+  filter: grayscale(50%);
+}
+
+.arch-node-card.pulsing {
+  animation: card-pulse-anim 0.8s ease-in-out;
+}
+
+@keyframes card-pulse-anim {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 var(--ac); }
+  50% { transform: scale(1.03); box-shadow: 0 0 24px 6px var(--ac); border-color: var(--ac); }
+  100% { transform: scale(1); }
+}
+
+.arch-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.arch-node-icon {
+  font-size: 1.35rem;
+}
+
+.arch-node-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ln);
+  color: var(--fg);
+}
+
+.arch-node-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.arch-node-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--mut);
+  font-family: 'Barlow Condensed', monospace;
+}
+
+.arch-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ac);
+  display: inline-block;
+}
+
+/* Telemetry Inspection HUD Card */
+.arch-telemetry-hud {
+  background: var(--card);
+  border: 1.5px solid var(--fg);
+  box-shadow: 6px 6px 0 var(--ac);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.25s ease;
+}
+
+.arch-hud-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--ln);
+}
+
+.arch-hud-id-tag {
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #00e5ff;
+}
+
+.arch-hud-live-tag {
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.78rem;
+  color: var(--ac);
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.arch-hud-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.arch-hud-title-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.arch-hud-icon-lg {
+  font-size: 2.5rem;
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.arch-hud-name {
+  margin: 0;
+  font-size: 1.4rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.arch-hud-sub {
+  font-size: 0.84rem;
+  color: var(--mut);
+  margin-top: 3px;
+}
+
+.arch-hud-desc {
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: var(--fg);
+  margin: 0 0 16px;
+}
+
+.arch-hud-viva {
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg));
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.arch-viva-label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 0.74rem;
+  color: #f59e0b;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.arch-hud-viva p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--fg);
+  line-height: 1.45;
+}
+
+.arch-specs-header {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.06em;
+  color: var(--mut);
+}
+
+.arch-specs-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.arch-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  gap: 8px;
+}
+
+.arch-spec-key {
+  color: var(--mut);
+  font-size: 0.82rem;
+}
+
+.arch-spec-val {
+  font-weight: 700;
+  color: #00e5ff;
+  font-family: 'Barlow Condensed', monospace;
+  text-align: right;
+}
+
+.arch-hud-actions {
+  margin-top: 16px;
+}
+
+.arch-action-btn {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Responsive Stacking */
+@media (max-width: 960px) {
+  .arch-diagram-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .arch-hud-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .arch-blueprint-wrapper {
+    padding: 20px 14px;
+    border-radius: 14px;
+  }
+  .arch-telemetry-hud {
+    padding: 18px 14px;
+  }
+  .arch-hud-title-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

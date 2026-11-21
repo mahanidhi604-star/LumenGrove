@@ -1152,7 +1152,10 @@ const PG = {
       'how'
     )}</a></p></div><div class="g3" role="img" aria-label="Interactive 3D power bank"><canvas id="cv"></canvas></div></div>
   <h2>Three steps</h2><div class="grid"><div class="card"><span class="num">01</span><h3>Find</h3><p>Pick a station with free, fully charged banks.</p></div><div class="card"><span class="num">02</span><h3>Unlock</h3><p>Reserve, pay and the lock opens from your phone.</p></div><div class="card"><span class="num">03</span><h3>Return</h3><p>Drop it at any station. Return is checked automatically.</p></div></div>
-  <h2 style="margin-top:48px">Inside a station</h2><div class="s3w" id="s3w"><div class="s3c"><canvas id="cv2" role="img" aria-label="Interactive 3D solar station. Scroll, or tap a part."></canvas><div class="card" id="s3t" aria-live="polite"></div></div></div><h2 style="margin-top:48px">Live stations</h2><div class="grid">${ST.map(
+  <div id="interactive-arch-mount">
+    ${typeof renderInteractiveArchDiagram === 'function' ? renderInteractiveArchDiagram() : ''}
+  </div>
+  <h2 style="margin-top:48px">Live stations</h2><div class="grid">${ST.map(
       stn
     ).join('')}</div></div>`,
 
