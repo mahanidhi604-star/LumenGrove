@@ -2921,37 +2921,37 @@ body.pay-sim-mode {
 
 
 /* -------------------------------------------------------------
-   INTERACTIVE ARCHITECTURE BLUEPRINT & TOPOLOGY DIAGRAM (#home)
+   INTERACTIVE DUAL-TRACK ARCHITECTURE SEMI-FLOWCHART (#home)
    ------------------------------------------------------------- */
-.arch-blueprint-wrapper {
+.arch-flowchart-blueprint {
   position: relative;
-  background: color-mix(in srgb, var(--card) 50%, var(--bg));
+  background: color-mix(in srgb, var(--card) 55%, var(--bg));
   border: 1.5px solid var(--ln);
-  border-radius: 20px;
-  padding: 32px 28px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  border-radius: 22px;
+  padding: 34px 28px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
   margin-top: 48px;
   overflow: hidden;
 }
 
-.arch-blueprint-wrapper:before {
+.arch-flowchart-blueprint:before {
   content: '';
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--ac) 8%, transparent) 0%, transparent 40%),
-    radial-gradient(circle at 90% 85%, color-mix(in srgb, #00e5ff 6%, transparent) 0%, transparent 45%);
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--ac) 9%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 92% 88%, color-mix(in srgb, #00e5ff 7%, transparent) 0%, transparent 48%);
   pointer-events: none;
 }
 
-.arch-header {
-  margin-bottom: 28px;
+.arch-flow-header {
+  margin-bottom: 24px;
   position: relative;
   z-index: 2;
 }
 
-.arch-header-meta {
-  max-width: 840px;
+.arch-flow-meta {
+  max-width: 860px;
 }
 
 .arch-tag-row {
@@ -3001,7 +3001,7 @@ body.pay-sim-mode {
   50% { opacity: 0.3; transform: scale(0.8); }
 }
 
-.arch-main-title {
+.arch-flow-title {
   font-size: clamp(1.8rem, 3.8vw, 2.6rem);
   margin: 4px 0 10px;
   line-height: 1.1;
@@ -3009,14 +3009,15 @@ body.pay-sim-mode {
   letter-spacing: 0.02em;
 }
 
-.arch-subtitle {
+.arch-flow-desc {
   color: var(--mut);
   font-size: 0.95rem;
   line-height: 1.5;
   margin: 0;
 }
 
-.arch-filter-pills {
+/* Filter Controls */
+.flow-filter-controls {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -3025,7 +3026,7 @@ body.pay-sim-mode {
   border-top: 1px dashed var(--ln);
 }
 
-.arch-filter-btn {
+.flow-filter-btn {
   background: var(--bg);
   border: 1px solid var(--ln);
   color: var(--fg);
@@ -3040,171 +3041,244 @@ body.pay-sim-mode {
   transition: all 0.2s ease;
 }
 
-.arch-filter-btn:hover {
+.flow-filter-btn:hover {
   border-color: var(--ac);
   color: var(--ac);
 }
 
-.arch-filter-btn.active {
+.flow-filter-btn.active {
   background: var(--ac);
   color: var(--on);
   border-color: var(--ac);
   box-shadow: 0 2px 12px color-mix(in srgb, var(--ac) 35%, transparent);
 }
 
-/* 3-Tier Grid Canvas */
-.arch-diagram-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  position: relative;
-  z-index: 2;
-  margin-bottom: 24px;
-}
-
-.arch-tier-column {
+/* Flow Tracks */
+.flow-track-lane {
   background: color-mix(in srgb, var(--card) 45%, var(--bg));
   border: 1px solid var(--ln);
   border-radius: 16px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
+  padding: 20px 22px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.25s ease;
 }
 
-.arch-tier-header {
+.track-a-lane {
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 8px;
+}
+
+.track-b-lane {
+  border-left: 4px solid #00e5ff;
+}
+
+.flow-track-badge-row {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--ln);
+  flex-wrap: wrap;
 }
 
-.arch-tier-icon {
-  font-size: 1.6rem;
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  background: var(--bg);
-  border: 1px solid var(--ln);
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-.arch-tier-step {
-  display: block;
+.flow-track-id {
   font-family: 'Barlow Condensed', monospace;
-  font-size: 0.72rem;
-  color: var(--ac);
-  letter-spacing: 0.08em;
+  font-size: 0.74rem;
   font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ac);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ln);
 }
 
-.arch-tier-title {
-  margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.2;
+.flow-track-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg);
 }
 
-.arch-tier-nodes {
+.flow-track-meta {
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.74rem;
+  color: var(--mut);
+  margin-left: auto;
+}
+
+/* Flow Steps Row */
+.flow-steps-row {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
 }
 
-.arch-node-card {
+/* Individual Flow Step Cards */
+.flow-card {
+  flex: 1;
+  min-width: 175px;
   background: var(--card);
   border: 1.5px solid var(--ln);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 14px;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   user-select: none;
 }
 
-.arch-node-card:hover {
-  transform: translateY(-2px);
+.flow-card:hover {
+  transform: translateY(-3px);
   border-color: var(--fg);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.arch-node-card.selected {
-  border-color: var(--ac);
-  background: color-mix(in srgb, var(--ac) 12%, var(--card));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--ac) 30%, transparent), 0 4px 12px rgba(0, 0, 0, 0.2);
+.flow-card-active {
+  border-color: var(--ac) !important;
+  background: color-mix(in srgb, var(--ac) 14%, var(--card)) !important;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--ac) 38%, transparent), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-3px);
+  opacity: 1 !important;
 }
 
-.arch-node-card.hover-highlight {
+.flow-card-input {
+  border-color: #34d399 !important;
+  background: color-mix(in srgb, #34d399 10%, var(--card)) !important;
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.3) !important;
+  opacity: 1 !important;
+}
+
+.flow-card-output {
   border-color: #00e5ff !important;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4) !important;
+  background: color-mix(in srgb, #00e5ff 10%, var(--card)) !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3) !important;
+  opacity: 1 !important;
 }
 
-.arch-node-card.hover-connected {
+.flow-card-bridge {
+  border-color: #a855f7 !important;
+  background: color-mix(in srgb, #a855f7 10%, var(--card)) !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.3) !important;
+  opacity: 1 !important;
+}
+
+.flow-card-dim {
+  opacity: 0.42;
+}
+
+.flow-track-muted {
+  opacity: 0.16 !important;
+  filter: grayscale(80%);
+  pointer-events: none;
+}
+
+.flow-hover-focus {
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.4) !important;
+  transform: translateY(-3px) !important;
+  opacity: 1 !important;
+}
+
+.flow-hover-linked {
   border-color: var(--ac) !important;
   background: color-mix(in srgb, var(--ac) 8%, var(--card)) !important;
+  opacity: 1 !important;
 }
 
-.arch-node-card.hover-dim,
-.arch-node-card.muted {
-  opacity: 0.32;
-  filter: grayscale(50%);
+.flow-hover-dim {
+  opacity: 0.28 !important;
 }
 
-.arch-node-card.pulsing {
-  animation: card-pulse-anim 0.8s ease-in-out;
+.flow-pulsing {
+  animation: card-flow-pulse 0.9s ease-in-out;
 }
 
-@keyframes card-pulse-anim {
+@keyframes card-flow-pulse {
   0% { transform: scale(1); box-shadow: 0 0 0 0 var(--ac); }
-  50% { transform: scale(1.03); box-shadow: 0 0 24px 6px var(--ac); border-color: var(--ac); }
+  50% { transform: scale(1.04); box-shadow: 0 0 26px 8px var(--ac); border-color: var(--ac); }
   100% { transform: scale(1); }
 }
 
-.arch-node-head {
+.flow-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
   margin-bottom: 6px;
 }
 
-.arch-node-icon {
-  font-size: 1.35rem;
+.flow-step-tag {
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--mut);
 }
 
-.arch-node-badge {
+.flow-step-icon {
+  font-size: 1.3rem;
+}
+
+.flow-spotlight-pill {
+  display: inline-block;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--ln);
-  color: var(--fg);
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-bottom: 6px;
 }
 
-.arch-node-title {
-  margin: 0 0 8px;
-  font-size: 1rem;
+.spotlight-active {
+  background: var(--ac);
+  color: var(--on);
+}
+
+.spotlight-input {
+  background: rgba(52, 211, 153, 0.2);
+  color: #34d399;
+  border: 1px solid #34d399;
+}
+
+.spotlight-output {
+  background: rgba(0, 229, 255, 0.2);
+  color: #00e5ff;
+  border: 1px solid #00e5ff;
+}
+
+.spotlight-bridge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid #a855f7;
+}
+
+.flow-step-name {
+  margin: 0 0 2px;
+  font-size: 0.96rem;
   font-weight: 700;
   line-height: 1.25;
 }
 
-.arch-node-meta {
+.flow-step-sub {
+  font-size: 0.78rem;
+  color: var(--mut);
+  margin-bottom: 8px;
+}
+
+.flow-step-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
+  gap: 5px;
+  font-size: 0.74rem;
   color: var(--mut);
   font-family: 'Barlow Condensed', monospace;
 }
 
-.arch-status-dot {
+.flow-status-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -3212,36 +3286,134 @@ body.pay-sim-mode {
   display: inline-block;
 }
 
-/* Telemetry Inspection HUD Card */
-.arch-telemetry-hud {
+/* Directional Flow Connectors between Steps */
+.flow-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 0 4px;
+}
+
+.flow-connector-line {
+  width: 100%;
+  height: 2px;
+  background: var(--ln);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.flow-pulse-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  background: linear-gradient(90deg, transparent, var(--ac), transparent);
+  animation: flow-particle-travel 1.8s linear infinite;
+}
+
+@keyframes flow-particle-travel {
+  0% { transform: translateX(-18px); }
+  100% { transform: translateX(60px); }
+}
+
+.pulse-boost {
+  background: linear-gradient(90deg, transparent, #00e5ff, transparent) !important;
+  animation-duration: 0.6s !important;
+}
+
+.flow-connector-arrow {
+  font-size: 0.85rem;
+  color: var(--ac);
+  line-height: 1;
+}
+
+.flow-connector-label {
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.68rem;
+  color: var(--mut);
+  white-space: nowrap;
+  margin-top: 3px;
+}
+
+/* Inter-Track Bridge Indicator */
+.flow-intertrack-bridge-indicator {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.bridge-line-left,
+.bridge-line-right {
+  flex: 1;
+  height: 1px;
+  background: dashed 1px var(--ln);
+  border-top: 1px dashed var(--ln);
+}
+
+.bridge-center-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px dashed #a855f7;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-family: 'Barlow Condensed', monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #d8b4fe;
+  letter-spacing: 0.06em;
+}
+
+.bridge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 6px #a855f7;
+  animation: pulse-dot-anim 1.8s infinite;
+}
+
+/* Telemetry Flow HUD Card */
+.flow-telemetry-hud {
   background: var(--card);
   border: 1.5px solid var(--fg);
   box-shadow: 6px 6px 0 var(--ac);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 24px;
   position: relative;
   z-index: 2;
+  margin-top: 24px;
   transition: all 0.25s ease;
 }
 
-.arch-hud-badge-row {
+.flow-hud-top-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px dashed var(--ln);
 }
 
-.arch-hud-id-tag {
+.flow-hud-subsystem {
   font-family: 'Barlow Condensed', monospace;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 800;
   color: #00e5ff;
 }
 
-.arch-hud-live-tag {
+.flow-hud-live-tag {
   font-family: 'Barlow Condensed', monospace;
   font-size: 0.78rem;
   color: var(--ac);
@@ -3249,54 +3421,99 @@ body.pay-sim-mode {
   margin-left: auto;
 }
 
-.arch-hud-grid {
+.flow-hud-content-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 24px;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 26px;
   align-items: start;
 }
 
-.arch-hud-title-box {
+.flow-hud-name-row {
   display: flex;
   align-items: center;
   gap: 14px;
   margin-bottom: 12px;
 }
 
-.arch-hud-icon-lg {
-  font-size: 2.5rem;
+.flow-hud-big-icon {
+  font-size: 2.6rem;
   background: var(--bg);
   border: 1px solid var(--ln);
-  width: 60px;
-  height: 60px;
+  width: 62px;
+  height: 62px;
   display: grid;
   place-items: center;
   border-radius: 12px;
   flex-shrink: 0;
 }
 
-.arch-hud-name {
+.flow-hud-name {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-family: 'Barlow Condensed', sans-serif;
   letter-spacing: 0.02em;
   line-height: 1.15;
 }
 
-.arch-hud-sub {
+.flow-hud-stage-sub {
   font-size: 0.84rem;
   color: var(--mut);
   margin-top: 3px;
 }
 
-.arch-hud-desc {
+.flow-hud-desc {
   font-size: 0.94rem;
   line-height: 1.5;
   color: var(--fg);
   margin: 0 0 16px;
 }
 
-.arch-hud-viva {
+.flow-streams-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.flow-stream-item {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.stream-in {
+  border-left: 3px solid #34d399;
+}
+
+.stream-out {
+  border-left: 3px solid #00e5ff;
+}
+
+.stream-label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.stream-in .stream-label {
+  color: #34d399;
+}
+
+.stream-out .stream-label {
+  color: #00e5ff;
+}
+
+.stream-val {
+  font-size: 0.82rem;
+  color: var(--fg);
+  line-height: 1.35;
+}
+
+.flow-hud-viva-box {
   background: color-mix(in srgb, #f59e0b 10%, var(--bg));
   border: 1px solid #f59e0b;
   border-left: 4px solid #f59e0b;
@@ -3304,7 +3521,7 @@ body.pay-sim-mode {
   padding: 12px 14px;
 }
 
-.arch-viva-label {
+.flow-viva-title {
   display: block;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800;
@@ -3314,14 +3531,14 @@ body.pay-sim-mode {
   margin-bottom: 4px;
 }
 
-.arch-hud-viva p {
+.flow-hud-viva-box p {
   margin: 0;
   font-size: 0.88rem;
   color: var(--fg);
   line-height: 1.45;
 }
 
-.arch-specs-header {
+.flow-specs-title {
   margin: 0 0 10px;
   font-size: 0.92rem;
   text-transform: uppercase;
@@ -3330,7 +3547,7 @@ body.pay-sim-mode {
   color: var(--mut);
 }
 
-.arch-specs-table {
+.flow-specs-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3340,7 +3557,7 @@ body.pay-sim-mode {
   padding: 12px 14px;
 }
 
-.arch-spec-row {
+.flow-spec-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3348,25 +3565,25 @@ body.pay-sim-mode {
   gap: 8px;
 }
 
-.arch-spec-key {
+.flow-spec-key {
   color: var(--mut);
   font-size: 0.82rem;
 }
 
-.arch-spec-val {
+.flow-spec-val {
   font-weight: 700;
   color: #00e5ff;
   font-family: 'Barlow Condensed', monospace;
   text-align: right;
 }
 
-.arch-hud-actions {
+.flow-action-wrapper {
   margin-top: 16px;
 }
 
-.arch-action-btn {
+.flow-pulse-btn {
   width: 100%;
-  padding: 10px 14px;
+  padding: 11px 16px;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -3374,29 +3591,52 @@ body.pay-sim-mode {
   gap: 8px;
 }
 
-/* Responsive Stacking */
-@media (max-width: 960px) {
-  .arch-diagram-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .flow-steps-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: visible;
   }
-  .arch-hud-grid {
+  .flow-connector {
+    flex-direction: row;
+    min-height: 28px;
+    min-width: 0;
+    gap: 8px;
+  }
+  .flow-connector-line {
+    width: 2px;
+    height: 18px;
+    margin-bottom: 0;
+  }
+  .flow-connector-arrow {
+    transform: rotate(90deg);
+  }
+  .flow-hud-content-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 20px;
+  }
+  .flow-streams-box {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .arch-blueprint-wrapper {
+  .arch-flowchart-blueprint {
     padding: 20px 14px;
-    border-radius: 14px;
+    border-radius: 16px;
   }
-  .arch-telemetry-hud {
+  .flow-track-lane {
+    padding: 16px 14px;
+  }
+  .flow-telemetry-hud {
     padding: 18px 14px;
   }
-  .arch-hud-title-box {
+  .flow-hud-name-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
 }
+

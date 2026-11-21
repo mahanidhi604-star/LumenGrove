@@ -1,367 +1,440 @@
-// js/arch-diagram.js - Interactive Full-Stack Architecture & Energy-Data Topology
+// js/arch-diagram.js - Interactive Dual-Track Semi-Flowchart Architecture & Energy-Data Topology
 // Solarpunk & Aerospace Engineering Blueprint for LumenGrove RVCE
 
 (function () {
-  const ARCH_NODES = {
+  const ARCH_FLOW_STEPS = {
+    // --- TRACK A: Physical Solar Energy Pipeline ---
     pv: {
       id: 'pv',
-      tier: 'hardware',
-      tierLabel: 'Physical Microgrid',
+      track: 'A',
+      trackName: 'TRACK A // SOLAR ENERGY PIPELINE',
+      stepNumber: '01',
+      stepTitle: 'Photovoltaic Harvest',
       title: 'Bifacial Solar PV Array',
-      badge: '200W Canopy PV',
+      badge: '200W Bifacial Canopy',
       icon: '☀️',
       status: '210W Peak Harvest',
-      desc: 'Converts solar irradiance across campus canopy arrays into clean DC power, feeding MPPT charge controllers with live thermal telemetry.',
+      inputDesc: 'Direct campus sunlight (1,000 W/m²) + Ground pavement albedo reflections',
+      outputDesc: '24V DC Raw Solar Power to Microgrid Power Core',
+      desc: 'Bifacial solar canopy converts incident sunlight and campus ground reflections into clean DC current with high efficiency MPPT tracking.',
       specs: {
-        'Capacity': '200W Bifacial Monocrystalline',
-        'Controller': 'MPPT Step-Down (98% eff.)',
-        'Telemetry': 'Panel Temp (33.5°C), Irradiance',
-        'Harvest Status': '100% Zero-Carbon Off-Grid'
+        'Array Rating': '200W Bifacial Monocrystalline',
+        'Operating Voltage': '24V Nominal DC (18V-36V Vmp)',
+        'MPPT Tracking': 'High-speed Perturb & Observe (98.4%)',
+        'Sensor Bus': 'DS18B20 Panel Temp (33.5°C)'
       },
-      conduits: ['c_pv_power', 'c_pv_esp32'],
-      flows: ['solar', 'iot'],
-      vivaNote: 'Bifacial PV captures both direct sunlight and albedo ground reflections, maximizing yield during cloudy Bangalore afternoons.'
+      inputs: [],
+      outputs: ['power'],
+      crossConduits: ['esp32'],
+      vivaNote: 'Bifacial design increases energy capture by 18-24% on campus concrete pavement compared to standard monofacial panels.'
     },
     power: {
       id: 'power',
-      tier: 'hardware',
-      tierLabel: 'Physical Microgrid',
+      track: 'A',
+      trackName: 'TRACK A // SOLAR ENERGY PIPELINE',
+      stepNumber: '02',
+      stepTitle: 'Storage & Regulation',
       title: 'Microgrid Power Core',
-      badge: 'LiFePO4 + INA219',
+      badge: 'LiFePO4 + INA219 Bus',
       icon: '🔋',
-      status: '50.02 Hz Harmonic Sync',
-      desc: 'Central energy buffer with lithium iron phosphate storage and I2C current sensing to regulate 5V/3A high-speed slot charging rails.',
+      status: '50.02 Hz Stable Microgrid',
+      inputDesc: '24V Raw DC from Solar PV Array',
+      outputDesc: 'Regulated 5V/3A DC Rails to 8-Bay Hardware Dock',
+      desc: 'Lithium Iron Phosphate buffer battery balances solar intermittency, providing steady 5V/3A power rails to all 8 hardware bays even during heavy clouds.',
       specs: {
-        'Chemistry': 'LiFePO4 (2,000+ lifecycle cycles)',
-        'Sensors': 'INA219 High-Side Current & Bus',
-        'Regulation': 'Synchronous DC-DC Buck (24V→5V)',
-        'Storage Cap': '480Wh Station Buffer'
+        'Buffer Battery': '24V 20Ah LiFePO4 (480Wh Capacity)',
+        'Buck Conversion': '24V to 5V Synchronous Step-Down',
+        'Telemetry IC': 'INA219 High-Side Voltage/Current Monitor',
+        'Charging Rail': '8 Discrete 5V/3A Dedicated Power Ports'
       },
-      conduits: ['c_pv_power', 'c_power_dock', 'c_power_esp32'],
-      flows: ['solar', 'iot'],
-      vivaNote: 'INA219 communicates over I2C to detect whether a power bank is actively drawing charging current or fully saturated.'
-    },
-    esp32: {
-      id: 'esp32',
-      tier: 'hardware',
-      tierLabel: 'Hardware Controller',
-      title: 'ESP32 Station IoT Microcontroller',
-      badge: 'Dual-Core 240MHz',
-      icon: '🎛️',
-      status: 'GPIO Latches Ready',
-      desc: 'Edge computing master managing 8-bay solenoid ejection latches, RC522 RFID return verification, and SW-420 anti-tamper security.',
-      specs: {
-        'Core MCU': 'Espressif ESP32-WROOM-32D',
-        'Wireless': '2.4GHz Wi-Fi + BLE 4.2',
-        'Peripherals': 'RC522 RFID, SW-420, INA219, Relays',
-        'Security': 'Hardware Solenoid Watchdog Driver'
-      },
-      conduits: ['c_power_esp32', 'c_esp32_dock', 'c_esp32_realtime', 'c_esp32_db'],
-      flows: ['iot', 'realtime', 'solar'],
-      vivaNote: 'The ESP32 runs an asynchronous state machine: on PIN entry or mobile QR approval, it pulses the designated slot relay for 500ms to eject the bank.'
+      inputs: ['pv'],
+      outputs: ['dock'],
+      crossConduits: ['esp32'],
+      vivaNote: 'INA219 communicates with ESP32 via I2C at 400kHz to dynamically throttle power allocation when multiple discharged banks are returned.'
     },
     dock: {
       id: 'dock',
-      tier: 'hardware',
-      tierLabel: 'Hardware Station',
-      title: '8-Bay Smart Ejection Dock',
-      badge: 'Solenoid Latches',
+      track: 'A',
+      trackName: 'TRACK A // SOLAR ENERGY PIPELINE',
+      stepNumber: '03',
+      stepTitle: 'Smart Latch & Docking',
+      title: '8-Bay Hardware Dock',
+      badge: 'Solenoid Latching Bays',
       icon: '🗄️',
-      status: '8 Slots Online',
-      desc: 'Physical modular kiosk enclosure with spring-loaded ejection bays, optical micro-switches, and USB-C magnetic charging contacts.',
+      status: '8 Slots Latched & Ready',
+      inputDesc: '5V Charging Rails + ESP32 Solenoid Release Pulse',
+      outputDesc: 'Ejected Solar Power Bank to Student',
+      desc: 'Precision laser-cut modular kiosk cabinet equipped with spring-loaded solenoid ejection latches, magnetic charging contacts, and mechanical micro-switches.',
       specs: {
-        'Solenoid Bays': '8 Discrete Spring Ejection Slots',
-        'Return Checks': 'RFID Tag + 5V Current + Limit Switch',
-        'Discharge': 'Live Cell Voltage & SoC Monitoring',
-        'Cabinet': 'Laser-cut Anodized Solarpunk Steel'
+        'Solenoid Spec': '12V 1.2A Heavy-Duty Pull-Type (JF-0824B)',
+        'Return Checks': 'RFID UID + 5V Current Draw + Limit Switch',
+        'Contacts': 'Gold-Plated Magnetic Spring Pogo Pins',
+        'Cabinet Enclosure': 'Powder-Coated Solarpunk Modular Steel'
       },
-      conduits: ['c_power_dock', 'c_esp32_dock', 'c_dock_bento'],
-      flows: ['solar', 'iot'],
-      vivaNote: 'Triple-factor return validation prevents theft: the RFID tag UID, 5V current loop, and physical switch must all confirm simultaneous latching.'
+      inputs: ['power'],
+      outputs: ['bank'],
+      crossConduits: ['esp32'],
+      vivaNote: 'Triple-factor physical validation guarantees power banks cannot be forcibly removed or falsely claimed as returned without authentic latch contact.'
     },
-    db: {
-      id: 'db',
-      tier: 'cloud',
-      tierLabel: 'Cloud Database',
-      title: 'PostgreSQL 15 & Row-Level Security',
-      badge: 'Supabase DB',
-      icon: '🗄️',
-      status: 'RLS Policies Enforced',
-      desc: 'Relational database core hosting authenticated rental lifecycles (paid→active→completed), pricing rules, and encrypted station telemetry.',
+    bank: {
+      id: 'bank',
+      track: 'A',
+      trackName: 'TRACK A // SOLAR ENERGY PIPELINE',
+      stepNumber: '04',
+      stepTitle: 'Active Utilization',
+      title: 'Active Power Bank Session',
+      badge: 'Solar Stored Energy In-Use',
+      icon: '⚡',
+      status: 'High-Speed USB-PD Active',
+      inputDesc: 'Ejected Power Bank with 100% Solar Charge',
+      outputDesc: 'Clean Power to Student Device + Live Battery Telemetry',
+      desc: 'High-capacity solar power bank powering student laptops and smartphones with continuous state-of-charge discharge and time-dilation tracking.',
       specs: {
-        'Engine': 'PostgreSQL 15 with pg_cron & triggers',
-        'Security': 'Row-Level Security (auth.uid() isolation)',
-        'Key Tables': 'public.rentals, profiles, stations',
-        'Integrity': 'Strict Finite State Machine Triggers'
+        'Cell Chemistry': 'High-Density INR18650-35E Li-ion Cells',
+        'Outputs': 'USB-C PD 65W (Laptop) + Dual USB-A 18W (Phone)',
+        'Discharge Telemetry': '3.60V - 4.18V Cell Curve Simulation',
+        'Cycle Durability': '800+ Full Discharge Cycles @ >80% Cap'
       },
-      conduits: ['c_esp32_db', 'c_auth_db', 'c_db_realtime', 'c_db_datav', 'c_db_bento'],
-      flows: ['auth', 'iot', 'realtime'],
-      vivaNote: 'Direct write access is locked by RLS. Rentals start as pending/paid, transition to active upon PIN ejection, and finalize with paise calculation upon return.'
+      inputs: ['dock'],
+      outputs: [],
+      crossConduits: ['bento'],
+      vivaNote: 'Continuous mathematical time-dilation allows testing 1-hour sessions in 1 minute (60x) or 12 seconds (300x) without timer resets.'
     },
-    realtime: {
-      id: 'realtime',
-      tier: 'cloud',
-      tierLabel: 'Cloud Messaging',
-      title: 'Realtime WebSocket Broadcast Engine',
-      badge: 'RFC 6455 WebSockets',
-      icon: '📡',
-      status: 'Latency < 12ms',
-      desc: 'Bi-directional WebSocket streaming backbone powering instantaneous cross-device laptop-to-phone QR payment approval without database polling.',
-      specs: {
-        'Protocol': 'Persistent WSS / Phoenix Channels',
-        'Channels': 'lg_pay_${sessionId} (Dynamic topic broadcast)',
-        'Fallback': 'BroadcastChannel API & LocalStorage Bus',
-        'Roundtrip': '< 15ms LAN / < 45ms Global CDN'
-      },
-      conduits: ['c_esp32_realtime', 'c_db_realtime', 'c_realtime_mobile', 'c_realtime_bento'],
-      flows: ['realtime'],
-      vivaNote: 'When a student authorizes payment on their smartphone, a broadcast event fires across WebSockets, instantly unlocking the physical laptop kiosk.'
-    },
-    auth: {
-      id: 'auth',
-      tier: 'cloud',
-      tierLabel: 'Cloud Security',
-      title: 'PKCE Auth & Domain Gatekeeper',
-      badge: 'Google OAuth2 + E.164',
-      icon: '🔐',
-      status: '@rvce.edu.in Verified',
-      desc: 'Identity provider ensuring student rentals require institutional Google sign-in and verified +91 Indian phone numbers, isolating staff privileges.',
-      specs: {
-        'Method': 'PKCE (Proof Key for Code Exchange)',
-        'Allowed Domain': 'Strict @rvce.edu.in Student Allowlist',
-        'Staff RBAC': 'Super Admin & Field Technician Roles',
-        'SMS Verification': 'E.164 Format (+91 Indian Phone Validation)'
-      },
-      conduits: ['c_auth_db', 'c_auth_bento', 'c_auth_datav'],
-      flows: ['auth'],
-      vivaNote: 'Protects hardware assets from unauthenticated abuse while allowing visitors to explore stations freely in guest mode.'
-    },
+
+    // --- TRACK B: Digital Control, Cloud & Telemetry Loop ---
     bento: {
       id: 'bento',
-      tier: 'client',
-      tierLabel: 'Student Interface',
-      title: 'Student Bento Rental Portal (#app-home)',
-      badge: 'Responsive Web SPA',
+      track: 'B',
+      trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
+      stepNumber: '01',
+      stepTitle: 'Session Reservation',
+      title: 'Student Bento Portal (#app-home)',
+      badge: 'Web Single-Page App',
       icon: '💻',
-      status: 'Continuous Time-Dilation',
-      desc: 'Unified student command deck featuring GPS campus navigation (Haversine formula), hardware kiosk simulator, and 1x/60x/300x continuous timer dilation.',
+      status: 'GPS Geolocation Synced',
+      inputDesc: 'Student Interaction, Campus GPS Location & PKCE Token',
+      outputDesc: 'Encrypted QR Checkout Pass & Station Configuration',
+      desc: 'Primary student interface with real-time station availability radar, Haversine nearest kiosk distance calculation, and checkout configuration pass generator.',
       specs: {
-        'Routing': 'Single-page Curtain Router (Vanilla ES6+)',
-        'Navigation': 'Haversine Great-Circle Geolocation',
-        'Kiosk Sim': 'Continuous Time-Dilation Engine',
-        'Design System': 'Solarpunk Bento Grid (Outfit + Barlow)'
+        'Architecture': 'Single-Page Vanilla ES6+ Curtain Router',
+        'Geolocation': 'HTML5 Navigator Geolocation + Haversine',
+        'Security Mode': 'Guest Lockout Protection Modal',
+        'Accessibility': 'Bilingual (English, Kannada, Hindi)'
       },
-      conduits: ['c_dock_bento', 'c_realtime_bento', 'c_auth_bento', 'c_bento_mobile', 'c_db_bento'],
-      flows: ['solar', 'realtime', 'auth', 'iot'],
-      vivaNote: 'The time-dilation engine re-anchors timestamps when toggling speed multipliers (60x/300x) so examiners can test grace windows without resetting elapsed time.'
+      inputs: ['bank'],
+      outputs: ['mobile'],
+      crossConduits: ['cloud'],
+      vivaNote: 'Dynamic Haversine distance recalculates every 3 seconds as the student walks toward Central Library or Cauvery Canteen.'
     },
     mobile: {
       id: 'mobile',
-      tier: 'client',
-      tierLabel: 'Mobile Gateway',
+      track: 'B',
+      trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
+      stepNumber: '02',
+      stepTitle: 'Cross-Device Redirect',
       title: 'Cross-Device Mobile Gateway (#pay-sim)',
-      badge: 'Zero-Install Web App',
+      badge: 'Zero-Install Web Gateway',
       icon: '📱',
-      status: 'QR Camera Direct Link',
-      desc: 'Mobile-optimized lightweight payment gateway launched directly from standard iOS/Android camera apps via scanned station QR code.',
+      status: 'Instant Camera Link',
+      inputDesc: 'Scanned Station QR Code with Session Hash Parameters',
+      outputDesc: 'Realtime Payment Approval Broadcast to Kiosk',
+      desc: 'Lightweight web gateway launched instantly from phone camera with zero app installation, allowing simulation of UPI payment authorization.',
       specs: {
-        'Entry': 'Scanned QR Code (Embedded Session Config)',
-        'Payment Sim': 'Instant Webhook Mock / UPI Intent URI',
-        'Sync Method': 'Supabase Realtime Broadcast + API Ping',
-        'Footprint': 'Zero app installation required (<25KB payload)'
+        'URL Parsing': 'Dual Query Parser (Hash `#pay-sim?` + Search `?`)',
+        'Intent URI': 'upi://pay?pa=lumengrove@rvce&pn=LumenGrove',
+        'Cross-Device Sync': 'Supabase Realtime Channel Broadcast',
+        'Client Footprint': '< 20 KB Payload Size (Zero Install)'
       },
-      conduits: ['c_bento_mobile', 'c_realtime_mobile'],
-      flows: ['realtime'],
-      vivaNote: 'Scanned QR codes encode the station ID, bank category, duration, and calculated fee, maintaining perfect synchronization between laptop and phone.'
+      inputs: ['bento'],
+      outputs: ['cloud'],
+      crossConduits: [],
+      vivaNote: 'Using Supabase WebSockets eliminates the need to expose a local backend server or write unauthenticated payment records to the database.'
+    },
+    cloud: {
+      id: 'cloud',
+      track: 'B',
+      trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
+      stepNumber: '03',
+      stepTitle: 'Realtime Cloud Hub',
+      title: 'Supabase Cloud & Realtime Engine',
+      badge: 'PostgreSQL 15 + WebSockets',
+      icon: '☁️',
+      status: 'WSS WebSocket < 12ms',
+      inputDesc: 'Payment Approval Broadcast from Mobile Phone',
+      outputDesc: 'Slot Unlocked Event to Kiosk + ACID Rental Record',
+      desc: 'Cloud hub executing Row-Level Security policies, managing authenticated rental state machines (paid→active→completed), and broadcasting live unlock events.',
+      specs: {
+        'Database': 'PostgreSQL 15 with pg_cron & SQL Triggers',
+        'WebSocket Protocol': 'RFC 6455 Persistent Duplex Phoenix Channels',
+        'Security Layer': 'Row-Level Security (auth.uid() isolation)',
+        'Auth Gatekeeper': 'PKCE Google OAuth with @rvce.edu.in Check'
+      },
+      inputs: ['mobile'],
+      outputs: ['esp32'],
+      crossConduits: ['bento', 'datav'],
+      vivaNote: 'Database validation triggers strictly enforce finite state transitions so a rental can never jump directly from pending to completed.'
+    },
+    esp32: {
+      id: 'esp32',
+      track: 'B',
+      trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
+      stepNumber: '04',
+      stepTitle: 'Edge Hardware Control',
+      title: 'ESP32 Station IoT Controller',
+      badge: 'Dual-Core 240MHz MCU',
+      icon: '🎛️',
+      status: 'Hardware Relays Ready',
+      inputDesc: 'PIN Match / Realtime Slot Release Signal from Cloud',
+      outputDesc: '500ms Solenoid GPIO Fire Pulse + Station Telemetry',
+      desc: 'Physical edge microcontroller orchestrating station hardware: drives solenoid relays, monitors current via INA219, and checks RFID return credentials.',
+      specs: {
+        'MCU': 'Espressif ESP32-WROOM-32D (240MHz, 520KB SRAM)',
+        'Connectivity': '802.11 b/g/n Wi-Fi + Bluetooth Low Energy',
+        'GPIO Outputs': '8x Opto-isolated Solenoid Driver Channels',
+        'Sensor Inputs': 'RC522 SPI, INA219 I2C, SW-420 Digital'
+      },
+      inputs: ['cloud'],
+      outputs: ['datav'],
+      crossConduits: ['pv', 'power', 'dock'],
+      vivaNote: 'The firmware runs non-blocking FreeRTOS tasks to guarantee instant solenoid response time (<50ms) upon valid PIN authentication.'
     },
     datav: {
       id: 'datav',
-      tier: 'client',
-      tierLabel: 'Aerospace Console',
+      track: 'B',
+      trackName: 'TRACK B // IOT & CLOUD CONTROL LOOP',
+      stepNumber: '05',
+      stepTitle: 'Aerospace Telemetry',
       title: '10k Cyber Aerospace Mission Control (#admin)',
-      badge: 'DataV Aerospace HUD',
+      badge: 'DataV Telemetry Command HUD',
       icon: '🛰️',
-      status: 'Stationary Vector Radar',
-      desc: 'Isolated telemetry command center featuring stationary RVCE vector radar, 3D Three.js microgrid globe, stepper pricing terminal, and complaints feed.',
+      status: 'Stationary Tactical Radar',
+      inputDesc: 'Station Sensor Feed + Microgrid Inverter Telemetry',
+      outputDesc: 'Live Dynamic Pricing Commits & Field Staff Dispatch',
+      desc: 'Tactical aerospace telemetry console providing stationary RVCE vector radar targeting, 3D Three.js microgrid globe, stepper pricing terminal, and complaints desk.',
       specs: {
-        '3D Graphics': 'Three.js (r128) WebGL Energy Globe',
-        'Tactical Map': 'Stationary 2D Radar with Polar Rings',
-        'Diagnostics': '8-Bay Technician Hardware Matrix',
-        'Policy Control': 'Live Stepper Pricing Terminal to DB'
+        '3D Visualizer': 'Three.js (r128) WebGL Particle Sphere',
+        'Tactical Map': 'Stationary Vector Radar with Polar Rings',
+        'Technician Matrix': '8-Bay Hardware Diagnostic Inspection Matrix',
+        'Policy Deck': 'Real-Time Stepper Pricing committed to Supabase'
       },
-      conduits: ['c_db_datav', 'c_auth_datav'],
-      flows: ['iot', 'auth'],
-      vivaNote: 'Full theme and layout isolation allows staff and field technicians to monitor solar microgrid harmonic stability without public student elements.'
+      inputs: ['esp32'],
+      outputs: [],
+      crossConduits: ['cloud'],
+      vivaNote: 'Complete theme isolation separates staff maintenance operations from public student views, adhering to industrial SCADA design standards.'
     }
   };
 
-  const ARCH_CONDUITS = [
-    { id: 'c_pv_power', from: 'pv', to: 'power', type: 'solar', label: '24V Raw Solar DC' },
-    { id: 'c_pv_esp32', from: 'pv', to: 'esp32', type: 'iot', label: 'Panel Temp & Irradiance' },
-    { id: 'c_power_dock', from: 'power', to: 'dock', type: 'solar', label: '5V/3A Slot Rails' },
-    { id: 'c_power_esp32', from: 'power', to: 'esp32', type: 'iot', label: 'INA219 I2C Telemetry' },
-    { id: 'c_esp32_dock', from: 'esp32', to: 'dock', type: 'iot', label: 'GPIO Relay & RFID' },
-    { id: 'c_esp32_realtime', from: 'esp32', to: 'realtime', type: 'realtime', label: 'Kiosk Socket State' },
-    { id: 'c_esp32_db', from: 'esp32', to: 'db', type: 'iot', label: 'Heartbeat & Telemetry' },
-    { id: 'c_dock_bento', from: 'dock', to: 'bento', type: 'solar', label: 'Power Bank Dispensed' },
-    { id: 'c_auth_db', from: 'auth', to: 'db', type: 'auth', label: 'User Token & Roles' },
-    { id: 'c_auth_bento', from: 'auth', to: 'bento', type: 'auth', label: 'Student Session (PKCE)' },
-    { id: 'c_auth_datav', from: 'auth', to: 'datav', type: 'auth', label: 'Staff Allowlist RBAC' },
-    { id: 'c_db_realtime', from: 'db', to: 'realtime', type: 'realtime', label: 'Database CDC Events' },
-    { id: 'c_db_datav', from: 'db', to: 'datav', type: 'iot', label: 'Pricing Rules & Logs' },
-    { id: 'c_db_bento', from: 'db', to: 'bento', type: 'auth', label: 'Rental History Ledger' },
-    { id: 'c_bento_mobile', from: 'bento', to: 'mobile', type: 'realtime', label: 'Scanned QR Intent' },
-    { id: 'c_realtime_mobile', from: 'mobile', to: 'realtime', type: 'realtime', label: 'Mobile Approval Broadcast' },
-    { id: 'c_realtime_bento', from: 'realtime', to: 'bento', type: 'realtime', label: 'Slot Ejection Trigger' }
-  ];
+  const TRACK_A_ORDER = ['pv', 'power', 'dock', 'bank'];
+  const TRACK_B_ORDER = ['bento', 'mobile', 'cloud', 'esp32', 'datav'];
 
-  window.currentArchFilter = 'all';
+  window.currentArchFilter = 'all'; // 'all', 'trackA', 'trackB', 'bridges'
   window.selectedArchNode = 'esp32';
 
   window.renderInteractiveArchDiagram = function () {
-    const selected = ARCH_NODES[window.selectedArchNode] || ARCH_NODES.esp32;
+    const activeStep = ARCH_FLOW_STEPS[window.selectedArchNode] || ARCH_FLOW_STEPS.esp32;
 
-    const renderNodeCard = (nodeId) => {
-      const n = ARCH_NODES[nodeId];
-      const isSel = nodeId === window.selectedArchNode;
-      const isMuted = window.currentArchFilter !== 'all' && !n.flows.includes(window.currentArchFilter);
+    const renderFlowCard = (nodeId) => {
+      const step = ARCH_FLOW_STEPS[nodeId];
+      const isSelected = nodeId === window.selectedArchNode;
+
+      // Determine spotlight roles relative to selected step
+      let spotlightRole = '';
+      let isInput = activeStep.inputs && activeStep.inputs.includes(nodeId);
+      let isOutput = activeStep.outputs && activeStep.outputs.includes(nodeId);
+      let isBridge = activeStep.crossConduits && activeStep.crossConduits.includes(nodeId);
+
+      let cardClasses = ['flow-card'];
+      if (isSelected) {
+        cardClasses.push('flow-card-active');
+        spotlightRole = '<span class="flow-spotlight-pill spotlight-active">CURRENT INSPECTION</span>';
+      } else if (isInput) {
+        cardClasses.push('flow-card-input');
+        spotlightRole = '<span class="flow-spotlight-pill spotlight-input">◄ INPUT SOURCE</span>';
+      } else if (isOutput) {
+        cardClasses.push('flow-card-output');
+        spotlightRole = '<span class="flow-spotlight-pill spotlight-output">OUTPUT TARGET ►</span>';
+      } else if (isBridge) {
+        cardClasses.push('flow-card-bridge');
+        spotlightRole = '<span class="flow-spotlight-pill spotlight-bridge">⚡ CROSS-TRACK SYNC</span>';
+      } else {
+        cardClasses.push('flow-card-dim');
+      }
+
+      // Check filter muting
+      if (window.currentArchFilter === 'trackA' && step.track !== 'A') {
+        cardClasses.push('flow-track-muted');
+      } else if (window.currentArchFilter === 'trackB' && step.track !== 'B') {
+        cardClasses.push('flow-track-muted');
+      } else if (window.currentArchFilter === 'bridges' && !isBridge && !isSelected) {
+        cardClasses.push('flow-track-muted');
+      }
 
       return `
-        <div class="arch-node-card ${isSel ? 'selected' : ''} ${isMuted ? 'muted' : ''}" 
-             id="arch-node-${n.id}" 
-             onclick="window.selectArchNode('${n.id}')"
-             onmouseenter="window.highlightArchConduits('${n.id}')"
-             onmouseleave="window.resetArchConduits()">
-          <div class="arch-node-head">
-            <span class="arch-node-icon">${n.icon}</span>
-            <span class="arch-node-badge">${n.badge}</span>
+        <div class="${cardClasses.join(' ')}" 
+             id="flow-step-${step.id}"
+             onclick="window.selectArchNode('${step.id}')"
+             onmouseenter="window.highlightFlowStep('${step.id}')"
+             onmouseleave="window.resetFlowStepHighlight()">
+          <div class="flow-card-top">
+            <span class="flow-step-tag">STEP ${step.track}-${step.stepNumber}</span>
+            <span class="flow-step-icon">${step.icon}</span>
           </div>
-          <h4 class="arch-node-title">${n.title}</h4>
-          <div class="arch-node-meta">
-            <span class="arch-status-dot"></span>
-            <span class="arch-status-text">${n.status}</span>
+          ${spotlightRole}
+          <h4 class="flow-step-name">${step.title}</h4>
+          <div class="flow-step-sub">${step.stepTitle}</div>
+          <div class="flow-step-status">
+            <span class="flow-status-dot"></span>
+            <span>${step.status}</span>
           </div>
         </div>
       `;
     };
 
+    const renderFlowConnector = (label, arrow = '►') => `
+      <div class="flow-connector">
+        <div class="flow-connector-line">
+          <span class="flow-pulse-particle"></span>
+        </div>
+        <div class="flow-connector-arrow">${arrow}</div>
+        <div class="flow-connector-label">${label}</div>
+      </div>
+    `;
+
     return `
-      <section class="arch-blueprint-wrapper" aria-label="Interactive System Architecture & Energy-Data Topology">
-        <!-- Solarpunk Blueprint Header -->
-        <div class="arch-header">
-          <div class="arch-header-meta">
+      <section class="arch-flowchart-blueprint" aria-label="Interactive Dual-Track System Architecture Flowchart">
+        <!-- Blueprint Header -->
+        <div class="arch-flow-header">
+          <div class="arch-flow-meta">
             <div class="arch-tag-row">
-              <span class="tag arch-blueprint-tag">SYSTEM ARCHITECTURE · RVCE MICROGRID</span>
-              <span class="arch-freq-pill"><span class="arch-pulse-dot"></span> 50.02 Hz STABLE · WSS ONLINE</span>
+              <span class="tag arch-blueprint-tag">SYSTEM TOPOLOGY // SEMI-FLOWCHART</span>
+              <span class="arch-freq-pill"><span class="arch-pulse-dot"></span> DUAL-TRACK CLOSED LOOP · 50.02 Hz STABLE</span>
             </div>
-            <h2 class="arch-main-title">Interactive End-to-End System & Energy Topology</h2>
-            <p class="arch-subtitle">
-              Explore how 100% solar DC electricity flows through station batteries to power bank slots, synchronized via ESP32 IoT microcontrollers and Supabase Realtime cloud gateways. Click any subsystem to inspect hardware protocols and viva defense points.
+            <h2 class="arch-flow-title">Dual-Track Energy & Control Flowchart</h2>
+            <p class="arch-flow-desc">
+              Visualizing how clean solar DC power flows physically from photovoltaic canopies to charging docks (Track A), synchronized in a closed loop with edge microcontrollers and real-time cloud triggers (Track B). Click any step to trace inputs, outputs, and hardware defense points.
             </p>
           </div>
 
-          <!-- Interactive Subsystem Filter Pills -->
-          <div class="arch-filter-pills" role="tablist" aria-label="Filter architecture conduits">
-            <button type="button" class="arch-filter-btn ${window.currentArchFilter === 'all' ? 'active' : ''}" onclick="window.filterArchConduits('all')">⚡ All Subsystems</button>
-            <button type="button" class="arch-filter-btn ${window.currentArchFilter === 'solar' ? 'active' : ''}" onclick="window.filterArchConduits('solar')">☀️ Solar DC Power</button>
-            <button type="button" class="arch-filter-btn ${window.currentArchFilter === 'iot' ? 'active' : ''}" onclick="window.filterArchConduits('iot')">📡 IoT & ESP32 Latches</button>
-            <button type="button" class="arch-filter-btn ${window.currentArchFilter === 'realtime' ? 'active' : ''}" onclick="window.filterArchConduits('realtime')">🔄 Realtime QR Sync</button>
-            <button type="button" class="arch-filter-btn ${window.currentArchFilter === 'auth' ? 'active' : ''}" onclick="window.filterArchConduits('auth')">🔐 Auth & PostgreSQL</button>
+          <!-- Flow Filter Controls -->
+          <div class="flow-filter-controls">
+            <button type="button" class="flow-filter-btn ${window.currentArchFilter === 'all' ? 'active' : ''}" onclick="window.filterArchConduits('all')">
+              ⚡ Both Tracks (Overview)
+            </button>
+            <button type="button" class="flow-filter-btn ${window.currentArchFilter === 'trackA' ? 'active' : ''}" onclick="window.filterArchConduits('trackA')">
+              ☀️ Track A: Solar Power Pipeline
+            </button>
+            <button type="button" class="flow-filter-btn ${window.currentArchFilter === 'trackB' ? 'active' : ''}" onclick="window.filterArchConduits('trackB')">
+              📡 Track B: IoT Control & Cloud Loop
+            </button>
+            <button type="button" class="flow-filter-btn ${window.currentArchFilter === 'bridges' ? 'active' : ''}" onclick="window.filterArchConduits('bridges')">
+              🔄 Cross-Track Bridges Only
+            </button>
           </div>
         </div>
 
-        <!-- Architecture Canvas with 3 Responsive Tiers -->
-        <div class="arch-diagram-grid">
-          <!-- TIER 1: Physical Solar Microgrid & Hardware Kiosk -->
-          <div class="arch-tier-column tier-hardware">
-            <div class="arch-tier-header">
-              <div class="arch-tier-icon">☀️</div>
-              <div>
-                <span class="arch-tier-step">TIER 01 // PHYSICAL LAYER</span>
-                <h3 class="arch-tier-title">Solar Microgrid & Hardware Kiosk</h3>
-              </div>
-            </div>
-            <div class="arch-tier-nodes">
-              ${renderNodeCard('pv')}
-              ${renderNodeCard('power')}
-              ${renderNodeCard('esp32')}
-              ${renderNodeCard('dock')}
-            </div>
+        <!-- TRACK A: Physical Solar Energy Pipeline -->
+        <div class="flow-track-lane track-a-lane">
+          <div class="flow-track-badge-row">
+            <span class="flow-track-id">TRACK A // PHYSICAL PIPELINE</span>
+            <span class="flow-track-heading">⚡ Solar Generation, Storage & Bay Latch Rails</span>
+            <span class="flow-track-meta">DIRECTIONAL DC TRANSMISSION</span>
           </div>
-
-          <!-- TIER 2: Cloud Infrastructure & Security Core -->
-          <div class="arch-tier-column tier-cloud">
-            <div class="arch-tier-header">
-              <div class="arch-tier-icon">☁️</div>
-              <div>
-                <span class="arch-tier-step">TIER 02 // CLOUD & LOGIC</span>
-                <h3 class="arch-tier-title">Supabase Cloud & Security Engine</h3>
-              </div>
-            </div>
-            <div class="arch-tier-nodes">
-              ${renderNodeCard('db')}
-              ${renderNodeCard('realtime')}
-              ${renderNodeCard('auth')}
-            </div>
-          </div>
-
-          <!-- TIER 3: Client Experience & Aerospace Consoles -->
-          <div class="arch-tier-column tier-client">
-            <div class="arch-tier-header">
-              <div class="arch-tier-icon">💻</div>
-              <div>
-                <span class="arch-tier-step">TIER 03 // CLIENT INTERFACES</span>
-                <h3 class="arch-tier-title">Client Portals & Aerospace HUD</h3>
-              </div>
-            </div>
-            <div class="arch-tier-nodes">
-              ${renderNodeCard('bento')}
-              ${renderNodeCard('mobile')}
-              ${renderNodeCard('datav')}
-            </div>
+          <div class="flow-steps-row">
+            ${renderFlowCard('pv')}
+            ${renderFlowConnector('24V Raw DC')}
+            ${renderFlowCard('power')}
+            ${renderFlowConnector('5V/3A Rails')}
+            ${renderFlowCard('dock')}
+            ${renderFlowConnector('Latch Release')}
+            ${renderFlowCard('bank')}
           </div>
         </div>
 
-        <!-- Dynamic Telemetry Inspection HUD Card -->
-        <div class="arch-telemetry-hud" id="arch-hud-container">
-          <div class="arch-hud-badge-row">
-            <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">${selected.tierLabel.toUpperCase()}</span>
-            <span class="arch-hud-id-tag">SUBSYSTEM REF: [${selected.id.toUpperCase()}]</span>
-            <span class="arch-hud-live-tag">● REALTIME ACTIVE</span>
+        <!-- INTER-TRACK BRIDGES (Cross-Track Energy <-> Control Pulses) -->
+        <div class="flow-intertrack-bridge-indicator">
+          <div class="bridge-line-left"></div>
+          <div class="bridge-center-badge">
+            <span class="bridge-dot"></span>
+            <span class="bridge-text">BIDIRECTIONAL CROSS-TRACK TELEMETRY & SOLENOID ACTUATION BUS</span>
+            <span class="bridge-dot"></span>
+          </div>
+          <div class="bridge-line-right"></div>
+        </div>
+
+        <!-- TRACK B: Digital Control, Cloud & Telemetry Loop -->
+        <div class="flow-track-lane track-b-lane">
+          <div class="flow-track-badge-row">
+            <span class="flow-track-id">TRACK B // DIGITAL CONTROL LOOP</span>
+            <span class="flow-track-heading">📡 Edge Microcontroller, WebSocket Broadcast & Cloud RLS</span>
+            <span class="flow-track-meta">FULL-DUPLEX REALTIME SYNC</span>
+          </div>
+          <div class="flow-steps-row">
+            ${renderFlowCard('bento')}
+            ${renderFlowConnector('QR Intent')}
+            ${renderFlowCard('mobile')}
+            ${renderFlowConnector('WSS Broadcast')}
+            ${renderFlowCard('cloud')}
+            ${renderFlowConnector('Edge Trigger')}
+            ${renderFlowCard('esp32')}
+            ${renderFlowConnector('Telemetry Feed')}
+            ${renderFlowCard('datav')}
+          </div>
+        </div>
+
+        <!-- Dynamic Flow Telemetry HUD Card -->
+        <div class="flow-telemetry-hud" id="flow-hud-container">
+          <div class="flow-hud-top-bar">
+            <span class="badge" style="background:var(--ac);color:var(--on);font-weight:700">FLOW STAGE: [TRACK ${activeStep.track} · STEP ${activeStep.stepNumber}]</span>
+            <span class="flow-hud-subsystem">${activeStep.trackName}</span>
+            <span class="flow-hud-live-tag">● SYNCHRONIZED</span>
           </div>
 
-          <div class="arch-hud-grid">
-            <div class="arch-hud-left">
-              <div class="arch-hud-title-box">
-                <span class="arch-hud-icon-lg">${selected.icon}</span>
+          <div class="flow-hud-content-grid">
+            <!-- Left Column: Component Description & I/O Streams -->
+            <div class="flow-hud-left-col">
+              <div class="flow-hud-name-row">
+                <span class="flow-hud-big-icon">${activeStep.icon}</span>
                 <div>
-                  <h3 class="arch-hud-name">${selected.title}</h3>
-                  <div class="arch-hud-sub">${selected.badge} · Operational State: <b style="color:var(--ac)">${selected.status}</b></div>
+                  <h3 class="flow-hud-name">${activeStep.title}</h3>
+                  <div class="flow-hud-stage-sub">${activeStep.badge} · Operational State: <b style="color:var(--ac)">${activeStep.status}</b></div>
                 </div>
               </div>
-              <p class="arch-hud-desc">${selected.desc}</p>
-              
-              <!-- Viva Academic Defense Callout -->
-              <div class="arch-hud-viva">
-                <span class="arch-viva-label">💡 VIVA PRESENTATION DEFENSE POINT</span>
-                <p>${selected.vivaNote}</p>
+              <p class="flow-hud-desc">${activeStep.desc}</p>
+
+              <!-- Real-time Flow Stream Cards -->
+              <div class="flow-streams-box">
+                <div class="flow-stream-item stream-in">
+                  <span class="stream-label">◄ INPUT STREAM</span>
+                  <div class="stream-val">${activeStep.inputDesc || 'Direct User / Solar Initiation'}</div>
+                </div>
+                <div class="flow-stream-item stream-out">
+                  <span class="stream-label">OUTPUT TARGET ►</span>
+                  <div class="stream-val">${activeStep.outputDesc || 'Terminal Consumer / Admin Display'}</div>
+                </div>
+              </div>
+
+              <!-- Viva Presentation Defense Box -->
+              <div class="flow-hud-viva-box">
+                <span class="flow-viva-title">💡 VIVA DEFENSE & ARCHITECTURAL HIGHLIGHT</span>
+                <p>${activeStep.vivaNote}</p>
               </div>
             </div>
 
-            <div class="arch-hud-right">
-              <h4 class="arch-specs-header">Technical Specifications & Interfaces</h4>
-              <div class="arch-specs-table">
-                ${Object.entries(selected.specs).map(([k, v]) => `
-                  <div class="arch-spec-row">
-                    <span class="arch-spec-key">${k}</span>
-                    <span class="arch-spec-val">${v}</span>
+            <!-- Right Column: Technical Specs & Pulse Action -->
+            <div class="flow-hud-right-col">
+              <h4 class="flow-specs-title">Hardware Specs & Data Protocols</h4>
+              <div class="flow-specs-list">
+                ${Object.entries(activeStep.specs).map(([k, v]) => `
+                  <div class="flow-spec-row">
+                    <span class="flow-spec-key">${k}</span>
+                    <span class="flow-spec-val">${v}</span>
                   </div>
                 `).join('')}
               </div>
 
-              <div class="arch-hud-actions">
-                <button type="button" class="btn arch-action-btn" onclick="window.simulateArchPulse('${selected.id}')">
-                  ⚡ Simulate Component Pulse
+              <div class="flow-action-wrapper">
+                <button type="button" class="btn flow-pulse-btn" onclick="window.simulateFlowPulse('${activeStep.id}')">
+                  ⚡ Simulate Flow Pulse through this Step
                 </button>
               </div>
             </div>
@@ -372,7 +445,7 @@
   };
 
   window.selectArchNode = function (nodeId) {
-    if (!ARCH_NODES[nodeId]) return;
+    if (!ARCH_FLOW_STEPS[nodeId]) return;
     window.selectedArchNode = nodeId;
     const mount = document.getElementById('interactive-arch-mount');
     if (mount) {
@@ -388,39 +461,41 @@
     }
   };
 
-  window.highlightArchConduits = function (nodeId) {
-    const node = ARCH_NODES[nodeId];
-    if (!node) return;
-    document.querySelectorAll('.arch-node-card').forEach(el => {
-      const id = el.id.replace('arch-node-', '');
+  window.highlightFlowStep = function (nodeId) {
+    const step = ARCH_FLOW_STEPS[nodeId];
+    if (!step) return;
+    document.querySelectorAll('.flow-card').forEach(card => {
+      const id = card.id.replace('flow-step-', '');
       if (id === nodeId) {
-        el.classList.add('hover-highlight');
+        card.classList.add('flow-hover-focus');
+      } else if (step.inputs.includes(id) || step.outputs.includes(id) || (step.crossConduits && step.crossConduits.includes(id))) {
+        card.classList.add('flow-hover-linked');
       } else {
-        const isConnected = ARCH_CONDUITS.some(c => 
-          (c.from === nodeId && c.to === id) || (c.to === nodeId && c.from === id)
-        );
-        if (isConnected) el.classList.add('hover-connected');
-        else el.classList.add('hover-dim');
+        card.classList.add('flow-hover-dim');
       }
     });
   };
 
-  window.resetArchConduits = function () {
-    document.querySelectorAll('.arch-node-card').forEach(el => {
-      el.classList.remove('hover-highlight', 'hover-connected', 'hover-dim');
+  window.resetFlowStepHighlight = function () {
+    document.querySelectorAll('.flow-card').forEach(card => {
+      card.classList.remove('flow-hover-focus', 'flow-hover-linked', 'flow-hover-dim');
     });
   };
 
-  window.simulateArchPulse = function (nodeId) {
-    const node = ARCH_NODES[nodeId];
-    if (!node) return;
-    const card = document.getElementById(`arch-node-${nodeId}`);
+  window.simulateFlowPulse = function (nodeId) {
+    const step = ARCH_FLOW_STEPS[nodeId];
+    if (!step) return;
+    const card = document.getElementById(`flow-step-${nodeId}`);
     if (card) {
-      card.classList.add('pulsing');
-      setTimeout(() => card.classList.remove('pulsing'), 1000);
+      card.classList.add('flow-pulsing');
+      setTimeout(() => card.classList.remove('flow-pulsing'), 900);
     }
+    document.querySelectorAll('.flow-pulse-particle').forEach(p => {
+      p.classList.add('pulse-boost');
+      setTimeout(() => p.classList.remove('pulse-boost'), 900);
+    });
     if (typeof toast === 'function') {
-      toast(`⚡ Telemetry Pulse Fired: ${node.title} · Conduits Synchronized`);
+      toast(`⚡ Flow Pulse Transmitted: ${step.title} (${step.stepTitle})`);
     }
   };
 })();
